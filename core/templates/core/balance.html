@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% block title %}Balance Mensual{% endblock %}
+
+{% block content %}
+<h2 class="text-center mb-4">Balance Mensual</h2>
+
+<form method="post" class="row g-3 justify-content-center mb-4">
+  {% csrf_token %}
+  <div class="col-auto">
+    {{ form.mes.label_tag }} {{ form.mes }}
+  </div>
+  <div class="col-auto">
+    {{ form.anio.label_tag }} {{ form.anio }}
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">Ver Balance</button>
+  </div>
+</form>
+
+{% if mes and anio %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Resultados para {{ mes }}/{{ anio }}</span>
+    <div>
+      <a href="{% url 'exportar_balance_excel' %}" class="btn btn-sm btn-outline-success me-2">📊 Excel</a>
+      <a href="{% url 'exportar_balance_pdf' %}" class="btn btn-sm btn-outline-danger">📄 PDF</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <p><strong>Total Ingresos:</strong> €{{ total_ingresos }}</p>
+    <p><strong>Total Egresos:</strong> €{{ total_egresos }}</p>
+    <p><strong>Utilidad:</strong> €{{ utilidad }}</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+

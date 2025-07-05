@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% block title %}Historial de Compras{% endblock %}
+
+{% block content %}
+<h2 class="text-center mb-4">Historial de Compras</h2>
+
+<div class="mb-3 text-end">
+    <a href="{% url 'compra_create' %}" class="btn btn-success">Registrar nueva compra</a>
+</div>
+
+<table class="table table-bordered table-hover table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th>Total (€)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for compra in compras %}
+        <tr>
+            <td>{{ compra.id }}</td>
+            <td>{{ compra.fecha }}</td>
+            <td>{{ compra.proveedor }}</td>
+            <td>{{ compra.total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center">No hay compras registradas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

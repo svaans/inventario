@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Producto{% endblock %}
+
+{% block content %}
+<h2 class="mb-4 text-center">{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Producto</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'producto_list' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+
+
