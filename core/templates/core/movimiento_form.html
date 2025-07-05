@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+{% block title %}Registrar Movimiento{% endblock %}
+
+{% block content %}
+<h2 class="text-center mb-4">Registrar Movimiento</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'movimiento_list' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

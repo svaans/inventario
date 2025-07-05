@@ -71,9 +71,20 @@
     <div class="col-md-4">
         <div class="card text-center h-100">
             <div class="card-body">
+                <h5 class="card-title">Reporte de Inventario</h5>
+                <p class="card-text">Descargar listado actualizado de productos.</p>
+                <a href="{% url 'reporte_inventario' %}" class="btn btn-outline-dark">Ver Reporte</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
                 <h5 class="card-title">Movimientos</h5>
                 <p class="card-text">Historial de entradas y salidas de inventario.</p>
-                <a href="{% url 'movimiento_list' %}" class="btn btn-secondary">Ver Movimientos</a>
+                <a href="{% url 'movimiento_list' %}" class="btn btn-secondary me-2">Ver Movimientos</a>
+                <a href="{% url 'movimiento_create' %}" class="btn btn-outline-secondary btn-sm">Registrar</a>
             </div>
         </div>
     </div>

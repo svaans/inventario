@@ -1,5 +1,5 @@
 from django import forms
-from .models import Compra, DetalleCompra, Venta, Producto, DetallesVenta
+from .models import Compra, DetalleCompra, Venta, Producto, DetallesVenta, MovimientoInventario
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -62,3 +62,14 @@ class BalanceForm(forms.Form):
 
     mes = forms.ChoiceField(choices=MES_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
     anio = forms.ChoiceField(choices=ANIO_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
+
+class MovimientoInventarioForm(forms.ModelForm):
+    class Meta:
+        model = MovimientoInventario
+        fields = ["producto", "tipo", "cantidad", "motivo"]
+        widgets = {
+            "producto": forms.Select(attrs={"class": "form-select"}),
+            "tipo": forms.Select(attrs={"class": "form-select"}),
+            "cantidad": forms.NumberInput(attrs={"class": "form-control"}),
+            "motivo": forms.TextInput(attrs={"class": "form-control"}),
+        }

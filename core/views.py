@@ -1,15 +1,21 @@
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from .forms import ProductoForm
+from .forms import ProductoForm, MovimientoInventarioForm
 from django.shortcuts import redirect, render
 from django.forms import inlineformset_factory
-from .models import Venta, DetallesVenta, Producto
 from .forms import VentaForm, DetallesVentaForm
-from .forms import CompraForm, DetalleCompraForm
-from .models import Compra, DetalleCompra, Producto, MovimientoInventario, Categoria
-from .forms import BalanceForm
-from .models import Venta, Compra, Balance
+from .forms import CompraForm, DetalleCompraForm, BalanceForm
+from .models import (
+    Venta,
+    DetallesVenta,
+    Producto,
+    Compra,
+    DetalleCompra,
+    MovimientoInventario,
+    Categoria,
+    Balance,
+)
 from django.views.generic import FormView
 from django.db.models import F
 from django.http import HttpResponse
@@ -22,9 +28,7 @@ from openpyxl import load_workbook
 from django.views.generic import TemplateView
 from django.utils.timezone import now
 from django.db.models import Sum
-from datetime import datetime
 from collections import defaultdict
-from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
@@ -281,7 +285,7 @@ class CargarProductosView(View):
         if 'confirmar' in request.POST:
             # Paso 2: Confirmar importación desde sesión
             datos = request.session.get('vista_previa_productos', [])
-            creados, duplicados, errores = 0, 0, 0
+            creados, errores = 0, 0, 0
             for fila in datos:
                 if fila['estado'] != 'nuevo':
                     continue
@@ -298,7 +302,7 @@ class CargarProductosView(View):
                         categoria=categoria
                     )
                     creados += 1
-                except:
+                except Exception:
                     errores += 1
             messages.success(request, f"Se importaron {creados} productos. Errores: {errores}.")
             return redirect('producto_list')
@@ -333,7 +337,7 @@ class CargarProductosView(View):
                     'categoria': categoria or 'Sin categoría',
                     'estado': estado
                 })
-            except:
+            except Exception:
                 continue
 
         request.session['vista_previa_productos'] = vista_previa
@@ -395,3 +399,40 @@ class DashboardView(TemplateView):
             'top_cantidades': top_cantidades
         })
         return context
+    
+@login_decorador
+class ReporteInventarioView(ListView):
+    model = Producto
+    template_name = 'core/reporte_inventario.html'
+    context_object_name = 'productos'
+
+@login_required
+def exportar_inventario_excel(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Inventario'
+    ws.append(['Codigo', 'Nombre', 'Tipo', 'Stock', 'Stock minimo', 'Unidad', 'Categoria'])
+    for p in Producto.objects.all():
+        ws.append([p.codigo, p.nombre, p.get_tipo_display(), p.stock_actual, p.stock_minimo, p.unidad_media, str(p.categoria)])
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=inventario.xlsx'
+    wb.save(response)
+    return response
+
+@login_decorador
+class MovimientoManualCreateView(CreateView):
+    model = MovimientoInventario
+    form_class = MovimientoInventarioForm
+    template_name = 'core/movimiento_form.html'
+    success_url = reverse_lazy('movimiento_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        prod = form.instance.producto
+        cant = form.instance.cantidad
+        if form.instance.tipo == 'entrada':
+            prod.stock_actual += cant
+        else:
+            prod.stock_actual -= cant
+        prod.save()
+        return response
