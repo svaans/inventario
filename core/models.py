@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 #categorias de productos
 
@@ -87,7 +88,7 @@ class Cliente(models.Model):
 class Venta(models.Model):
     fecha = models.DateField()
     total = models.DecimalField(max_digits=10, decimal_places=2)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):

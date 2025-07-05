@@ -39,11 +39,10 @@ class DetalleCompraForm(forms.ModelForm):
 class VentaForm(forms.ModelForm):
     class Meta:
         model = Venta
-        fields = ['fecha', 'cliente', 'usuario']
+        fields = ['fecha', 'cliente']
         widgets = {
             'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'cliente': forms.Select(attrs={'class': 'form-select'}),
-            'usuario': forms.Select(attrs={'class': 'form-select'}),
         }
 
 class DetallesVentaForm(forms.ModelForm):

@@ -88,6 +88,7 @@ class VentaCreateView(CreateView):
 
         if form.is_valid() and formset.is_valid():
             self.object = form.save(commit=False)
+            self.object.usuario = request.user
             formset.instance = self.object
 
             total = 0

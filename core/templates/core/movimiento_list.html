@@ -3,6 +3,9 @@
 
 {% block content %}
 <h2 class="text-center mb-4">Historial de Movimientos de Inventario</h2>
+<div class="mb-3 text-end">
+    <a href="{% url 'movimiento_create' %}" class="btn btn-outline-secondary">Nuevo Movimiento</a>
+</div>
 
 <table class="table table-bordered table-striped">
   <thead class="table-dark">
