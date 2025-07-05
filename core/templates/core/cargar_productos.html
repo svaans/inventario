@@ -18,6 +18,7 @@
       <table class="table table-bordered table-hover">
         <thead class="table-dark">
           <tr>
+            <th>Código</th>
             <th>Nombre</th>
             <th>Tipo</th>
             <th>Precio</th>
@@ -31,6 +32,7 @@
         <tbody>
           {% for fila in vista_previa %}
           <tr class="{% if fila.estado == 'nuevo' %}table-success{% elif fila.estado == 'duplicado' %}table-warning{% else %}table-danger{% endif %}">
+            <td>{{ fila.codigo }}</td>
             <td>{{ fila.nombre }}</td>
             <td>{{ fila.tipo }}</td>
             <td>{{ fila.precio }}</td>

@@ -288,6 +288,7 @@ class CargarProductosView(View):
                 try:
                     categoria, _ = Categoria.objects.get_or_create(nombre_categoria=fila['categoria'])
                     Producto.objects.create(
+                        codigo=fila['codigo'],
                         nombre=fila['nombre'],
                         tipo=fila['tipo'],
                         precio=fila['precio'],
@@ -315,13 +316,14 @@ class CargarProductosView(View):
         vista_previa = []
         for i, fila in enumerate(hoja.iter_rows(min_row=2, values_only=True), start=2):
             try:
-                nombre, tipo, precio, stock_actual, stock_minimo, unidad_media, categoria = fila
+                codigo, nombre, tipo, precio, stock_actual, stock_minimo, unidad_media, categoria = fila
                 estado = 'nuevo'
-                if not nombre or not precio:
+                if not codigo or not nombre or not precio:
                     estado = 'invalido'
-                elif Producto.objects.filter(nombre=nombre).exists():
+                elif Producto.objects.filter(codigo=codigo).exists():
                     estado = 'duplicado'
                 vista_previa.append({
+                    'codigo': codigo or '',
                     'nombre': nombre or '',
                     'tipo': tipo or '',
                     'precio': precio or 0,
