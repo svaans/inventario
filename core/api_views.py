@@ -2,6 +2,7 @@ from django.db.models import F, Sum
 from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework.generics import ListAPIView, ListCreateAPIView
+from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -34,7 +35,7 @@ class ProductoPagination(PageNumberPagination):
     page_size = 20
 
 
-class ProductoListCreateView(ListCreateAPIView):
+class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all().order_by("nombre")
     serializer_class = ProductoSerializer
     pagination_class = ProductoPagination

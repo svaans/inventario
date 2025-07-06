@@ -74,13 +74,15 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Running the backend
 
-Install Python dependencies and start the FastAPI server:
+Install Python dependencies, apply the database migrations and create a Django superuser:
 
 ```bash
 pip install -r requirements.txt
-uvicorn api:app --reload --port 8000
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver 8000
 ```
 
 The React frontend expects the backend to be available at `http://localhost:8000`.
 
-The `DialogContent` component now references the description using `aria-describedby` for better accessibility.
+The React frontend expects the backend to be available at `http://localhost:8000`. CORS is configured to allow requests from `http://localhost:4173` during development.

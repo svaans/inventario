@@ -1,9 +1,10 @@
 from django.urls import path, include
 from . import views
 from .views import CustomLoginView
+from rest_framework.routers import DefaultRouter
 from .api_views import (
     CriticalProductListView,
-    ProductoListCreateView,
+    ProductoViewSet,
     VentaListCreateView,
     DashboardStatsView,
 )
@@ -15,6 +16,10 @@ from django.contrib.auth import views as auth_views
 def cerrar_sesion(request):
     logout(request)
     return redirect('login')
+
+
+router = DefaultRouter()
+router.register('api/productos', ProductoViewSet, basename='producto')
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),
@@ -39,7 +44,7 @@ urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', cerrar_sesion, name='logout'),
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
-    path('api/productos/', ProductoListCreateView.as_view(), name='productos_api'),
+    path('', include(router.urls)),
     path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
     path('password_reset/',

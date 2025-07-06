@@ -7,9 +7,26 @@ class CriticalProductSerializer(serializers.ModelSerializer):
         fields = ["id", "nombre", "stock_actual", "stock_minimo"]
 
 class ProductoSerializer(serializers.ModelSerializer):
+    categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
+    proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
     class Meta:
         model = Producto
-        fields = "__all__"
+        fields = [
+            "id",
+            "codigo",
+            "nombre",
+            "descripcion",
+            "tipo",
+            "precio",
+            "costo",
+            "stock_actual",
+            "stock_minimo",
+            "unidad_media",
+            "categoria",
+            "categoria_nombre",
+            "proveedor",
+            "proveedor_nombre",
+        ]
 
 
 class DetallesVentaSerializer(serializers.ModelSerializer):

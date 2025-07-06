@@ -63,12 +63,15 @@ export default function Products() {
   const payload = {
     codigo: `AUTO-${Date.now()}`,
     nombre: newProduct.name,
+    descripcion: newProduct.description,
     tipo: newProduct.category.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
+    costo: newProduct.cost,
     precio: newProduct.price,
     stock_actual: newProduct.stock,
     stock_minimo: newProduct.minStock,
     unidad_media: newProduct.unit,
     categoria: newProduct.category,
+    proveedor: newProduct.supplier || null,
   };
 
   try {
