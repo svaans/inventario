@@ -16,6 +16,8 @@ from .models import (
     Categoria,
     Balance,
 )
+from django.contrib.auth.views import LoginView
+from django.contrib.auth.models import Group
 from django.views.generic import FormView
 from django.db.models import F
 from django.http import HttpResponse
@@ -41,7 +43,19 @@ def index(request):
 login_decorador = method_decorator(login_required, name='dispatch')
 
 
+class CustomLoginView(LoginView):
+    template_name = 'core/login.html'
 
+    def form_invalid(self, form):
+        messages.error(self.request, 'Usuario o contraseña incorrectos.')
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+        if self.request.user.groups.filter(name='administrador').exists():
+            return reverse_lazy('dashboard')
+        return reverse_lazy('index')
+    
+    
 class ProductoListView(ListView):
     model = Producto
     template_name = 'core/product_list.html'

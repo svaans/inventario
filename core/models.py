@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from django.contrib.auth.hashers import make_password
 #categorias de productos
 
 class Categoria(models.Model):
@@ -73,6 +73,11 @@ class Usuario(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    def save(self, *args, **kwargs):
+        if self.contraseña and not self.contraseña.startswith('pbkdf2_'):
+            self.contraseña = make_password(self.contraseña)
+        super().save(*args, **kwargs)
     
 
 # clientes

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from django.contrib.auth.views import LoginView
+from .views import CustomLoginView
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 
@@ -29,7 +29,7 @@ urlpatterns = [
     path("movimientos/nuevo/", views.MovimientoManualCreateView.as_view(), name="movimiento_create"),
     path('productos/cargar/', views.CargarProductosView.as_view(), name='cargar_productos'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
-    path('login/', LoginView.as_view(template_name='core/login.html'), name='login'),
+    path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', cerrar_sesion, name='logout'),
 
 ]

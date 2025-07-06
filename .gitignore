@@ -181,3 +181,5 @@ cython_debug/
 .cursorindexingignore
 # Temporary exports
 tmp/
+desarrollo/
+inventario/

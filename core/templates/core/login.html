@@ -9,6 +9,7 @@
     <h2 class="mb-4 text-center">Iniciar sesión</h2>
     <form method="post">
       {% csrf_token %}
+      {{ form.non_field_errors }}
 
       <div class="mb-3">
         {{ form.username.label_tag }}
