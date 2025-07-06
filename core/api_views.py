@@ -12,6 +12,7 @@ from .serializers import (
     CriticalProductSerializer,
     ProductoSerializer,
     VentaSerializer,
+    VentaCreateSerializer,
 )
 
 
@@ -48,6 +49,12 @@ class VentaListCreateView(ListCreateAPIView):
     serializer_class = VentaSerializer
     pagination_class = VentaPagination
     permission_classes = [AllowAny]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return VentaCreateSerializer
+        return VentaSerializer
+
 
 class DashboardStatsView(APIView):
     permission_classes = [AllowAny]
