@@ -51,37 +51,45 @@ export default function Products() {
   const categories = ["Todas", ...new Set(products.map(p => p.category))];
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.category) {
-      toast({
-        title: "Error",
-        description: "Por favor completa todos los campos requeridos",
-        variant: "destructive"
-      });
-      return;
-    }
+  if (!newProduct.name || !newProduct.category) {
+    toast({
+      title: "Error",
+      description: "Por favor completa todos los campos requeridos",
+      variant: "destructive"
+    });
+    return;
+  }
 
-    const payload = {
-      codigo: `AUTO-${Date.now()}`,
-      nombre: newProduct.name,
-      tipo: newProduct.category.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
-      precio: newProduct.price,
-      stock_actual: newProduct.stock,
-      stock_minimo: newProduct.minStock,
-      unidad_media: newProduct.unit,
-      categoria: newProduct.category,
-    };
+  const payload = {
+    codigo: `AUTO-${Date.now()}`,
+    nombre: newProduct.name,
+    tipo: newProduct.category.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
+    precio: newProduct.price,
+    stock_actual: newProduct.stock,
+    stock_minimo: newProduct.minStock,
+    unidad_media: newProduct.unit,
+    categoria: newProduct.category,
+  };
 
+  try {
     const res = await fetch("http://localhost:8000/api/productos/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    if (res.ok) {
-      refetch();
+    if (!res.ok) {
+      throw new Error(`Error del servidor: ${res.status}`);
     }
 
-    const name = newProduct.name;
+    await res.json(); // o la respuesta que tu API mande
+
+    refetch();
+
+    toast({
+      title: "Producto agregado",
+      description: `${newProduct.name} ha sido agregado exitosamente`,
+    });
 
     setNewProduct({
       name: "",
@@ -94,13 +102,17 @@ export default function Products() {
       unit: "unidades",
       supplier: ""
     });
-    setIsDialogOpen(false);
-    
+    setIsDialogOpen(false); // SOLO cerrar si todo fue bien
+  } catch (error) {
+    console.error(error);
     toast({
-      title: "Producto agregado",
-      description: `${name} ha sido agregado exitosamente`,
+      title: "Error",
+      description: "No se pudo agregar el producto",
+      variant: "destructive"
     });
-  };
+    // No cerrar el modal si falla
+  }
+};
 
   const getStockStatus = (stock: number, minStock: number) => {
     if (stock <= minStock) return { label: "Stock Bajo", variant: "destructive" as const };

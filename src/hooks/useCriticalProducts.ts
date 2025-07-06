@@ -13,7 +13,7 @@ export function useCriticalProducts() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/critical-products/");
+        const res = await fetch("http://localhost:8000/api/critical-products/");
         if (res.ok) {
           const data = await res.json();
           setProducts(data.results ?? []);
