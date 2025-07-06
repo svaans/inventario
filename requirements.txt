@@ -1,5 +1,9 @@
-django
+# Python dependencies
+Django>=5.2
 openpyxl
 reportlab
 fastapi
 uvicorn
+# For API integration with React
+django-cors-headers
+djangorestframework
