@@ -1,6 +1,7 @@
 from django.urls import path, include
 from . import views
 from .views import CustomLoginView
+from .api_views import CriticalProductListView
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 from django.contrib.auth import views as auth_views
@@ -32,6 +33,7 @@ urlpatterns = [
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', cerrar_sesion, name='logout'),
+    path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
     path('password_reset/',
          auth_views.PasswordResetView.as_view(
              template_name='registration/password_reset_form.html'),

@@ -21,7 +21,7 @@ django_app = get_asgi_application()
 from api import app as fastapi_app
 
 main_app = FastAPI()
-main_app.mount('/api', fastapi_app)
+main_app.mount('/fastapi', fastapi_app)
 main_app.mount('/', django_app)
 
 application = main_app

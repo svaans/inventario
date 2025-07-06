@@ -2,8 +2,11 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Package, CheckCircle } from "lucide-react";
+import CriticalProductsTicker from "../components/inventory/CriticalProductsTicker";
+import { useCriticalProducts } from "../hooks/useCriticalProducts";
 
 export default function Home() {
+  const criticalProducts = useCriticalProducts();
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary/5 to-background py-12 px-4">
       {/* Encabezado con gradiente */}
@@ -52,23 +55,9 @@ export default function Home() {
         </Card>
       </section>
 
-      {/* Ticker de inventario */}
-      <div className="overflow-hidden bg-primary text-primary-foreground py-2 mb-4 rounded shadow">
-        <div className="animate-marquee whitespace-nowrap">
-          <span className="mx-4">⚠️ Empanada de atún: solo 5 unidades en stock</span>
-          <span className="mx-4">⚠️ Masa integral: reposición pendiente</span>
-          <span className="mx-4">📦 Revisión de inventario programada el 10/07</span>
-          <span className="mx-4">🆕 Nuevo producto: Empanada vegana registrada</span>
-        </div>
-      </div>
+      {/* Productos en stock crítico */}
+      <CriticalProductsTicker products={criticalProducts} />
 
-      <div className="overflow-hidden bg-muted text-foreground py-2 border border-primary/20 rounded shadow">
-        <div className="animate-marquee whitespace-nowrap">
-          <span className="mx-4">✅ Última sincronización completada hoy a las 14:00</span>
-          <span className="mx-4">🔄 Próxima auditoría el 30/07</span>
-          <span className="mx-4">📊 Sistema estable con 128 productos activos</span>
-        </div>
-      </div>
 
       {/* Footer corporativo */}
       <footer className="text-center text-xs text-muted-foreground mt-auto pt-8 border-t">
