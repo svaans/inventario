@@ -8,7 +8,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Compra
-from .serializers import CriticalProductSerializer, ProductoSerializer
+from .serializers import (
+    CriticalProductSerializer,
+    ProductoSerializer,
+    VentaSerializer,
+)
 
 
 class CriticalProductPagination(PageNumberPagination):
@@ -33,6 +37,16 @@ class ProductoListCreateView(ListCreateAPIView):
     queryset = Producto.objects.all().order_by("nombre")
     serializer_class = ProductoSerializer
     pagination_class = ProductoPagination
+    permission_classes = [AllowAny]
+
+class VentaPagination(PageNumberPagination):
+    page_size = 20
+
+
+class VentaListCreateView(ListCreateAPIView):
+    queryset = Venta.objects.all().order_by("-fecha")
+    serializer_class = VentaSerializer
+    pagination_class = VentaPagination
     permission_classes = [AllowAny]
 
 class DashboardStatsView(APIView):

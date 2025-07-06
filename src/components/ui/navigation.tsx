@@ -16,6 +16,7 @@ export function Navigation() {
     { name: "Inicio", path: "/" },
     { name: "Inventario", path: "/inventory" },
     { name: "Productos", path: "/products" },
+    { name: "Ventas", path: "/sales" },
     { name: "Dashboard", path: "/dashboard" },
   ];
 

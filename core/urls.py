@@ -4,6 +4,7 @@ from .views import CustomLoginView
 from .api_views import (
     CriticalProductListView,
     ProductoListCreateView,
+    VentaListCreateView,
     DashboardStatsView,
 )
 from django.shortcuts import redirect
@@ -39,6 +40,7 @@ urlpatterns = [
     path('logout/', cerrar_sesion, name='logout'),
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
     path('api/productos/', ProductoListCreateView.as_view(), name='productos_api'),
+    path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
     path('password_reset/',
          auth_views.PasswordResetView.as_view(
