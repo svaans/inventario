@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useProducts } from "../hooks/useProducts";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -6,64 +7,10 @@ import { Badge } from "../components/ui/badge";
 import { InventoryStats } from "../components/inventory/InventoryStats";
 import { Search, Plus, Package } from "lucide-react";
 
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  stock: number;
-  minStock: number;
-  price: number;
-  unit: string;
-}
+import type { Product } from "../hooks/useProducts";
 
 export default function Inventory() {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 1,
-      name: "Empanadas de Carne",
-      category: "Empanadas",
-      stock: 150,
-      minStock: 50,
-      price: 2.50,
-      unit: "unidades"
-    },
-    {
-      id: 2,
-      name: "Empanadas de Pollo",
-      category: "Empanadas",
-      stock: 120,
-      minStock: 40,
-      price: 2.30,
-      unit: "unidades"
-    },
-    {
-      id: 3,
-      name: "Empanadas de Queso",
-      category: "Empanadas",
-      stock: 25,
-      minStock: 30,
-      price: 2.20,
-      unit: "unidades"
-    },
-    {
-      id: 4,
-      name: "Harina de Trigo",
-      category: "Ingredientes",
-      stock: 15,
-      minStock: 20,
-      price: 1.80,
-      unit: "kg"
-    },
-    {
-      id: 5,
-      name: "Carne Molida",
-      category: "Ingredientes",
-      stock: 8,
-      minStock: 10,
-      price: 7.50,
-      unit: "kg"
-    }
-  ]);
+  const { data: products = [] } = useProducts();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");

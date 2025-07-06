@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useProducts } from "../hooks/useProducts";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -24,57 +25,7 @@ interface Product {
 }
 
 export default function Products() {
-  const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 1,
-      name: "Empanadas de Carne",
-      description: "Empanadas tradicionales con carne de res, cebolla y especias",
-      category: "Empanadas Saladas",
-      price: 2.50,
-      cost: 1.20,
-      stock: 150,
-      minStock: 50,
-      unit: "unidades",
-      supplier: "Producción Propia"
-    },
-    {
-      id: 2,
-      name: "Empanadas de Pollo",
-      description: "Empanadas con pollo desmenuzado y verduras",
-      category: "Empanadas Saladas",
-      price: 2.30,
-      cost: 1.10,
-      stock: 120,
-      minStock: 40,
-      unit: "unidades",
-      supplier: "Producción Propia"
-    },
-    {
-      id: 3,
-      name: "Empanadas de Queso",
-      description: "Empanadas con queso cremoso y hierbas",
-      category: "Empanadas Saladas",
-      price: 2.20,
-      cost: 1.00,
-      stock: 25,
-      minStock: 30,
-      unit: "unidades",
-      supplier: "Producción Propia"
-    },
-    {
-      id: 4,
-      name: "Empanadas Dulces de Membrillo",
-      description: "Empanadas dulces rellenas de dulce de membrillo",
-      category: "Empanadas Dulces",
-      price: 2.80,
-      cost: 1.30,
-      stock: 80,
-      minStock: 25,
-      unit: "unidades",
-      supplier: "Producción Propia"
-    }
-  ]);
+  const { data: products = [], refetch } = useProducts();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
@@ -99,7 +50,7 @@ export default function Products() {
 
   const categories = ["Todas", ...new Set(products.map(p => p.category))];
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.category) {
       toast({
         title: "Error",
@@ -109,12 +60,29 @@ export default function Products() {
       return;
     }
 
-    const product: Product = {
-      ...newProduct,
-      id: Date.now()
+    const payload = {
+      codigo: `AUTO-${Date.now()}`,
+      nombre: newProduct.name,
+      tipo: newProduct.category.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
+      precio: newProduct.price,
+      stock_actual: newProduct.stock,
+      stock_minimo: newProduct.minStock,
+      unidad_media: newProduct.unit,
+      categoria: 1,
     };
 
-    setProducts([...products, product]);
+    const res = await fetch("/api/productos/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      refetch();
+    }
+
+    const name = newProduct.name;
+
     setNewProduct({
       name: "",
       description: "",
@@ -130,7 +98,7 @@ export default function Products() {
     
     toast({
       title: "Producto agregado",
-      description: `${product.name} ha sido agregado exitosamente`,
+      description: `${name} ha sido agregado exitosamente`,
     });
   };
 
