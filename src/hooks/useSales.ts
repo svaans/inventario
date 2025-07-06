@@ -8,6 +8,14 @@ export interface Sale {
   usuario: string;
 }
 
+interface VentaAPI {
+  id: number
+  fecha: string
+  total: string | number
+  cliente?: string
+  usuario?: string
+}
+
 export function useSales() {
   return useQuery<Sale[]>({
     queryKey: ["sales"],
@@ -17,10 +25,10 @@ export function useSales() {
         throw new Error("Failed to fetch sales");
       }
       const data = await res.json();
-      return (data.results ?? data).map((v: any) => ({
+      return (data.results ?? data).map((v: VentaAPI) => ({
         id: v.id,
         fecha: v.fecha,
-        total: parseFloat(v.total),
+        total: parseFloat(String(v.total)),
         cliente: v.cliente ?? "",
         usuario: v.usuario ?? "",
       }));
