@@ -130,3 +130,7 @@ LOGIN_REDIRECT_URL = '/inicio/'
 
 LOGOUT_REDIRECT_URL = '/login/'
 
+# Emails se envían a la consola durante el desarrollo
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'no-reply@example.com'
+
