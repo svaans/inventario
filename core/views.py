@@ -1,6 +1,7 @@
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.http import JsonResponse
 from .forms import ProductoForm, MovimientoInventarioForm
 from django.shortcuts import redirect, render
 from django.forms import inlineformset_factory
@@ -468,3 +469,11 @@ class MovimientoManualCreateView(CreateView):
         prod.save()
         messages.success(self.request, "Movimiento registrado correctamente.")
         return response
+    
+
+class CriticalProductListView(View):
+    def get(self, request):
+        productos_criticos = Producto.objects.filter(stock_actual__lte=F('stock_minimo')).values(
+            'id', 'nombre', 'stock_actual', 'stock_minimo'
+        )
+        return JsonResponse(list(productos_criticos), safe=False)
