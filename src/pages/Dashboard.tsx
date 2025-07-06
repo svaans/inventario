@@ -2,40 +2,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { BarChart3, Package, Archive, Calendar, User } from "lucide-react";
+import { useDashboard } from "../hooks/useDashboard";
 
 export default function Dashboard() {
   // Mock data - En producción esto vendría de una API
-  const dashboardData = {
-    sales: {
-      today: 1250,
-      thisWeek: 8450,
-      thisMonth: 32100,
-      growth: 12.5
-    },
-    inventory: {
-      totalProducts: 24,
-      lowStock: 3,
-      outOfStock: 1,
-      totalValue: 15650
-    },
-    production: {
-      dailyGoal: 500,
-      produced: 387,
-      efficiency: 77.4
-    },
-    topProducts: [
-      { name: "Empanadas de Carne", sold: 156, stock: 150 },
-      { name: "Empanadas de Pollo", sold: 134, stock: 120 },
-      { name: "Empanadas de Queso", sold: 98, stock: 25 },
-      { name: "Empanadas de Jamón y Queso", sold: 87, stock: 95 }
-    ]
-  };
+  const { data } = useDashboard();
+  const dailyGoal = 500;
 
-  const alerts = [
-    { type: "warning", message: "Stock bajo: Empanadas de Queso (25 unidades)" },
-    { type: "danger", message: "Sin stock: Harina de Maíz" },
-    { type: "info", message: "Nuevo pedido programado para mañana" }
-  ];
+  const alerts = data?.alerts.map(a => ({
+    type: a.stock_actual <= 0 ? "danger" : "warning",
+    message: `${a.nombre}: ${a.stock_actual}`
+  })) ?? [];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -52,9 +29,9 @@ export default function Dashboard() {
             <BarChart3 className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${dashboardData.sales.today}</div>
+            <div className="text-2xl font-bold">${data?.sales_today ?? 0}</div>
             <p className="text-xs opacity-80">
-              +{dashboardData.sales.growth}% vs ayer
+              +{((data?.sales_week ?? 0) / (dailyGoal || 1)).toFixed(1)}% vs ayer
             </p>
           </CardContent>
         </Card>
@@ -65,9 +42,9 @@ export default function Dashboard() {
             <Package className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.inventory.totalProducts}</div>
+            <div className="text-2xl font-bold">{data?.total_products ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              {dashboardData.inventory.lowStock} con stock bajo
+              {data?.low_stock ?? 0} con stock bajo
             </p>
           </CardContent>
         </Card>
@@ -79,9 +56,9 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {dashboardData.production.produced}/{dashboardData.production.dailyGoal}
+              {data?.production_today ?? 0}/{dailyGoal}
             </div>
-            <Progress value={dashboardData.production.efficiency} className="mt-2" />
+            <Progress value={((data?.production_today ?? 0) / dailyGoal) * 100} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -91,7 +68,7 @@ export default function Dashboard() {
             <Calendar className="h-4 w-4 text-brown" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${dashboardData.inventory.totalValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${(data?.inventory_value ?? 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Valor total del stock
             </p>
@@ -108,20 +85,17 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {dashboardData.topProducts.map((product, index) => (
-                <div key={product.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              {data?.top_products.map((product, index) => (
+                <div key={product.producto__nombre} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.sold} vendidas</p>
+                      <p className="font-medium">{product.producto__nombre}</p>
+                      <p className="text-sm text-muted-foreground">{product.total_vendido} vendidas</p>
                     </div>
                   </div>
-                  <Badge variant={product.stock > 50 ? "secondary" : product.stock > 20 ? "outline" : "destructive"}>
-                    Stock: {product.stock}
-                  </Badge>
                 </div>
               ))}
             </div>
@@ -160,20 +134,19 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-4">
-            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day, index) => {
-              const amount = Math.floor(Math.random() * 500) + 800;
-              const height = (amount / 1300) * 100;
+            {data?.week_sales.map((item) => {
+              const height = (item.total / Math.max(...data.week_sales.map(w => w.total), 1)) * 100;
               
               return (
-                <div key={day} className="text-center">
+                <div key={item.day} className="text-center">
                   <div className="bg-muted rounded-lg p-2 mb-2 h-24 flex items-end justify-center">
                     <div 
                       className="bg-primary rounded w-6 transition-all duration-300 hover:bg-primary/80"
                       style={{ height: `${height}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{day}</p>
-                  <p className="text-sm font-medium">${amount}</p>
+                  <p className="text-xs text-muted-foreground">{item.day}</p>
+                  <p className="text-sm font-medium">${item.total}</p>
                 </div>
               );
             })}
