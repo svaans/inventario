@@ -71,3 +71,16 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Running the backend
+
+Install Python dependencies and start the FastAPI server:
+
+```bash
+pip install -r requirements.txt
+uvicorn api:app --reload --port 8000
+```
+
+The React frontend expects the backend to be available at `http://localhost:8000`.
+
+The `DialogContent` component now references the description using `aria-describedby` for better accessibility.

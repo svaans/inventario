@@ -71,7 +71,7 @@ export default function Products() {
       categoria: newProduct.category,
     };
 
-    const res = await fetch("/api/productos/", {
+    const res = await fetch("http://localhost:8000/api/productos/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -127,10 +127,10 @@ export default function Products() {
               Nuevo Producto
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent aria-describedby="add-product-description" className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Agregar Nuevo Producto</DialogTitle>
-              <DialogDescription>
+              <DialogDescription id="add-product-description">
                 Completa la información del nuevo producto
               </DialogDescription>
             </DialogHeader>

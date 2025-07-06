@@ -26,7 +26,7 @@ export function useProducts() {
   return useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: async () => {
-      const res = await fetch("/api/productos/");
+      const res = await fetch("http://localhost:8000/api/productos/");
       if (!res.ok) {
         throw new Error("Failed to fetch products");
       }
