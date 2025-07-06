@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
 import { Input } from "../components/ui/input";
 import { toast } from "../hooks/use-toast";
 
@@ -16,17 +16,16 @@ export default function Sales() {
 
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [selectedProduct, setSelectedProduct] = useState<number | "">("");
-  const [quantity, setQuantity] = useState(1);
+  const [search, setSearch] = useState("");
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [items, setItems] = useState<{id:number; name:string; price:number; quantity:number;}[]>([]);
 
-  const addItem = () => {
-    if (!selectedProduct) return;
-    const product = products.find(p => p.id === Number(selectedProduct));
+  const addItem = (productId: number) => {
+    const product = products.find(p => p.id === productId);
     if (!product) return;
-    setItems([...items, { id: product.id, name: product.name, price: product.price, quantity }]);
-    setSelectedProduct("");
-    setQuantity(1);
+    const qty = quantities[productId] ?? 1;
+    setItems([...items, { id: product.id, name: product.name, price: product.price, quantity: qty }]);
+    setQuantities({ ...quantities, [productId]: 1 });
   };
 
   const removeItem = (id:number) => setItems(items.filter(i => i.id !== id));
@@ -67,25 +66,44 @@ export default function Sales() {
                 <label className="text-sm" htmlFor="date">Fecha</label>
                 <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <label className="text-sm" htmlFor="product">Producto</label>
-                  <Select value={selectedProduct} onValueChange={(v) => setSelectedProduct(v)}>
-                    <SelectTrigger id="product">
-                      <SelectValue placeholder="Selecciona producto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map(p => (
-                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+              <div className="grid gap-2">
+                <Input
+                  placeholder="Buscar producto..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <Carousel className="w-full" opts={{ align: 'start' }}>
+                  <CarouselContent>
+                    {products
+                      .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+                      .map(p => (
+                        <CarouselItem key={p.id} className="basis-1/2 sm:basis-1/3">
+                          <Card className="p-4 h-full flex flex-col justify-between">
+                            <div>
+                              <CardTitle className="text-sm font-medium mb-2">{p.name}</CardTitle>
+                              <p className="text-muted-foreground text-sm mb-2">${p.price.toFixed(2)}</p>
+                            </div>
+                            <div className="flex items-center gap-2 mt-auto">
+                              <Input
+                                type="number"
+                                min={1}
+                                value={quantities[p.id] ?? 1}
+                                onChange={(e) =>
+                                  setQuantities({ ...quantities, [p.id]: parseInt(e.target.value) || 1 })
+                                }
+                                className="w-16"
+                              />
+                              <Button size="sm" onClick={() => addItem(p.id)}>
+                                Agregar
+                              </Button>
+                            </div>
+                          </Card>
+                        </CarouselItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="w-24">
-                  <label className="text-sm" htmlFor="qty">Cant.</label>
-                  <Input id="qty" type="number" min={1} value={quantity} onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)} />
-                </div>
-                <Button onClick={addItem}>Agregar</Button>
+                    </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
               </div>
               {items.length > 0 && (
                 <div className="border rounded-md p-2 space-y-2 max-h-52 overflow-y-auto">
