@@ -54,6 +54,10 @@ class ProductoCreateView(CreateView):
     template_name = 'core/producto_form.html'
     success_url = reverse_lazy('producto_list')
 
+    def form_valid(self, form):
+        messages.success(self.request, "Producto creado correctamente.")
+        return super().form_valid(form)
+
 @login_decorador
 class ProductoUpdateView(UpdateView):
     model = Producto
@@ -61,11 +65,21 @@ class ProductoUpdateView(UpdateView):
     template_name = 'core/producto_form.html'
     success_url = reverse_lazy('producto_list')
 
+    def form_valid(self, form):
+        messages.success(self.request, "Producto actualizado correctamente.")
+        return super().form_valid(form)
+
 @login_decorador
 class ProductoDeleteView(DeleteView):
     model = Producto
     template_name = 'core/producto_confirm_delete.html'
     success_url = reverse_lazy('producto_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Producto eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
+
+    
 
 class VentaCreateView(CreateView):
     model = Venta
@@ -115,8 +129,9 @@ class VentaCreateView(CreateView):
                     motivo='Venta'
                 )
 
+            messages.success(request, "Venta registrada correctamente.")
             return redirect(self.success_url)
-
+        
         return render(request, self.template_name, {'form': form, 'formset': formset})
 
 @login_decorador
@@ -173,6 +188,7 @@ class CompraCreateView(CreateView):
                     motivo='Compra'
                 )
 
+            messages.success(request, "Compra registrada correctamente.")
             return redirect(self.success_url)
 
         return render(request, self.template_name, {'form': form, 'formset': formset})
@@ -436,4 +452,5 @@ class MovimientoManualCreateView(CreateView):
         else:
             prod.stock_actual -= cant
         prod.save()
+        messages.success(self.request, "Movimiento registrado correctamente.")
         return response
