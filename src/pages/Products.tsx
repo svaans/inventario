@@ -9,7 +9,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Plus, Search, Package } from "lucide-react";
-import { useToast } from "../hooks/use-toast";
+import { toast } from "../hooks/use-toast";
 
 interface Product {
   id: number;
@@ -68,7 +68,7 @@ export default function Products() {
       stock_actual: newProduct.stock,
       stock_minimo: newProduct.minStock,
       unidad_media: newProduct.unit,
-      categoria: 1,
+      categoria: newProduct.category,
     };
 
     const res = await fetch("/api/productos/", {
