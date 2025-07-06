@@ -1,42 +1,73 @@
-# Inventario
+# Welcome to your Lovable project
 
-Este proyecto es una aplicación de inventario construida con Django y FastAPI.
+## Project info
 
-## Instalación
+**URL**: https://lovable.dev/projects/8bd90db1-7e19-4dcd-bc9f-2ac09a5f591e
 
-1. Crea un entorno virtual y actívalo.
-2. Instala las dependencias:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Ejecuta las migraciones y crea un superusuario:
-   ```bash
-   python manage.py migrate
-   python manage.py createsuperuser
-   ```
+## How can I edit this code?
 
-## Ejecución
+There are several ways of editing your application.
 
-Para iniciar el servidor usando ASGI con FastAPI y Django:
+**Use Lovable**
 
-```bash
-uvicorn configuracion.asgi:application --reload
+Simply visit the [Lovable Project](https://lovable.dev/projects/8bd90db1-7e19-4dcd-bc9f-2ac09a5f591e) and start prompting.
+
+Changes made via Lovable will be committed automatically to this repo.
+
+**Use your preferred IDE**
+
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
 ```
 
-Los endpoints de la API están disponibles en:
+**Edit a file directly in GitHub**
 
-- `/api/productos/`
-- `/api/movimientos/`
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-## Asignar grupos de usuarios
+**Use GitHub Codespaces**
 
-En el panel de administración de Django puedes crear grupos y asignarlos a los usuarios. Usa la etiqueta `has_group` incluida en los *template tags* para restringir funcionalidades en las plantillas.
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## Cargar productos desde Excel
+## What technologies are used for this project?
 
-En la sección "Cargar productos" del menú se puede subir un archivo Excel. Primero se muestra una vista previa y luego se confirma la importación.
+This project is built with:
 
-## Generar reportes
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-- **Reporte de inventario**: acceder a `/inventario/reporte/` y usar el botón "Exportar a Excel" para obtener el archivo.
-- **Balance**: desde `/balance/` se puede generar y exportar el balance mensual en Excel o PDF.
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/8bd90db1-7e19-4dcd-bc9f-2ac09a5f591e) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
