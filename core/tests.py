@@ -112,3 +112,21 @@ class ProductoTests(TestCase):
             export_resp["Content-Type"],
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
+
+    def test_api_create_product_with_category(self):
+        url = reverse("productos-list")
+        data = {
+            "codigo": "P100",
+            "nombre": "ProdX",
+            "tipo": "empanada",
+            "precio": 2,
+            "stock_actual": 5,
+            "stock_minimo": 1,
+            "unidad_media": "unidad",
+            "categoria": self.categoria.id,
+        }
+        response = self.client.post(url, data, content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+        producto = Producto.objects.get(codigo="P100")
+        self.assertEqual(producto.categoria, self.categoria)
+        self.assertEqual(response.json()["categoria_nombre"], self.categoria.nombre_categoria)

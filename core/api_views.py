@@ -1,6 +1,7 @@
 from django.db.models import F, Sum
 from django.utils.timezone import now
 from datetime import timedelta
+import logging
 from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
@@ -63,7 +64,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            logging.error("Product validation failed: %s", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
