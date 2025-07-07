@@ -184,9 +184,11 @@ export default function Products() {
       stock: 0,
       minStock: 0,
       unit: "unidades",
-      supplier: ""
+      supplier: "",
     });
-    setIsDialogOpen(false); // SOLO cerrar si todo fue bien
+    // Cerramos el modal en el próximo ciclo de eventos para evitar
+    // conflictos con otros estados que se actualizan al mismo tiempo
+    setTimeout(() => setIsDialogOpen(false), 0);
   } catch (error) {
     console.error(error);
     toast({
