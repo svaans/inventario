@@ -56,9 +56,10 @@ export default function Products() {
 
   const categories = ["Todas", ...categoriesData.map((c) => c.nombre_categoria)];
 
-  // Carga inicial de las categorías desde el backend
+  // Carga inicial de las categorías desde el backend de Django
+  // Utilizamos una URL relativa para funcionar en cualquier entorno
   useEffect(() => {
-    fetch("http://localhost:8000/api/categorias/")
+    fetch("/api/categorias/")
       .then((res) => res.json())
       .then((data) => setCategoriesData(data))
       .catch((err) => console.error(err));
@@ -108,7 +109,7 @@ export default function Products() {
   };
 
   try {
-    const res = await fetch("http://localhost:8000/api/productos/", {
+    const res = await fetch("/api/productos/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
