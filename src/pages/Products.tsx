@@ -55,10 +55,7 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  // Usamos una función dedicada para cerrar el diálogo. Esto nos permite
-  // diferir el cambio de estado y evitar conflictos con otros updates que
-  // ocurren cuando se envía el formulario.
-  const closeDialog = () => setTimeout(() => setIsDialogOpen(false), 0);
+  const closeDialog = () => setIsDialogOpen(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -197,6 +194,7 @@ export default function Products() {
         supplier: created.proveedor_nombre ?? String(created.proveedor),
       },
     ]);
+    closeDialog();
 
     await refetch();
 
@@ -216,9 +214,6 @@ export default function Products() {
       unit: "unidades",
       supplier: "",
     });
-    // Cerramos el modal en el próximo ciclo de eventos para evitar
-    // conflictos con otros estados que se actualizan al mismo tiempo
-    closeDialog();
   } catch (error) {
     console.error(error);
     toast({
