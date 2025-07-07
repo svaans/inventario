@@ -36,7 +36,12 @@ export default function Inventory() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["Todos", ...new Set(products.map(p => p.categoria_nombre))];
+  const categories = [
+    "Todos",
+    ...Array.from(new Set(products.map(p => p.categoria_nombre))).filter(
+      (c): c is string => Boolean(c)
+    ),
+  ];
   const totalProducts = dashboard?.total_products ?? products.length;
   const lowStock = dashboard?.low_stock ?? products.filter(p => p.stock <= p.minStock).length;
   const totalValue = dashboard?.inventory_value ?? products.reduce((sum, p) => sum + (p.stock * p.price), 0);
@@ -94,12 +99,12 @@ export default function Inventory() {
           />
         </div>
         <div className="flex gap-2">
-          {categories.map(category => (
+          {categories.filter(Boolean).map(category => (
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedCategory(category)}
+              onClick={() => category && setSelectedCategory(category)}
             >
               {category}
             </Button>
@@ -122,7 +127,9 @@ export default function Inventory() {
                   </Badge>
                 </div>
                 <CardTitle className="text-xl">{product.name}</CardTitle>
-                <CardDescription>{product.categoria_nombre}</CardDescription>
+                <CardDescription>
+                  {product.categoria_nombre || "Sin categoría"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

@@ -38,11 +38,16 @@ export default function Products() {
   } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
     queryFn: async () => {
-      const res = await fetch("/api/categorias/");
-      if (!res.ok) {
-        throw new Error("Failed to fetch categories");
+      try {
+        const res = await fetch("/api/categorias/");
+        if (!res.ok) {
+          throw new Error(`Failed to fetch categories: ${res.status}`);
+        }
+        return res.json();
+      } catch (err) {
+        console.error(err);
+        throw err;
       }
-      return res.json();
     },
     staleTime: Infinity,
   });
@@ -98,7 +103,12 @@ export default function Products() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["Todas", ...categoriesData.map((c) => c.nombre_categoria)];
+  const categories = [
+    "Todas",
+    ...categoriesData
+      .map((c) => c.nombre_categoria)
+      .filter((c): c is string => Boolean(c)),
+  ];
 
 
   // Reinicia el filtro si la categoría seleccionada desaparece de la lista
@@ -152,6 +162,8 @@ export default function Products() {
     });
 
     if (res.status !== 201) {
+      const text = await res.text();
+      console.error("Server error", res.status, text);
       throw new Error(`Error del servidor: ${res.status}`);
     }
 
@@ -256,8 +268,11 @@ export default function Products() {
                 <Label htmlFor="name">Nombre del Producto*</Label>
                 <Input
                   id="name"
+                  required
                   value={newProduct.name}
-                  onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, name: e.target.value })
+                  }
                   placeholder="Ej: Empanadas de Carne"
                 />
               </div>
@@ -297,6 +312,7 @@ export default function Products() {
                     id="price"
                     type="number"
                     step="0.01"
+                    required
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value) || 0})}
                   />
@@ -307,6 +323,7 @@ export default function Products() {
                     id="cost"
                     type="number"
                     step="0.01"
+                    required
                     value={newProduct.cost}
                     onChange={(e) => setNewProduct({...newProduct, cost: parseFloat(e.target.value) || 0})}
                   />
@@ -318,6 +335,7 @@ export default function Products() {
                   <Input
                     id="stock"
                     type="number"
+                    required
                     value={newProduct.stock}
                     onChange={(e) => setNewProduct({...newProduct, stock: parseInt(e.target.value) || 0})}
                   />
@@ -327,6 +345,7 @@ export default function Products() {
                   <Input
                     id="minStock"
                     type="number"
+                    required
                     value={newProduct.minStock}
                     onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
                   />
@@ -397,12 +416,12 @@ export default function Products() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {categories.map(category => (
+          {categories.filter(Boolean).map(category => (
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedCategory(category)}
+              onClick={() => category && setSelectedCategory(category)}
             >
               {category}
             </Button>
@@ -432,7 +451,9 @@ export default function Products() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-sm text-muted-foreground">Categoría:</span>
-                    <Badge variant="outline">{product.categoria_nombre}</Badge>
+                    <Badge variant="outline">
+                      {product.categoria_nombre || "Sin categoría"}
+                    </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

@@ -46,6 +46,8 @@ export function useProducts(search = "", codigo?: string) {
       while (url) {
         const res = await fetch(url);
         if (!res.ok) {
+          const text = await res.text();
+          console.error("Failed to fetch products", res.status, text);
           throw new Error("Failed to fetch products");
         }
         const data = await res.json();
