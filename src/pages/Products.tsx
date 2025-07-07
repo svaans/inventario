@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useProducts } from "../hooks/useProducts";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -25,6 +26,7 @@ interface Product {
 }
 
 export default function Products() {
+  const queryClient = useQueryClient();
   const { data: products = [], refetch } = useProducts();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,13 +44,38 @@ export default function Products() {
     supplier: ""
   });
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "Todas" || product.category === selectedCategory;
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "Todas" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["Todas", ...new Set(products.map(p => p.category))];
+  // Categorías base que siempre se muestran en el filtro
+  const baseCategories = [
+    "Empanadas Saladas",
+    "Empanadas Dulces",
+    "Ingredientes",
+    "Bebidas",
+  ];
+  const categories = [
+    "Todas",
+    ...new Set([...baseCategories, ...products.map((p) => p.category)]),
+  ];
+
+  // Reinicia el filtro si la categoría seleccionada deja de existir en la lista
+  // de productos (por ejemplo, justo después de crear un producto nuevo y el
+  // refetch aún no lo incluye). De esta forma evitamos pantallas vacías.
+  useEffect(() => {
+    if (
+      selectedCategory !== "Todas" &&
+      !products.some((p) => p.category === selectedCategory)
+    ) {
+      setSelectedCategory("Todas");
+    }
+  }, [products, selectedCategory]);
 
   useEffect(() => {
     if (
@@ -58,7 +85,7 @@ export default function Products() {
       setSelectedCategory("Todas");
     }
   }, [products, selectedCategory]);
-  
+
   const handleAddProduct = async () => {
   if (!newProduct.name || !newProduct.category) {
     toast({
@@ -94,9 +121,26 @@ export default function Products() {
       throw new Error(`Error del servidor: ${res.status}`);
     }
 
-    await res.json(); // o la respuesta que tu API mande
+    const created = await res.json();
 
-    refetch();
+    // Actualiza la caché local para reflejar el nuevo producto inmediatamente
+    queryClient.setQueryData<Product[]>(["products"], (old = []) => [
+      ...old,
+      {
+        id: created.id,
+        name: created.nombre,
+        description: created.descripcion ?? "",
+        category: created.categoria_nombre ?? String(created.categoria),
+        price: parseFloat(String(created.precio)),
+        cost: parseFloat(String(created.costo ?? 0)),
+        stock: parseFloat(String(created.stock_actual)),
+        minStock: parseFloat(String(created.stock_minimo)),
+        unit: created.unidad_media,
+        supplier: created.proveedor_nombre ?? String(created.proveedor),
+      },
+    ]);
+
+    await refetch();
 
     toast({
       title: "Producto agregado",
