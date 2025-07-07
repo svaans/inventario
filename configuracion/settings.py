@@ -138,6 +138,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@example.com'
 
 # Allow API requests from the Vite dev server during development
-CORS_ALLOWED_ORIGINS = ["http://localhost:4173"]
+# (both default 4173 and our custom 8080 port)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4173",
+    "http://localhost:8080",
+]
 CORS_ALLOW_CREDENTIALS = True
 
