@@ -8,13 +8,22 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Compra, Categoria
+from .models import (
+    Producto,
+    Venta,
+    DetallesVenta,
+    MovimientoInventario,
+    Compra,
+    Categoria,
+    Cliente,
+)
 from .serializers import (
     CriticalProductSerializer,
     ProductoSerializer,
     VentaSerializer,
     VentaCreateSerializer,
     CategoriaSerializer,
+    ClienteSerializer,
 )
 
 
@@ -42,6 +51,16 @@ class ProductoViewSet(viewsets.ModelViewSet):
     pagination_class = ProductoPagination
     permission_classes = [AllowAny]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.query_params.get("search")
+        codigo = self.request.query_params.get("codigo")
+        if codigo:
+            qs = qs.filter(codigo__iexact=codigo)
+        if search:
+            qs = qs.filter(nombre__icontains=search)
+        return qs
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -57,7 +76,21 @@ class CategoriaListView(ListAPIView):
     queryset = Categoria.objects.all().order_by("nombre_categoria")
     serializer_class = CategoriaSerializer
     permission_classes = [AllowAny]
-    
+
+class ClienteListView(ListAPIView):
+    """API para autocompletar clientes."""
+
+    queryset = Cliente.objects.all().order_by("nombre")
+    serializer_class = ClienteSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        q = self.request.query_params.get("search")
+        if q:
+            qs = qs.filter(nombre__icontains=q)
+        return qs
+
 class VentaPagination(PageNumberPagination):
     page_size = 20
 
@@ -72,6 +105,16 @@ class VentaListCreateView(ListCreateAPIView):
         if self.request.method == "POST":
             return VentaCreateSerializer
         return VentaSerializer
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        fecha = self.request.query_params.get("fecha")
+        usuario = self.request.query_params.get("usuario")
+        if fecha:
+            qs = qs.filter(fecha=fecha)
+        if usuario:
+            qs = qs.filter(usuario_id=usuario)
+        return qs
 
 
 class DashboardStatsView(APIView):
@@ -131,3 +174,18 @@ class DashboardStatsView(APIView):
             'alerts': alerts,
             'last_updated': now().isoformat(),
         })
+
+
+class DailySalesSummary(APIView):
+    """Resumen rápido de ventas del día para el usuario autenticado."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        today = now().date()
+        qs = Venta.objects.filter(fecha=today)
+        if request.user and request.user.is_authenticated:
+            qs = qs.filter(usuario=request.user)
+        total = qs.aggregate(total=Sum('total'))['total'] or 0
+        count = qs.count()
+        return Response({'count': count, 'total': total})

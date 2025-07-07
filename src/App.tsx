@@ -7,6 +7,7 @@ import { Navigation } from "./components/ui/navigation";
 import Home from "./pages/Home";
 import Inventory from "./pages/Inventory";
 import Sales from "./pages/Sales";
+import SalesWizard from "./pages/SalesWizard";
 import Products from "./pages/Products";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/products" element={<Products />} />
           <Route path="/sales" element={<Sales />} />
+          <Route path="/sales/new" element={<SalesWizard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

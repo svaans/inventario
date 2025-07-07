@@ -28,11 +28,15 @@ interface ProductoAPI {
   proveedor_nombre?: string;
 }
 
-export function useProducts() {
+export function useProducts(search = "", codigo?: string) {
   return useQuery<Product[]>({
-    queryKey: ["products"],
+    queryKey: ["products", search, codigo],
     queryFn: async () => {
-      const res = await fetch("http://localhost:8000/api/productos/");
+      const params: string[] = [];
+      if (search) params.push(`search=${encodeURIComponent(search)}`);
+      if (codigo) params.push(`codigo=${encodeURIComponent(codigo)}`);
+      const query = params.length ? `?${params.join("&")}` : "";
+      const res = await fetch(`/api/productos/${query}`);
       if (!res.ok) {
         throw new Error("Failed to fetch products");
       }

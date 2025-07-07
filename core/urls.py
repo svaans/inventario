@@ -8,6 +8,8 @@ from .api_views import (
     VentaListCreateView,
     DashboardStatsView,
     CategoriaListView,
+    ClienteListView,
+    DailySalesSummary,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -48,6 +50,8 @@ urlpatterns = [
     path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
+    path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
+    path('api/sales-summary/', DailySalesSummary.as_view(), name='sales_summary_api'),
     path('password_reset/',
          auth_views.PasswordResetView.as_view(
              template_name='registration/password_reset_form.html'),

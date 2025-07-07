@@ -1,6 +1,12 @@
 from rest_framework import serializers
-from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Categoria
-
+from .models import (
+    Producto,
+    Venta,
+    DetallesVenta,
+    MovimientoInventario,
+    Categoria,
+    Cliente,
+)
 
 class CategoriaSerializer(serializers.ModelSerializer):
     """Serializer simple para listar categorías."""
@@ -8,6 +14,15 @@ class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categoria
         fields = ["id", "nombre_categoria"]
+
+        
+
+class ClienteSerializer(serializers.ModelSerializer):
+    """Serializer para autocompletar clientes."""
+
+    class Meta:
+        model = Cliente
+        fields = ["id", "nombre"]
 
 class CriticalProductSerializer(serializers.ModelSerializer):
     class Meta:
