@@ -127,32 +127,43 @@ export default function Products() {
 
   const handleAddProduct = async () => {
   if (!newProduct.name || !newProduct.category) {
-    toast({
-      title: "Error",
-      description: "Por favor completa todos los campos requeridos",
-      variant: "destructive"
-    });
-    return;
-  }
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos requeridos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const categoriaId = parseInt(newProduct.category);
+    if (Number.isNaN(categoriaId)) {
+      toast({
+        title: "Error",
+        description: "Selecciona una categoría válida",
+        variant: "destructive",
+      });
+      return;
+    }
 
   // Determinamos la categoría seleccionada para enviar su ID y calcular el tipo
-  const selectedCat = categoriesData.find(c => c.id === parseInt(newProduct.category));
+  const selectedCat = categoriesData.find((c) => c.id === categoriaId);
+    const isIngrediente = selectedCat?.nombre_categoria
+      ?.toLowerCase()
+      .includes("ingred");
 
   const payload = {
-    codigo: `AUTO-${Date.now()}`,
-    nombre: newProduct.name,
-    descripcion: newProduct.description,
-    // Si la categoría menciona "ingred" asumimos que es un ingrediente
-    tipo: selectedCat?.nombre_categoria.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
-    costo: newProduct.cost,
-    precio: newProduct.price,
-    stock_actual: newProduct.stock,
-    stock_minimo: newProduct.minStock,
-    unidad_media: newProduct.unit,
-    // Enviamos solo el ID de la categoría al backend
-    categoria: parseInt(newProduct.category),
-    proveedor: newProduct.supplier || null,
-  };
+      codigo: `AUTO-${Date.now()}`,
+      nombre: newProduct.name,
+      descripcion: newProduct.description,
+      tipo: isIngrediente ? "ingredientes" : "empanada",
+      costo: newProduct.cost,
+      precio: newProduct.price,
+      stock_actual: newProduct.stock,
+      stock_minimo: newProduct.minStock,
+      unidad_media: newProduct.unit,
+      categoria: categoriaId,
+      proveedor: newProduct.supplier || null,
+    };
 
   try {
     const res = await fetch("/api/productos/", {
