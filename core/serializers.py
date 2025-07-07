@@ -1,16 +1,22 @@
 from rest_framework import serializers
 from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Categoria
 
+
+class CategoriaSerializer(serializers.ModelSerializer):
+    """Serializer simple para listar categorías."""
+
+    class Meta:
+        model = Categoria
+        fields = ["id", "nombre_categoria"]
+
 class CriticalProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Producto
         fields = ["id", "nombre", "stock_actual", "stock_minimo"]
 
 class ProductoSerializer(serializers.ModelSerializer):
-    categoria = serializers.SlugRelatedField(
-        slug_field="nombre_categoria",
-        queryset=Categoria.objects.all(),
-    )
+    # Validamos la categoría por su clave primaria para evitar errores
+    categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
     categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
     class Meta:

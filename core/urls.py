@@ -7,6 +7,7 @@ from .api_views import (
     ProductoViewSet,
     VentaListCreateView,
     DashboardStatsView,
+    CategoriaListView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -46,6 +47,7 @@ urlpatterns = [
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
     path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
+    path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('password_reset/',
          auth_views.PasswordResetView.as_view(
              template_name='registration/password_reset_form.html'),

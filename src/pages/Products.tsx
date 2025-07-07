@@ -31,6 +31,7 @@ export default function Products() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
+  const [categoriesData, setCategoriesData] = useState<{id: number; nombre_categoria: string;}[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -53,32 +54,29 @@ export default function Products() {
     return matchesSearch && matchesCategory;
   });
 
-  // Categorías base que siempre se muestran en el filtro
-  const baseCategories = [
-    "Empanadas Saladas",
-    "Empanadas Dulces",
-    "Ingredientes",
-    "Bebidas",
-  ];
-  const categories = [
-    "Todas",
-    ...new Set([...baseCategories, ...products.map((p) => p.category)]),
-  ];
+  const categories = ["Todas", ...categoriesData.map((c) => c.nombre_categoria)];
 
-  // Reinicia el filtro si la categoría seleccionada deja de existir en la lista
-  // de productos (por ejemplo, justo después de crear un producto nuevo y el
-  // refetch aún no lo incluye). De esta forma evitamos pantallas vacías.
+  // Carga inicial de las categorías desde el backend
   useEffect(() => {
-  if (
-    selectedCategory !== "Todas" &&
-    !products.some((p) => p.category === selectedCategory)
-  ) {
-    console.warn(
-      `⚠️ La categoría "${selectedCategory}" no tiene productos, reiniciando filtro a Todas`
-    );
-    setSelectedCategory("Todas");
-  }
-}, [products, selectedCategory]);
+    fetch("http://localhost:8000/api/categorias/")
+      .then((res) => res.json())
+      .then((data) => setCategoriesData(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // Reinicia el filtro si la categoría seleccionada desaparece de la lista
+  // (por ejemplo después de crear un producto y aún no aparece en el refetch)
+  useEffect(() => {
+    if (
+      selectedCategory !== "Todas" &&
+      !products.some((p) => p.category === selectedCategory)
+    ) {
+      console.warn(
+        `⚠️ La categoría "${selectedCategory}" no tiene productos, reiniciando filtro a Todas`
+      );
+      setSelectedCategory("Todas");
+    }
+  }, [products, selectedCategory]);
 
   const handleAddProduct = async () => {
   if (!newProduct.name || !newProduct.category) {
@@ -90,17 +88,22 @@ export default function Products() {
     return;
   }
 
+  // Determinamos la categoría seleccionada para enviar su ID y calcular el tipo
+  const selectedCat = categoriesData.find(c => c.id === parseInt(newProduct.category));
+
   const payload = {
     codigo: `AUTO-${Date.now()}`,
     nombre: newProduct.name,
     descripcion: newProduct.description,
-    tipo: newProduct.category.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
+    // Si la categoría menciona "ingred" asumimos que es un ingrediente
+    tipo: selectedCat?.nombre_categoria.toLowerCase().includes("ingred") ? "ingredientes" : "empanada",
     costo: newProduct.cost,
     precio: newProduct.price,
     stock_actual: newProduct.stock,
     stock_minimo: newProduct.minStock,
     unidad_media: newProduct.unit,
-    categoria: newProduct.category,
+    // Enviamos solo el ID de la categoría al backend
+    categoria: parseInt(newProduct.category),
     proveedor: newProduct.supplier || null,
   };
 
@@ -217,15 +220,16 @@ export default function Products() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="category">Categoría*</Label>
-                <Select onValueChange={(value) => setNewProduct({...newProduct, category: value})}>
+                <Select value={newProduct.category} onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Empanadas Saladas">Empanadas Saladas</SelectItem>
-                    <SelectItem value="Empanadas Dulces">Empanadas Dulces</SelectItem>
-                    <SelectItem value="Ingredientes">Ingredientes</SelectItem>
-                    <SelectItem value="Bebidas">Bebidas</SelectItem>
+                    {categoriesData.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {cat.nombre_categoria}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

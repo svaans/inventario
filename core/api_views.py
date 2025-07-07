@@ -8,13 +8,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
-from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Compra
+from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Compra, Categoria
 from .serializers import (
     CriticalProductSerializer,
     ProductoSerializer,
     VentaSerializer,
     VentaCreateSerializer,
+    CategoriaSerializer,
 )
 
 
@@ -49,6 +49,15 @@ class ProductoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
+
+class CategoriaListView(ListAPIView):
+    """API pública para listar categorías de productos."""
+
+    queryset = Categoria.objects.all().order_by("nombre_categoria")
+    serializer_class = CategoriaSerializer
+    permission_classes = [AllowAny]
+    
 class VentaPagination(PageNumberPagination):
     page_size = 20
 
