@@ -69,22 +69,16 @@ export default function Products() {
   // de productos (por ejemplo, justo después de crear un producto nuevo y el
   // refetch aún no lo incluye). De esta forma evitamos pantallas vacías.
   useEffect(() => {
-    if (
-      selectedCategory !== "Todas" &&
-      !products.some((p) => p.category === selectedCategory)
-    ) {
-      setSelectedCategory("Todas");
-    }
-  }, [products, selectedCategory]);
-
-  useEffect(() => {
-    if (
-      selectedCategory !== "Todas" &&
-      !products.some((p) => p.category === selectedCategory)
-    ) {
-      setSelectedCategory("Todas");
-    }
-  }, [products, selectedCategory]);
+  if (
+    selectedCategory !== "Todas" &&
+    !products.some((p) => p.category === selectedCategory)
+  ) {
+    console.warn(
+      `⚠️ La categoría "${selectedCategory}" no tiene productos, reiniciando filtro a Todas`
+    );
+    setSelectedCategory("Todas");
+  }
+}, [products, selectedCategory]);
 
   const handleAddProduct = async () => {
   if (!newProduct.name || !newProduct.category) {

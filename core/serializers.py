@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Producto, Venta, DetallesVenta, MovimientoInventario
+from .models import Producto, Venta, DetallesVenta, MovimientoInventario, Categoria
 
 class CriticalProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,6 +7,10 @@ class CriticalProductSerializer(serializers.ModelSerializer):
         fields = ["id", "nombre", "stock_actual", "stock_minimo"]
 
 class ProductoSerializer(serializers.ModelSerializer):
+    categoria = serializers.SlugRelatedField(
+        slug_field="nombre_categoria",
+        queryset=Categoria.objects.all(),
+    )
     categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
     class Meta:
