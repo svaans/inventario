@@ -27,6 +27,16 @@ class ProductoSerializer(serializers.ModelSerializer):
             "proveedor",
             "proveedor_nombre",
         ]
+        extra_kwargs = {
+            "codigo": {"required": True},
+            "nombre": {"required": True},
+            "categoria": {"required": True},
+            "precio": {"required": True},
+            "stock_actual": {"required": True},
+            "stock_minimo": {"required": True},
+            "unidad_media": {"required": True},
+            "tipo": {"required": True},
+        }
 
 
 class DetallesVentaSerializer(serializers.ModelSerializer):

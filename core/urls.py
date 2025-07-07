@@ -19,7 +19,7 @@ def cerrar_sesion(request):
 
 
 router = DefaultRouter()
-router.register('api/productos', ProductoViewSet, basename='producto')
+router.register(r'api/productos', ProductoViewSet, basename="productos")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),
@@ -44,7 +44,6 @@ urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', cerrar_sesion, name='logout'),
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
-    path('', include(router.urls)),
     path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
     path('password_reset/',
@@ -67,5 +66,7 @@ urlpatterns = [
 
 ]
 
+
+urlpatterns += router.urls
 
 

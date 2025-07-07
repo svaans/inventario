@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useProducts } from "../hooks/useProducts";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -50,6 +50,15 @@ export default function Products() {
 
   const categories = ["Todas", ...new Set(products.map(p => p.category))];
 
+  useEffect(() => {
+    if (
+      selectedCategory !== "Todas" &&
+      !products.some((p) => p.category === selectedCategory)
+    ) {
+      setSelectedCategory("Todas");
+    }
+  }, [products, selectedCategory]);
+  
   const handleAddProduct = async () => {
   if (!newProduct.name || !newProduct.category) {
     toast({
@@ -81,7 +90,7 @@ export default function Products() {
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) {
+    if (res.status !== 201) {
       throw new Error(`Error del servidor: ${res.status}`);
     }
 

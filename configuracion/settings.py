@@ -137,6 +137,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@example.com'
 
-# Allow API requests from any origin during development
-CORS_ALLOW_ALL_ORIGINS = True
+# Allow API requests from the Vite dev server during development
+CORS_ALLOWED_ORIGINS = ["http://localhost:4173"]
+CORS_ALLOW_CREDENTIALS = True
 
