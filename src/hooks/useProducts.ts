@@ -4,7 +4,8 @@ export interface Product {
   id: number;
   name: string;
   description: string;
-  category: string;
+  categoria: number;
+  categoria_nombre: string;
   price: number;
   cost: number;
   stock: number;
@@ -56,7 +57,8 @@ export function useProducts(search = "", codigo?: string) {
         id: p.id,
         name: p.nombre,
         description: p.descripcion ?? "",
-        category: p.categoria_nombre ?? String(p.categoria),
+        categoria: parseInt(String(p.categoria)),
+        categoria_nombre: p.categoria_nombre ?? "Sin categoría",
         price: parseFloat(String(p.precio)),
         cost: parseFloat(String(p.costo ?? 0)),
         stock: parseFloat(String(p.stock_actual)),

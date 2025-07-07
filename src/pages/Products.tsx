@@ -17,7 +17,8 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  category: string;
+  categoria: number;
+  categoria_nombre: string;
   price: number;
   cost: number;
   stock: number;
@@ -92,7 +93,8 @@ export default function Products() {
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "Todas" || product.category === selectedCategory;
+      selectedCategory === "Todas" ||
+      product.categoria_nombre === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -104,7 +106,7 @@ export default function Products() {
   useEffect(() => {
     if (
       selectedCategory !== "Todas" &&
-      !products.some((p) => p.category === selectedCategory)
+      !products.some((p) => p.categoria_nombre === selectedCategory)
     ) {
       console.warn(
         `⚠️ La categoría "${selectedCategory}" no tiene productos, reiniciando filtro a Todas`
@@ -162,7 +164,8 @@ export default function Products() {
         id: created.id,
         name: created.nombre,
         description: created.descripcion ?? "",
-        category: created.categoria_nombre ?? String(created.categoria),
+        categoria: parseInt(String(created.categoria)),
+        categoria_nombre: created.categoria_nombre ?? "Sin categoría",
         price: parseFloat(String(created.precio)),
         cost: parseFloat(String(created.costo ?? 0)),
         stock: parseFloat(String(created.stock_actual)),
@@ -192,7 +195,7 @@ export default function Products() {
     });
     // Cerramos el modal en el próximo ciclo de eventos para evitar
     // conflictos con otros estados que se actualizan al mismo tiempo
-    setTimeout(() => setIsDialogOpen(false), 0);
+    closeDialog();
   } catch (error) {
     console.error(error);
     toast({
@@ -331,7 +334,7 @@ export default function Products() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={closeDialog}>
                 Cancelar
               </Button>
               <Button onClick={handleAddProduct} className="bg-primary hover:bg-primary/90">
@@ -429,7 +432,7 @@ export default function Products() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-sm text-muted-foreground">Categoría:</span>
-                    <Badge variant="outline">{product.category}</Badge>
+                    <Badge variant="outline">{product.categoria_nombre}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

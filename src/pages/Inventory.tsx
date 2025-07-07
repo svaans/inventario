@@ -32,11 +32,11 @@ export default function Inventory() {
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
+    const matchesCategory = selectedCategory === "Todos" || product.categoria_nombre === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["Todos", ...new Set(products.map(p => p.category))];
+  const categories = ["Todos", ...new Set(products.map(p => p.categoria_nombre))];
   const totalProducts = dashboard?.total_products ?? products.length;
   const lowStock = dashboard?.low_stock ?? products.filter(p => p.stock <= p.minStock).length;
   const totalValue = dashboard?.inventory_value ?? products.reduce((sum, p) => sum + (p.stock * p.price), 0);
@@ -122,7 +122,7 @@ export default function Inventory() {
                   </Badge>
                 </div>
                 <CardTitle className="text-xl">{product.name}</CardTitle>
-                <CardDescription>{product.category}</CardDescription>
+                <CardDescription>{product.categoria_nombre}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
