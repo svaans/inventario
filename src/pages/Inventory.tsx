@@ -1,16 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProducts } from "../hooks/useProducts";
+import { useDashboard } from "../hooks/useDashboard";
+import { toast } from "../hooks/use-toast";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { InventoryStats } from "../components/inventory/InventoryStats";
+import { Skeleton } from "../components/ui/skeleton";
 import { Search, Plus, Package } from "lucide-react";
 
 import type { Product } from "../hooks/useProducts";
 
 export default function Inventory() {
-  const { data: products = [] } = useProducts();
+  const { data: products = [], isLoading, isError } = useProducts();
+  const { data: dashboard } = useDashboard();
+
+  // Notificamos cualquier error de carga para que el usuario pueda reintentar.
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: "No se pudo obtener el inventario",
+        variant: "destructive",
+      });
+    }
+  }, [isError]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -22,16 +37,30 @@ export default function Inventory() {
   });
 
   const categories = ["Todos", ...new Set(products.map(p => p.category))];
-  const totalProducts = products.length;
-  const lowStock = products.filter(p => p.stock <= p.minStock).length;
-  const totalValue = products.reduce((sum, p) => sum + (p.stock * p.price), 0);
-  const lastUpdated = new Date().toLocaleTimeString();
+  const totalProducts = dashboard?.total_products ?? products.length;
+  const lowStock = dashboard?.low_stock ?? products.filter(p => p.stock <= p.minStock).length;
+  const totalValue = dashboard?.inventory_value ?? products.reduce((sum, p) => sum + (p.stock * p.price), 0);
+  const lastUpdated = dashboard?.last_updated
+    ? new Date(dashboard.last_updated).toLocaleTimeString()
+    : new Date().toLocaleTimeString();
 
   const getStockStatus = (stock: number, minStock: number) => {
     if (stock <= minStock) return { label: "Stock Bajo", variant: "destructive" as const };
     if (stock <= minStock * 1.5) return { label: "Stock Medio", variant: "outline" as const };
     return { label: "Stock Normal", variant: "secondary" as const };
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-40" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

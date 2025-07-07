@@ -52,7 +52,6 @@ export function useProducts(search = "", codigo?: string) {
         // "next" puede venir como URL absoluta; la convertimos en ruta relativa.
         url = data.next ? data.next.replace(/^https?:\/\/[^/]+/, "") : "";
       }
-      const data = await res.json();
       return all.map((p: ProductoAPI) => ({
         id: p.id,
         name: p.nombre,

@@ -12,7 +12,7 @@ export default function Home() {
       {/* Encabezado con gradiente */}
       <header className="text-center mb-12 space-y-2">
         <h1 className="text-4xl md:text-5xl font-bold text-primary drop-shadow">
-          Empanadas El Dorado
+          Empanadas De Sabor
         </h1>
         <p className="text-lg text-muted-foreground max-w-xl mx-auto border-b border-primary pb-2">
           Panel de Gestión de Inventario
