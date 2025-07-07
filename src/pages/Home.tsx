@@ -6,7 +6,7 @@ import CriticalProductsTicker from "../components/inventory/CriticalProductsTick
 import { useCriticalProducts } from "../hooks/useCriticalProducts";
 
 export default function Home() {
-  const criticalProducts = useCriticalProducts();
+  const { data: criticalProducts = [] } = useCriticalProducts();
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary/5 to-background py-12 px-4">
       {/* Encabezado con gradiente */}

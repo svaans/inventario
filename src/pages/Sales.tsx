@@ -1,16 +1,17 @@
 import { useSales } from "../hooks/useSales";
 import { useProducts } from "../hooks/useProducts";
 import { useCreateSale } from "../hooks/useCreateSale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
 import { Input } from "../components/ui/input";
 import { toast } from "../hooks/use-toast";
+import { Skeleton } from "../components/ui/skeleton";
 
 export default function Sales() {
-  const { data: sales = [], refetch } = useSales();
+  const { data: sales = [], refetch, isLoading, isError } = useSales();
   const { data: products = [] } = useProducts();
   const createSale = useCreateSale();
 
@@ -19,6 +20,16 @@ export default function Sales() {
   const [search, setSearch] = useState("");
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [items, setItems] = useState<{id:number; name:string; price:number; quantity:number;}[]>([]);
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las ventas",
+        variant: "destructive",
+      });
+    }
+  }, [isError]);
 
   const addItem = (productId: number) => {
     const product = products.find(p => p.id === productId);
@@ -47,6 +58,14 @@ export default function Sales() {
       toast({ title: "Error", description: "No se pudo registrar la venta", variant: "destructive" });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <Skeleton className="h-20" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

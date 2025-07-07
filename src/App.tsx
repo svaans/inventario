@@ -12,7 +12,18 @@ import Products from "./pages/Products";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Configuramos React Query con un tiempo de stale más amplio para evitar
+// refetch innecesarios pero asegurando sincronización cuando la ventana
+// recupera el foco. Esto ayuda a mantener la UI actualizada sin recargar
+// constantemente todos los datos.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutos
+      refetchOnWindowFocus: true,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

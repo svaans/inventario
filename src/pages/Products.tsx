@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProducts } from "../hooks/useProducts";
+import { toast } from "../hooks/use-toast";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -10,7 +11,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Plus, Search, Package } from "lucide-react";
-import { toast } from "../hooks/use-toast";
+import { Skeleton } from "../components/ui/skeleton";
 
 interface Product {
   id: number;
@@ -27,7 +28,7 @@ interface Product {
 
 export default function Products() {
   const queryClient = useQueryClient();
-  const { data: products = [], refetch } = useProducts();
+  const { data: products = [], refetch, isLoading, isError } = useProducts();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
@@ -44,6 +45,17 @@ export default function Products() {
     unit: "unidades",
     supplier: ""
   });
+
+  // Avisamos al usuario en caso de errores de carga
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: "No se pudo obtener el catálogo",
+        variant: "destructive",
+      });
+    }
+  }, [isError]);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
@@ -177,6 +189,18 @@ export default function Products() {
   const getMargin = (price: number, cost: number) => {
     return ((price - cost) / price * 100).toFixed(1);
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-40" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

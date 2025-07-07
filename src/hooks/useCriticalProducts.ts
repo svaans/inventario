@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 export interface CriticalProduct {
   id: number;
@@ -8,23 +8,19 @@ export interface CriticalProduct {
 }
 
 export function useCriticalProducts() {
-  const [products, setProducts] = useState<CriticalProduct[]>([]);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch("/api/critical-products/");
-        if (res.ok) {
-          const data = await res.json();
-          setProducts(data.results ?? []);
-        }
-      } catch (error) {
-        console.error("Error fetching critical products", error);
+  // React Query simplifica la obtención y reintentos automáticos
+  // además de permitir refetch periódico para mantener la lista al día.
+  return useQuery<CriticalProduct[]>({
+    queryKey: ["critical-products"],
+    queryFn: async () => {
+      const res = await fetch("/api/critical-products/");
+      if (!res.ok) {
+        throw new Error("Failed to fetch critical products");
       }
-    }
-
-    fetchData();
-  }, []);
-
-  return products;
+    const data = await res.json();
+      return data.results ?? data;
+    },
+    initialData: [],
+    refetchInterval: 60000, // actualizar cada minuto
+  });
 }

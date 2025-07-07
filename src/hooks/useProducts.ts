@@ -30,18 +30,30 @@ interface ProductoAPI {
 
 export function useProducts(search = "", codigo?: string) {
   return useQuery<Product[]>({
+    // La clave de consulta incluye los filtros para que React Query maneje
+    // correctamente el caché y la invalidación.
     queryKey: ["products", search, codigo],
     queryFn: async () => {
-      const params: string[] = [];
-      if (search) params.push(`search=${encodeURIComponent(search)}`);
-      if (codigo) params.push(`codigo=${encodeURIComponent(codigo)}`);
-      const query = params.length ? `?${params.join("&")}` : "";
-      const res = await fetch(`/api/productos/${query}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch products");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (codigo) params.append("codigo", codigo);
+
+      // DRF pagina los resultados; para evitar perder productos entre páginas
+      // iteramos hasta que la API no devuelva más enlaces "next".
+      let url = `/api/productos/?${params.toString()}`;
+      const all: ProductoAPI[] = [];
+      while (url) {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error("Failed to fetch products");
+        }
+        const data = await res.json();
+        all.push(...(data.results ?? data));
+        // "next" puede venir como URL absoluta; la convertimos en ruta relativa.
+        url = data.next ? data.next.replace(/^https?:\/\/[^/]+/, "") : "";
       }
       const data = await res.json();
-      return (data.results ?? data).map((p: ProductoAPI) => ({
+      return all.map((p: ProductoAPI) => ({
         id: p.id,
         name: p.nombre,
         description: p.descripcion ?? "",
