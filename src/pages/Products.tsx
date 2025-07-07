@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProducts } from "../hooks/useProducts";
 import { toast } from "../hooks/use-toast";
 import { Button } from "../components/ui/button";
@@ -30,9 +30,24 @@ export default function Products() {
   const queryClient = useQueryClient();
   const { data: products = [], refetch, isLoading, isError } = useProducts();
 
+  // Obtener categorías desde Django con React Query
+  const {
+    data: categoriesData = [],
+    isError: catError,
+  } = useQuery<{ id: number; nombre_categoria: string }[]>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categorias/");
+      if (!res.ok) {
+        throw new Error("Failed to fetch categories");
+      }
+      return res.json();
+    },
+    staleTime: Infinity,
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
-  const [categoriesData, setCategoriesData] = useState<{id: number; nombre_categoria: string;}[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -57,6 +72,17 @@ export default function Products() {
     }
   }, [isError]);
 
+  // Avisamos si falla la carga de categorías
+  useEffect(() => {
+    if (catError) {
+      toast({
+        title: "Error",
+        description: "No se pudieron obtener las categorías",
+        variant: "destructive",
+      });
+    }
+  }, [catError]);
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
@@ -68,14 +94,6 @@ export default function Products() {
 
   const categories = ["Todas", ...categoriesData.map((c) => c.nombre_categoria)];
 
-  // Carga inicial de las categorías desde el backend de Django
-  // Utilizamos una URL relativa para funcionar en cualquier entorno
-  useEffect(() => {
-    fetch("/api/categorias/")
-      .then((res) => res.json())
-      .then((data) => setCategoriesData(data))
-      .catch((err) => console.error(err));
-  }, []);
 
   // Reinicia el filtro si la categoría seleccionada desaparece de la lista
   // (por ejemplo después de crear un producto y aún no aparece en el refetch)
@@ -245,8 +263,13 @@ export default function Products() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="category">Categoría*</Label>
-                <Select value={newProduct.category} onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}>
-                  <SelectTrigger>
+                <Select
+                  value={newProduct.category}
+                  onValueChange={(value) =>
+                    setNewProduct({ ...newProduct, category: value })
+                  }
+                >
+                  <SelectTrigger required>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
