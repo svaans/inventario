@@ -49,6 +49,10 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Usamos una función dedicada para cerrar el diálogo. Esto nos permite
+  // diferir el cambio de estado y evitar conflictos con otros updates que
+  // ocurren cuando se envía el formulario.
+  const closeDialog = () => setTimeout(() => setIsDialogOpen(false), 0);
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
