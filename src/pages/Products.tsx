@@ -12,6 +12,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Plus, Search, Package } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
+import { getCSRFToken } from "@/utils/csrf";
 
 interface Product {
   id: number;
@@ -165,7 +166,11 @@ export default function Products() {
   try {
     const res = await fetch("/api/productos/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken(),
+      },
+      credentials: "include",
       body: JSON.stringify(payload),
     });
 

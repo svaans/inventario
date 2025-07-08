@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { getCSRFToken } from "@/utils/csrf";
 
 export interface SaleItem {
   producto: number;
@@ -16,7 +17,11 @@ export function useCreateSale() {
   return useMutation(async (sale: CreateSale) => {
     const res = await fetch("/api/ventas/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCSRFToken(),
+      },
+      credentials: "include",
       body: JSON.stringify(sale),
     });
     if (!res.ok) {
