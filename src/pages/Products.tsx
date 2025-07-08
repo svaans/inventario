@@ -14,6 +14,7 @@ import { Plus, Search, Package } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
 import { getCSRFToken } from "@/utils/csrf";
 import { formatCurrency } from "../utils/formatCurrency";
+import { translateCategory } from "../utils/categoryTranslations";
 
 interface Product {
   id: number;
@@ -117,7 +118,7 @@ export default function Products() {
   const categories = [
     "Todas",
     ...categoriesData
-      .map((c) => c.nombre_categoria)
+      .map((c) => translateCategory(c.nombre_categoria))
       .filter((c): c is string => Boolean(c)),
   ];
 
@@ -324,7 +325,7 @@ export default function Products() {
                   <SelectContent>
                     {categoriesData.map((cat) => (
                       <SelectItem key={cat.id} value={String(cat.id)}>
-                        {cat.nombre_categoria}
+                        {translateCategory(cat.nombre_categoria)}
                       </SelectItem>
                     ))}
                   </SelectContent>

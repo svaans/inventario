@@ -12,6 +12,7 @@ import { InventoryStats } from "../components/inventory/InventoryStats";
 import { Skeleton } from "../components/ui/skeleton";
 import { Search, Plus, Package } from "lucide-react";
 import { formatCurrency } from "../utils/formatCurrency";
+import { translateCategory } from "../utils/categoryTranslations";
 import { useUpdateProduct } from "../hooks/useUpdateProduct";
 
 import type { Product } from "../hooks/useProducts";
@@ -47,7 +48,7 @@ export default function Inventory() {
 
   const categories = [
     "Todos",
-    ...Array.from(new Set(products.map(p => p.categoria_nombre))).filter(
+    ...Array.from(new Set(products.map(p => translateCategory(p.categoria_nombre)))).filter(
       (c): c is string => Boolean(c)
     ),
   ];

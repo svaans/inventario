@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { translateCategory } from "../utils/categoryTranslations";
 
 export interface Product {
   id: number;
@@ -60,7 +61,7 @@ export function useProducts(search = "", codigo?: string) {
         name: p.nombre,
         description: p.descripcion ?? "",
         categoria: parseInt(String(p.categoria)),
-        categoria_nombre: p.categoria_nombre ?? "Sin categoría",
+        categoria_nombre: translateCategory(p.categoria_nombre ?? "Sin categoría"),
         price: parseFloat(String(p.precio)),
         cost: parseFloat(String(p.costo ?? 0)),
         stock: parseFloat(String(p.stock_actual)),
