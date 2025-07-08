@@ -63,6 +63,17 @@ class ProductoSerializer(serializers.ModelSerializer):
             "tipo": {"required": True},
         }
 
+    def validate_nombre(self, value: str) -> str:
+        """Ensure product names are unique, ignoring case."""
+        qs = Producto.objects.filter(nombre__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "Un producto con este nombre ya existe."
+            )
+        return value
+
 
 class DetallesVentaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,7 +91,13 @@ class VentaCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         detalles_data = validated_data.pop("detalles", [])
         request = self.context.get("request")
-        usuario = getattr(request, "user", None)
+        usuario = None
+        if request is not None and hasattr(request, "user") and request.user.is_authenticated:
+            usuario = request.user
+        else:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            usuario = User.objects.order_by("id").first()
         venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
         total = 0
         for det in detalles_data:

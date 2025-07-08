@@ -14,6 +14,7 @@ import { Search, Plus, Package } from "lucide-react";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { useUpdateProduct } from "../hooks/useUpdateProduct";
+import { useDeleteProduct } from "../hooks/useDeleteProduct";
 
 import type { Product } from "../hooks/useProducts";
 
@@ -36,6 +37,7 @@ export default function Inventory() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
   const [editing, setEditing] = useState<Product | null>(null);
   const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
   const [form, setForm] = useState({ stock: 0, price: 0, cost: 0, minStock: 0 });
 
   const filteredProducts = products.filter(product => {
@@ -91,6 +93,21 @@ export default function Inventory() {
       await refetch();
     } catch {
       toast({ title: "Error", description: "No se pudo actualizar el producto", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+    try {
+      await deleteProduct.mutateAsync(id);
+      toast({ title: "Producto eliminado" });
+      await refetch();
+    } catch {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el producto",
+        variant: "destructive",
+      });
     }
   };
 
@@ -220,8 +237,9 @@ export default function Inventory() {
                     </span>
                   </div>
                   </div>
-                    <div className="pt-2 text-right">
+                    <div className="pt-2 flex justify-end gap-2">
                       <Button size="sm" onClick={() => setEditing(product)}>Actualizar</Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>Eliminar</Button>
                     </div>
                 </CardContent>
             </Card>
