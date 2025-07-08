@@ -60,7 +60,7 @@ export default function Products() {
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
-    categoria: "",
+    categoria: 0,
     price: 0,
     cost: 0,
     stock: 0,
@@ -133,8 +133,8 @@ export default function Products() {
       return;
     }
 
-    const categoriaId = parseInt(newProduct.categoria);
-    if (Number.isNaN(categoriaId)) {
+    const categoriaId = newProduct.categoria;
+    if (Number.isNaN(categoriaId) || categoriaId === 0) {
       toast({
         title: "Error",
         description: "Selecciona una categoría válida",
@@ -211,7 +211,7 @@ export default function Products() {
     setNewProduct({
       name: "",
       description: "",
-      categoria: "",
+      categoria: 0,
       price: 0,
       cost: 0,
       stock: 0,
@@ -299,12 +299,12 @@ export default function Products() {
               <div className="grid gap-2">
                 <Label htmlFor="category">Categoría*</Label>
                 <Select
-                  value={newProduct.categoria}
+                  value={newProduct.categoria ? String(newProduct.categoria) : ""}
                   onValueChange={(value) =>
-                    setNewProduct({ ...newProduct, categoria: value })
+                    setNewProduct({ ...newProduct, categoria: Number(value) })
                   }
                 >
-                  <SelectTrigger id="category" required>
+                  <SelectTrigger id="categoria" required>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
