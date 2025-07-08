@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Archive, BarChart3, Clock } from "lucide-react";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 interface InventoryStatsProps {
   totalProducts: number;
@@ -24,7 +25,7 @@ export function InventoryStats({ totalProducts, lowStock, totalValue, lastUpdate
     },
     {
       title: "Valor Total",
-      value: `$${totalValue.toLocaleString()}`,
+      value: formatCurrency(totalValue),
       icon: BarChart3,
       color: "text-golden"
     },

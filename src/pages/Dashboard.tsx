@@ -3,6 +3,7 @@ import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { BarChart3, Package, Archive, Calendar, User } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
+import { formatCurrency } from "../utils/formatCurrency";
 
 export default function Dashboard() {
   // Mock data - En producción esto vendría de una API
@@ -29,7 +30,7 @@ export default function Dashboard() {
             <BarChart3 className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${data?.sales_today ?? 0}</div>
+            <div className="text-2xl font-bold">{formatCurrency(data?.sales_today ?? 0)}</div>
             <p className="text-xs opacity-80">
               +{((data?.sales_week ?? 0) / (dailyGoal || 1)).toFixed(1)}% vs ayer
             </p>
@@ -68,7 +69,7 @@ export default function Dashboard() {
             <Calendar className="h-4 w-4 text-brown" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(data?.inventory_value ?? 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">{formatCurrency(data?.inventory_value ?? 0)}</div>
             <p className="text-xs text-muted-foreground">
               Valor total del stock
             </p>
@@ -146,7 +147,7 @@ export default function Dashboard() {
                     ></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{item.day}</p>
-                  <p className="text-sm font-medium">${item.total}</p>
+                  <p className="text-sm font-medium">{formatCurrency(item.total)}</p>
                 </div>
               );
             })}

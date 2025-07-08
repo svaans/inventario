@@ -9,6 +9,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Input } from "../components/ui/input";
 import { toast } from "../hooks/use-toast";
 import { Skeleton } from "../components/ui/skeleton";
+import { formatCurrency } from "../utils/formatCurrency";
 
 export default function Sales() {
   const { data: sales = [], refetch, isLoading, isError } = useSales();
@@ -100,7 +101,7 @@ export default function Sales() {
                           <Card className="p-4 h-full flex flex-col justify-between">
                             <div>
                               <CardTitle className="text-sm font-medium mb-2">{p.name}</CardTitle>
-                              <p className="text-muted-foreground text-sm mb-2">${p.price.toFixed(2)}</p>
+                              <p className="text-muted-foreground text-sm mb-2">{formatCurrency(p.price)}</p>
                             </div>
                             <div className="flex items-center gap-2 mt-auto">
                               <Input
@@ -130,14 +131,14 @@ export default function Sales() {
                     <div key={item.id} className="flex justify-between items-center text-sm">
                       <span>{item.name} x{item.quantity}</span>
                       <div className="flex items-center gap-2">
-                        <span>${(item.price * item.quantity).toFixed(2)}</span>
+                        <span>{formatCurrency(item.price * item.quantity)}</span>
                         <Button size="sm" variant="ghost" onClick={() => removeItem(item.id)}>Eliminar</Button>
                       </div>
                     </div>
                   ))}
                   <div className="flex justify-between font-semibold border-t pt-2">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatCurrency(total)}</span>
                   </div>
                 </div>
               )}
@@ -164,7 +165,7 @@ export default function Sales() {
                 <span className="text-muted-foreground">Usuario:</span> {sale.usuario}
               </div>
               <div>
-                <span className="text-muted-foreground">Total:</span> ${sale.total.toFixed(2)}
+                <span className="text-muted-foreground">Total:</span> {formatCurrency(sale.total)}
               </div>
             </CardContent>
           </Card>

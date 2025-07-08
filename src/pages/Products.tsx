@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Plus, Search, Package } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
 import { getCSRFToken } from "@/utils/csrf";
+import { formatCurrency } from "../utils/formatCurrency";
 
 interface Product {
   id: number;
@@ -412,7 +413,7 @@ export default function Products() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${(products.reduce((sum, p) => sum + p.price, 0) / products.length).toFixed(2)}
+              {formatCurrency(products.reduce((sum, p) => sum + p.price, 0) / (products.length || 1))}
             </div>
           </CardContent>
         </Card>
@@ -490,11 +491,11 @@ export default function Products() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Precio</p>
-                      <p className="font-semibold text-primary">${product.price}</p>
+                      <p className="font-semibold text-primary">{formatCurrency(product.price)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Costo</p>
-                      <p className="font-semibold">${product.cost}</p>
+                      <p className="font-semibold">{formatCurrency(product.cost)}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">

@@ -6,6 +6,7 @@ import { useClients } from "../hooks/useClients";
 import { useProducts } from "../hooks/useProducts";
 import { useCreateSale } from "../hooks/useCreateSale";
 import { toast } from "../hooks/use-toast";
+import { formatCurrency } from "../utils/formatCurrency";
 
 interface Item { id:number; nombre:string; precio:number; cantidad:number; stock:number; }
 
@@ -75,7 +76,7 @@ export default function SalesWizard() {
           <div className="border rounded-md max-h-40 overflow-auto">
             {products.map(p => (
               <div key={p.id} className="p-2 hover:bg-muted cursor-pointer" onClick={()=>addProduct({id:p.id,nombre:p.name,precio:p.price,cantidad:1,stock:p.stock})}>
-                {p.name} - ${p.price.toFixed(2)}
+                {p.name} - {formatCurrency(p.price)}
               </div>
             ))}
           </div>
@@ -98,7 +99,7 @@ export default function SalesWizard() {
               </div>
             ))}
           </div>
-          <div className="text-right font-semibold">Total: ${total.toFixed(2)}</div>
+          <div className="text-right font-semibold">Total: {formatCurrency(total)}</div>
           <Button onClick={()=>setStep(4)} disabled={items.some(i=>i.cantidad>i.stock)}>Siguiente</Button>
         </div>
       )}
@@ -115,12 +116,12 @@ export default function SalesWizard() {
               {items.map(i=> (
                 <div key={i.id} className="flex justify-between">
                   <span>{i.nombre} x{i.cantidad}</span>
-                  <span>${(i.cantidad*i.precio).toFixed(2)}</span>
+                  <span>{formatCurrency(i.cantidad*i.precio)}</span>
                 </div>
               ))}
               <div className="flex justify-between font-semibold border-t pt-2">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </CardContent>
           </Card>
@@ -133,7 +134,7 @@ export default function SalesWizard() {
           <h1 className="text-xl font-bold">Venta Registrada</h1>
           {summary && (
             <p>
-              Hoy llevas {summary.count} venta{summary.count !== 1 && 's'} por ${summary.total.toFixed(2)}.
+              Hoy llevas {summary.count} venta{summary.count !== 1 && 's'} por {formatCurrency(summary.total)}.
             </p>
           )}
           <Button onClick={()=>{setItems([]); setStep(1);}}>Nueva Venta</Button>
