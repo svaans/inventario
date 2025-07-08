@@ -9,11 +9,11 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col px-6 py-12">
       {/* Hero */}
-      <section className="max-w-6xl mx-auto text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight">
+      <section className="max-w-6xl mx-auto text-center mb-16 bg-gradient-hero text-background rounded-lg p-8 shadow-warm">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
           Bienvenido al Sistema de Inventario
         </h1>
-        <p className="text-muted-foreground text-lg mt-4 max-w-2xl mx-auto">
+        <p className="text-background/80 text-lg mt-4 max-w-2xl mx-auto">
           Gestiona tus productos, controla el stock y administra tu inventario con precisión y profesionalismo.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
