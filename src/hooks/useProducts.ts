@@ -72,6 +72,7 @@ export function useProducts(search = "", codigo?: string) {
         supplier: p.proveedor_nombre ?? String(p.proveedor),
       }));
     },
-    initialData: [],
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 }
