@@ -32,14 +32,16 @@ export default function Inventory() {
   }, [isError]);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
   const [editing, setEditing] = useState<Product | null>(null);
   const updateProduct = useUpdateProduct();
   const [form, setForm] = useState({ stock: 0, price: 0, cost: 0, minStock: 0 });
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "Todos" || product.categoria_nombre === selectedCategory;
+    const matchesCategory =
+      categoriaSeleccionada === "Todos" ||
+      product.categoria_nombre === categoriaSeleccionada;
     return matchesSearch && matchesCategory;
   });
 
@@ -164,14 +166,14 @@ export default function Inventory() {
           />
         </div>
         <div className="flex gap-2">
-          {categories.filter(Boolean).map(category => (
+          {categories.filter(Boolean).map(categoria => (
             <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
+              key={categoria}
+              variant={categoriaSeleccionada === categoria ? "default" : "outline"}
               size="sm"
-              onClick={() => category && setSelectedCategory(category)}
+              onClick={() => categoria && setCategoriaSeleccionada(categoria)}
             >
-              {category}
+              {categoria}
             </Button>
           ))}
         </div>

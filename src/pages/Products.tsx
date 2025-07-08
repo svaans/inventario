@@ -67,7 +67,7 @@ export default function Products() {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todas");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todas");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const closeDialog = () => setIsDialogOpen(false);
   const [newProduct, setNewProduct] = useState<NewProduct>({
@@ -109,8 +109,8 @@ export default function Products() {
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "Todas" ||
-      product.categoria_nombre === selectedCategory;
+      categoriaSeleccionada === "Todas" ||
+      product.categoria_nombre === categoriaSeleccionada;
     return matchesSearch && matchesCategory;
   });
 
@@ -126,15 +126,15 @@ export default function Products() {
   // (por ejemplo después de crear un producto y aún no aparece en el refetch)
   useEffect(() => {
     if (
-      selectedCategory !== "Todas" &&
-      !products.some((p) => p.categoria_nombre === selectedCategory)
+      categoriaSeleccionada !== "Todas" &&
+      !products.some((p) => p.categoria_nombre === categoriaSeleccionada)
     ) {
       console.warn(
-        `⚠️ La categoría "${selectedCategory}" no tiene productos, reiniciando filtro a Todas`
+        `⚠️ La categoría "${categoriaSeleccionada}" no tiene productos, reiniciando filtro a Todas`
       );
-      setSelectedCategory("Todas");
+      setCategoriaSeleccionada("Todas");
     }
-  }, [products, selectedCategory]);
+  }, [products, categoriaSeleccionada]);
 
   const handleAddProduct = async () => {
   if (!newProduct.name || !newProduct.categoria) {
@@ -449,14 +449,14 @@ export default function Products() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {categories.filter(Boolean).map(category => (
+          {categories.filter(Boolean).map(categoria => (
             <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
+              key={categoria}
+              variant={categoriaSeleccionada === categoria ? "default" : "outline"}
               size="sm"
-              onClick={() => category && setSelectedCategory(category)}
+              onClick={() => categoria && setCategoriaSeleccionada(categoria)}
             >
-              {category}
+              {categoria}
             </Button>
           ))}
         </div>
