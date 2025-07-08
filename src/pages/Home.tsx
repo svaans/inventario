@@ -7,7 +7,7 @@ export default function Home() {
   const { data: criticalProducts = [] } = useCriticalProducts();
 
   return (
-    <div className="min-h-screen flex flex-col bg-panel-gradient px-6 py-12">
+    <div className="min-h-screen flex flex-col px-6 py-12">
       {/* Hero */}
       <section className="max-w-6xl mx-auto text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight">

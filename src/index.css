@@ -119,7 +119,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply min-h-screen bg-gradient-primary bg-fixed bg-cover text-foreground;
   }
 }
 

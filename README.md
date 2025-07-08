@@ -78,7 +78,7 @@ Install Python dependencies, apply the database migrations and create a Django s
 
 ```bash
 pip install -r requirements.txt
-python manage.py migrate
+python manage.py migrate   # run this after pulling updates
 python manage.py createsuperuser
 python manage.py runserver 8000
 ```
