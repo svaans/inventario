@@ -45,7 +45,9 @@ export function useProducts(search = "", codigo?: string) {
       let url = `/api/productos/?${params.toString()}`;
       const all: ProductoAPI[] = [];
       while (url) {
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          credentials: "include",
+        });
         if (!res.ok) {
           const text = await res.text();
           console.error("Failed to fetch products", res.status, text);

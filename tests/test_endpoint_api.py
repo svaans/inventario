@@ -27,3 +27,25 @@ class ProductoAPITest(TestCase):
         self.assertEqual(Producto.objects.count(), 1)
         producto = Producto.objects.first()
         self.assertEqual(producto.categoria, self.categoria)
+
+    def test_eliminar_producto(self):
+        data = {
+            "codigo": "P002",
+            "nombre": "Fanta",
+            "descripcion": "Bebida naranja",
+            "tipo": "empanada",
+            "precio": 1.0,
+            "costo": 0.4,
+            "stock_actual": 50,
+            "stock_minimo": 5,
+            "unidad_media": "botella",
+            "categoria": self.categoria.id,
+            "proveedor": self.proveedor.id,
+        }
+        response = self.client.post("/api/productos/", data, format="json")
+        self.assertEqual(response.status_code, 201)
+        producto_id = response.data["id"]
+
+        delete_resp = self.client.delete(f"/api/productos/{producto_id}/")
+        self.assertIn(delete_resp.status_code, [200, 204])
+        self.assertEqual(Producto.objects.count(), 0)
