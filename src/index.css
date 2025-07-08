@@ -123,6 +123,17 @@ All colors MUST be HSL.
   }
 }
 
+.bg-panel-gradient {
+  background-image: linear-gradient(
+    to bottom right,
+    hsl(var(--primary) / 0.06),
+    hsl(var(--background))
+  );
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+
 @keyframes marquee {
   0% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }

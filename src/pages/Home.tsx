@@ -7,14 +7,14 @@ export default function Home() {
   const { data: criticalProducts = [] } = useCriticalProducts();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-100 via-white to-gray-50 px-6 py-12">
+    <div className="min-h-screen flex flex-col bg-panel-gradient px-6 py-12">
       {/* Hero */}
       <section className="max-w-6xl mx-auto text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight">
-          Bienvenido a tu Sistema de Inventario
+          Bienvenido al Sistema de Inventario
         </h1>
         <p className="text-muted-foreground text-lg mt-4 max-w-2xl mx-auto">
-          Gestiona tu inventario de forma clara, precisa y profesional. Todo lo que necesitas para el control total está a un clic.
+          Gestiona tus productos, controla el stock y administra tu inventario con precisión y profesionalismo.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild size="lg" className="px-8">
@@ -26,7 +26,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Productos críticos */}
+      {/* Productos críticos en ticker */}
       {criticalProducts.length > 0 && (
         <section className="max-w-5xl mx-auto mb-16">
           <CriticalProductsTicker products={criticalProducts} />
@@ -41,6 +41,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 
 

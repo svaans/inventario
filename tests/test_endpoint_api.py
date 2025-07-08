@@ -47,7 +47,7 @@ class ProductoAPITest(TestCase):
         producto_id = response.data["id"]
 
         delete_resp = self.client.delete(f"/api/productos/{producto_id}/")
-        self.assertIn(delete_resp.status_code, [200, 204])
+        self.assertEqual(delete_resp.status_code, 204)
         self.assertEqual(Producto.objects.count(), 0)
         self.assertEqual(MovimientoInventario.objects.count(), 1)
         movimiento = MovimientoInventario.objects.first()

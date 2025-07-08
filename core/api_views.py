@@ -81,14 +81,16 @@ class ProductoViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """Delete a product and register the removal in inventory."""
         instance = self.get_object()
-        if instance.stock_actual > 0:
+        stock = instance.stock_actual
+        if stock > 0:
             MovimientoInventario.objects.create(
                 producto=instance,
                 tipo="salida",
-                cantidad=instance.stock_actual,
+                cantidad=stock,
                 motivo="Eliminación de producto",
             )
-        return super().destroy(request, *args, **kwargs)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CategoriaListView(ListAPIView):
