@@ -35,7 +35,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-auto text-center text-sm text-muted-foreground border-t pt-6">
-        <p className="mb-1">Empanadas El Dorado — Sistema de Gestión v1.0 &copy; 2025</p>
+        <p className="mb-1">Empanadas De Sabor — Sistema de Gestión v1.0 &copy; 2025</p>
         <p>Soporte: soporte@empanadaseldorado.com | +34 123 456 789</p>
       </footer>
     </div>

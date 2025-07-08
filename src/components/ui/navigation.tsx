@@ -28,7 +28,7 @@ export function Navigation() {
           <div className="flex items-center space-x-2">
             <Package className="h-8 w-8 text-primary" />
             <span className="font-bold text-xl text-foreground">
-              Empanadas El Dorado
+              Empanadas De Sabor
             </span>
           </div>
 
