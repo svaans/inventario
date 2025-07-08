@@ -1,6 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
-from core.models import Producto, Categoria, Proveedor
+from core.models import Producto, Categoria, Proveedor, MovimientoInventario
 
 class ProductoAPITest(TestCase):
     def setUp(self):
@@ -49,3 +49,7 @@ class ProductoAPITest(TestCase):
         delete_resp = self.client.delete(f"/api/productos/{producto_id}/")
         self.assertIn(delete_resp.status_code, [200, 204])
         self.assertEqual(Producto.objects.count(), 0)
+        self.assertEqual(MovimientoInventario.objects.count(), 1)
+        movimiento = MovimientoInventario.objects.first()
+        self.assertEqual(movimiento.tipo, "salida")
+        self.assertEqual(float(movimiento.cantidad), 50)

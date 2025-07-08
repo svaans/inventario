@@ -91,6 +91,15 @@ class ProductoDeleteView(DeleteView):
     success_url = reverse_lazy('producto_list')
 
     def delete(self, request, *args, **kwargs):
+        """Elimina el producto y registra la salida en el inventario."""
+        producto = self.get_object()
+        if producto.stock_actual > 0:
+            MovimientoInventario.objects.create(
+                producto=producto,
+                tipo="salida",
+                cantidad=producto.stock_actual,
+                motivo="Eliminación de producto",
+            )
         messages.success(request, "Producto eliminado correctamente.")
         return super().delete(request, *args, **kwargs)
 

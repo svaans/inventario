@@ -78,6 +78,17 @@ class ProductoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def destroy(self, request, *args, **kwargs):
+        """Delete a product and register the removal in inventory."""
+        instance = self.get_object()
+        if instance.stock_actual > 0:
+            MovimientoInventario.objects.create(
+                producto=instance,
+                tipo="salida",
+                cantidad=instance.stock_actual,
+                motivo="Eliminación de producto",
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class CategoriaListView(ListAPIView):
