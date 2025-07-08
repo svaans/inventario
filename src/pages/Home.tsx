@@ -7,28 +7,33 @@ export default function Home() {
   const { data: criticalProducts = [] } = useCriticalProducts();
 
   return (
-    <div className="min-h-screen flex flex-col px-6 py-12">
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto text-center mb-16 bg-gradient-hero text-background rounded-lg p-8 shadow-warm">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+    <div className="min-h-screen flex flex-col bg-panel-gradient px-6 py-12">
+      {/* Hero destacado */}
+      <section className="max-w-5xl mx-auto text-center mb-20 bg-gradient-hero text-background rounded-2xl p-10 shadow-warm border border-border backdrop-blur-md">
+        <h1 className="text-5xl font-extrabold tracking-tight leading-tight drop-shadow-sm">
           Bienvenido al Sistema de Inventario
         </h1>
         <p className="text-background/80 text-lg mt-4 max-w-2xl mx-auto">
-          Gestiona tus productos, controla el stock y administra tu inventario con precisión y profesionalismo.
+          Control total de productos, stock y movimientos. Tu inventario al alcance de un clic.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-          <Button asChild size="lg" className="px-8">
+          <Button asChild size="lg" className="px-8 shadow-md hover:shadow-lg transition-all">
             <Link to="/dashboard">Acceder al Panel</Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="px-8">
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="px-8 border-white/30 hover:bg-white/10 hover:text-white transition-all"
+          >
             <Link to="/inventory">Ver Inventario</Link>
           </Button>
         </div>
       </section>
 
-      {/* Productos críticos en ticker */}
+      {/* Productos críticos */}
       {criticalProducts.length > 0 && (
-        <section className="max-w-5xl mx-auto mb-16">
+        <section className="max-w-5xl mx-auto mb-20">
           <CriticalProductsTicker products={criticalProducts} />
         </section>
       )}
@@ -41,6 +46,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 
 
