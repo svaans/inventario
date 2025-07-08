@@ -130,3 +130,20 @@ class ProductoTests(TestCase):
         producto = Producto.objects.get(codigo="P100")
         self.assertEqual(producto.categoria, self.categoria)
         self.assertEqual(response.json()["categoria_nombre"], self.categoria.nombre_categoria)
+    def test_api_create_product_assigns_category(self):
+        url = reverse("productos-list")
+        payload = {
+            "codigo": "PX1",
+            "nombre": "ProdY",
+            "tipo": "empanada",
+            "precio": 1,
+            "stock_actual": 10,
+            "stock_minimo": 2,
+            "unidad_media": "unidad",
+            "categoria": self.categoria.id,
+        }
+        resp = self.client.post(url, payload, content_type="application/json")
+        self.assertEqual(resp.status_code, 201)
+        producto = Producto.objects.get(codigo="PX1")
+        self.assertEqual(producto.categoria_id, self.categoria.id)
+        self.assertEqual(resp.json()["categoria_nombre"], self.categoria.nombre_categoria)

@@ -59,13 +59,13 @@ export default function Products() {
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
-    category: "",
+    categoria: "",
     price: 0,
     cost: 0,
     stock: 0,
     minStock: 0,
     unit: "unidades",
-    supplier: ""
+    supplier: "",
   });
 
   // Avisamos al usuario en caso de errores de carga
@@ -123,7 +123,7 @@ export default function Products() {
   }, [products, selectedCategory]);
 
   const handleAddProduct = async () => {
-  if (!newProduct.name || !newProduct.category) {
+  if (!newProduct.name || !newProduct.categoria) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos requeridos",
@@ -132,7 +132,7 @@ export default function Products() {
       return;
     }
 
-    const categoriaId = parseInt(newProduct.category);
+    const categoriaId = parseInt(newProduct.categoria);
     if (Number.isNaN(categoriaId)) {
       toast({
         title: "Error",
@@ -206,7 +206,7 @@ export default function Products() {
     setNewProduct({
       name: "",
       description: "",
-      category: "",
+      categoria: "",
       price: 0,
       cost: 0,
       stock: 0,
@@ -294,12 +294,12 @@ export default function Products() {
               <div className="grid gap-2">
                 <Label htmlFor="category">Categoría*</Label>
                 <Select
-                  value={newProduct.category}
+                  value={newProduct.categoria}
                   onValueChange={(value) =>
-                    setNewProduct({ ...newProduct, category: value })
+                    setNewProduct({ ...newProduct, categoria: value })
                   }
                 >
-                  <SelectTrigger required>
+                  <SelectTrigger id="category" required>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>

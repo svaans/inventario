@@ -63,7 +63,14 @@ class ProductoViewSet(viewsets.ModelViewSet):
         return qs
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        data = request.data.copy()
+        if "categoria" in data:
+            try:
+                data["categoria"] = int(data["categoria"])
+            except (TypeError, ValueError):
+                return Response({"categoria": ["Invalid id"]}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=data)
         if not serializer.is_valid():
             logging.error("Product validation failed: %s", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
