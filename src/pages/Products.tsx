@@ -297,12 +297,13 @@ export default function Products() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="category">Categoría*</Label>
+                <Label htmlFor="categoria">Categoría*</Label>
                 <Select
                   value={newProduct.categoria ? String(newProduct.categoria) : ""}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
+                    console.log("🟩 ID seleccionado:", value)
                     setNewProduct({ ...newProduct, categoria: Number(value) })
-                  }
+                  }}
                 >
                   <SelectTrigger id="categoria" required>
                     <SelectValue placeholder="Selecciona una categoría" />
