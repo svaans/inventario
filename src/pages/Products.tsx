@@ -28,6 +28,18 @@ interface Product {
   supplier: string;
 }
 
+interface NewProduct {
+  name: string;
+  description: string;
+  categoria: number;
+  price: string;
+  cost: string;
+  stock: string;
+  minStock: string;
+  unit: string;
+  supplier: string;
+}
+
 export default function Products() {
   const queryClient = useQueryClient();
   const { data: products = [], refetch, isLoading, isError } = useProducts();
@@ -57,14 +69,14 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const closeDialog = () => setIsDialogOpen(false);
-  const [newProduct, setNewProduct] = useState({
+  const [newProduct, setNewProduct] = useState<NewProduct>({
     name: "",
     description: "",
     categoria: 0,
-    price: 0,
-    cost: 0,
-    stock: 0,
-    minStock: 0,
+    price: "",
+    cost: "",
+    stock: "",
+    minStock: "",
     unit: "unidades",
     supplier: "",
   });
@@ -154,10 +166,10 @@ export default function Products() {
       nombre: newProduct.name,
       descripcion: newProduct.description,
       tipo: isIngrediente ? "ingredientes" : "empanada",
-      costo: newProduct.cost,
-      precio: newProduct.price,
-      stock_actual: newProduct.stock,
-      stock_minimo: newProduct.minStock,
+      costo: parseFloat(newProduct.cost) || 0,
+      precio: parseFloat(newProduct.price) || 0,
+      stock_actual: parseFloat(newProduct.stock) || 0,
+      stock_minimo: parseFloat(newProduct.minStock) || 0,
       unidad_media: newProduct.unit,
       categoria: categoriaId,
       proveedor: newProduct.supplier || null,
@@ -212,10 +224,10 @@ export default function Products() {
       name: "",
       description: "",
       categoria: 0,
-      price: 0,
-      cost: 0,
-      stock: 0,
-      minStock: 0,
+      price: "",
+      cost: "",
+      stock: "",
+      minStock: "",
       unit: "unidades",
       supplier: "",
     });
@@ -326,7 +338,9 @@ export default function Products() {
                     step="0.01"
                     required
                     value={newProduct.price}
-                    onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value) || 0})}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, price: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid gap-2">
@@ -337,7 +351,9 @@ export default function Products() {
                     step="0.01"
                     required
                     value={newProduct.cost}
-                    onChange={(e) => setNewProduct({...newProduct, cost: parseFloat(e.target.value) || 0})}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, cost: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -349,7 +365,9 @@ export default function Products() {
                     type="number"
                     required
                     value={newProduct.stock}
-                    onChange={(e) => setNewProduct({...newProduct, stock: parseInt(e.target.value) || 0})}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, stock: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid gap-2">
@@ -359,7 +377,9 @@ export default function Products() {
                     type="number"
                     required
                     value={newProduct.minStock}
-                    onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, minStock: e.target.value })
+                    }
                   />
                 </div>
               </div>
