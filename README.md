@@ -83,6 +83,13 @@ python manage.py createsuperuser
 python manage.py runserver 8000
 ```
 
-The React frontend expects the backend to be available at `http://localhost:8000`.
-
 The React frontend expects the backend to be available at `http://localhost:8000`. CORS is configured to allow requests from `http://localhost:4173` during development.
+
+## Environment variables
+
+Set the following environment variables for your deployment:
+
+```bash
+export DJANGO_SECRET_KEY='<your secret key>'
+export DJANGO_DEBUG='True'  # or 'False' for production
+```
