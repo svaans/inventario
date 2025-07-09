@@ -5,7 +5,7 @@ from core.models import Producto, Categoria, Proveedor, MovimientoInventario
 
 class ProductoAPITest(TestCase):
     def setUp(self):
-        admin_group, _ = Group.objects.get_or_create(name="administrador")
+        admin_group, _ = Group.objects.get_or_create(name="admin")
         self.user = User.objects.create_user(username="admin", password="pass")
         self.user.groups.add(admin_group)
         self.client = APIClient()

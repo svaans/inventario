@@ -7,7 +7,7 @@ from django.apps import apps
 
 def create_groups(apps, schema_editor):
     """Create default user groups with permissions."""
-    admin_group, _ = Group.objects.get_or_create(name="administrador")
+    admin_group, _ = Group.objects.get_or_create(name="admin")
     empleado_group, _ = Group.objects.get_or_create(name="empleado")
 
     core_models = [
@@ -31,7 +31,7 @@ def create_groups(apps, schema_editor):
 
 
 def remove_groups(apps, schema_editor):
-    Group.objects.filter(name__in=["administrador", "empleado"]).delete()
+    Group.objects.filter(name__in=["admin", "empleado"]).delete()
 
 
 class Migration(migrations.Migration):

@@ -52,7 +52,7 @@ class CustomLoginView(LoginView):
         return super().form_invalid(form)
 
     def get_success_url(self):
-        if self.request.user.groups.filter(name='administrador').exists():
+        if self.request.user.groups.filter(name='admin').exists():
             return reverse_lazy('dashboard')
         return reverse_lazy('index')
     

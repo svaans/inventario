@@ -26,7 +26,7 @@ class ProductoTests(TestCase):
         self.user = User.objects.create_user(
             username="user", email="user@test.com", password="pass"
         )
-        admin_group, _ = Group.objects.get_or_create(name="administrador")
+        admin_group, _ = Group.objects.get_or_create(name="admin")
         self.user.groups.add(admin_group)
 
     def test_codigo_unico(self):

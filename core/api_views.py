@@ -13,10 +13,10 @@ from rest_framework.response import Response
 from rest_framework import status
 
 class IsAdminUser(BasePermission):
-    """Allow access only to administrator group users."""
+    """Allow access only to admin group users."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.groups.filter(name="administrador").exists()
+        return request.user.is_authenticated and request.user.groups.filter(name="admin").exists()
 
 
 class IsEmployee(BasePermission):
