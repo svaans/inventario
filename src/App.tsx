@@ -10,8 +10,9 @@ import Sales from "./pages/Sales";
 import SalesWizard from "./pages/SalesWizard";
 import Products from "./pages/Products";
 import Dashboard from "./pages/Dashboard";
+import Employees from "./pages/Employees";
 import NotFound from "./pages/NotFound";
-
+import Login from "./pages/Login";
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
 // recupera el foco. Esto ayuda a mantener la UI actualizada sin recargar
@@ -33,12 +34,14 @@ const App = () => (
       <BrowserRouter>
         <Navigation />
         <Routes>
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/products" element={<Products />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/sales/new" element={<SalesWizard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/employees" element={<Employees />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

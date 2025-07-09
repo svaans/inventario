@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from .models import (
     Producto,
     Venta,
@@ -131,3 +133,21 @@ class VentaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Venta
         fields = ["id", "fecha", "total", "cliente", "usuario"]
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    """Serializer para crear empleados del sistema."""
+
+    class Meta:
+        model = get_user_model()
+        fields = ["id", "username", "first_name", "email", "password"]
+        extra_kwargs = {"password": {"write_only": True}}
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = get_user_model().objects.create(**validated_data)
+        user.set_password(password)
+        user.save()
+        empleado_group, _ = Group.objects.get_or_create(name="empleado")
+        user.groups.add(empleado_group)
+        return user

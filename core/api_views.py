@@ -2,13 +2,29 @@ from django.db.models import F, Sum
 from django.utils.timezone import now
 from datetime import timedelta
 import logging
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+class IsAdminUser(BasePermission):
+    """Allow access only to administrator group users."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.groups.filter(name="administrador").exists()
+
+
+class IsEmployee(BasePermission):
+    """Allow access only to employee group users."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.groups.filter(name="empleado").exists()
+    
 from .models import (
     Producto,
     Venta,
@@ -25,6 +41,7 @@ from .serializers import (
     VentaCreateSerializer,
     CategoriaSerializer,
     ClienteSerializer,
+    EmployeeSerializer,
 )
 
 
@@ -36,7 +53,7 @@ class CriticalProductListView(ListAPIView):
     queryset = Producto.objects.all()
     serializer_class = CriticalProductSerializer
     pagination_class = CriticalProductPagination
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Producto.objects.filter(stock_actual__lte=F("stock_minimo")).order_by("nombre")
@@ -50,7 +67,12 @@ class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all().order_by("nombre")
     serializer_class = ProductoSerializer
     pagination_class = ProductoPagination
-    permission_classes = [AllowAny]
+
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -98,14 +120,14 @@ class CategoriaListView(ListAPIView):
 
     queryset = Categoria.objects.all().order_by("nombre_categoria")
     serializer_class = CategoriaSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
 class ClienteListView(ListAPIView):
     """API para autocompletar clientes."""
 
     queryset = Cliente.objects.all().order_by("nombre")
     serializer_class = ClienteSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -122,7 +144,12 @@ class VentaListCreateView(ListCreateAPIView):
     queryset = Venta.objects.all().order_by("-fecha")
     serializer_class = VentaSerializer
     pagination_class = VentaPagination
-    permission_classes = [AllowAny]
+
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -141,7 +168,7 @@ class VentaListCreateView(ListCreateAPIView):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         today = now().date()
@@ -202,7 +229,7 @@ class DashboardStatsView(APIView):
 class DailySalesSummary(APIView):
     """Resumen rápido de ventas del día para el usuario autenticado."""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         today = now().date()
@@ -212,3 +239,21 @@ class DailySalesSummary(APIView):
         total = qs.aggregate(total=Sum('total'))['total'] or 0
         count = qs.count()
         return Response({'count': count, 'total': total})
+
+
+class EmployeeListCreateView(ListCreateAPIView):
+    """API para listar y crear empleados."""
+
+    queryset = get_user_model().objects.all().order_by("username")
+    serializer_class = EmployeeSerializer
+    permission_classes = [AllowAny]
+
+
+class CurrentUserView(APIView):
+    """Return basic information about the current authenticated user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        groups = list(request.user.groups.values_list('name', flat=True))
+        return Response({'username': request.user.username, 'groups': groups})

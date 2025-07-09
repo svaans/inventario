@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils import timezone
 
 from .models import (
@@ -26,6 +26,8 @@ class ProductoTests(TestCase):
         self.user = User.objects.create_user(
             username="user", email="user@test.com", password="pass"
         )
+        admin_group, _ = Group.objects.get_or_create(name="administrador")
+        self.user.groups.add(admin_group)
 
     def test_codigo_unico(self):
         Producto.objects.create(
@@ -125,6 +127,7 @@ class ProductoTests(TestCase):
             "unidad_media": "unidad",
             "categoria": self.categoria.id,
         }
+        self.client.force_login(self.user)
         response = self.client.post(url, data, content_type="application/json")
         self.assertEqual(response.status_code, 201)
         producto = Producto.objects.get(codigo="P100")
@@ -142,6 +145,7 @@ class ProductoTests(TestCase):
             "unidad_media": "unidad",
             "categoria": self.categoria.id,
         }
+        self.client.force_login(self.user)
         resp = self.client.post(url, payload, content_type="application/json")
         self.assertEqual(resp.status_code, 201)
         producto = Producto.objects.get(codigo="PX1")

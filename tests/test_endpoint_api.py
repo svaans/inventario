@@ -1,10 +1,15 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
+from django.contrib.auth.models import User, Group
 from core.models import Producto, Categoria, Proveedor, MovimientoInventario
 
 class ProductoAPITest(TestCase):
     def setUp(self):
+        admin_group, _ = Group.objects.get_or_create(name="administrador")
+        self.user = User.objects.create_user(username="admin", password="pass")
+        self.user.groups.add(admin_group)
         self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
         self.categoria = Categoria.objects.create(nombre_categoria="Bebidas")
         self.proveedor = Proveedor.objects.create(nombre="Proveedor 1", contacto="123", direccion="Calle falsa 123")
 

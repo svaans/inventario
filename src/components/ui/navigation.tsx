@@ -5,19 +5,23 @@ import { Link, useLocation } from "react-router-dom";
 // Update the path below to the actual location of your Button component
 import { Button } from "./button";
 import { Menu, X, Package } from "lucide-react";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
+  const { data: user } = useCurrentUser();
+
+  const isAdmin = user?.groups.includes("administrador");
 
   const navItems = [
-    { name: "Inicio", path: "/" },
-    { name: "Inventario", path: "/inventory" },
-    { name: "Productos", path: "/products" },
-    { name: "Ventas", path: "/sales" },
-    { name: "Dashboard", path: "/dashboard" },
+    ...(isAdmin ? [{ name: "Inventario", path: "/inventory" }] : []),
+    ...(user ? [{ name: "Productos", path: "/products" }] : []),
+    ...(user ? [{ name: "Ventas", path: "/sales" }] : []),
+    ...(user ? [{ name: "Empleados", path: "/employees"}] : []),
+    ...(isAdmin ? [{ name: "Dashboard", path: "/dashboard" }] : []),
   ];
 
   return (
@@ -35,19 +39,39 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(item.path)
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive(item.path)
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
+          {user ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                fetch("/logout/", { credentials: "include" }).then(() => {
+                  window.location.href = "/login";
+                });
+              }}
+            >
+              Cerrar sesión
+            </Button>
+          ) : (
+            <Link
+              to="/login"
+              className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              Iniciar sesión
+            </Link>
+          )}
+        </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
@@ -79,6 +103,27 @@ export function Navigation() {
                   {item.name}
                 </Link>
               ))}
+              {user ? (
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    fetch("/logout/", { credentials: "include" }).then(() => {
+                      window.location.href = "/login";
+                    });
+                  }}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted w-full text-left"
+                >
+                  Cerrar sesión
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Iniciar sesión
+                </Link>
+              )}
             </div>
           </div>
         )}
