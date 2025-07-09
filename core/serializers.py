@@ -106,6 +106,10 @@ class VentaCreateSerializer(serializers.ModelSerializer):
             producto = det["producto"]
             cantidad = det["cantidad"]
             precio = det["precio_unitario"]
+            if producto.stock_actual < cantidad:
+                raise serializers.ValidationError(
+                    {"detalles": "Stock insuficiente para %s" % producto.nombre}
+                )
             DetallesVenta.objects.create(
                 venta=venta,
                 producto=producto,

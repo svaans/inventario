@@ -136,6 +136,13 @@ class VentaCreateView(CreateView):
             for detalle in formset:
                 producto = detalle.cleaned_data['producto']
                 cantidad = detalle.cleaned_data['cantidad']
+                if producto.stock_actual < cantidad:
+                    detalle.add_error(
+                        'cantidad', 'Stock insuficiente para este producto'
+                    )
+                    return render(
+                        request, self.template_name, {'form': form, 'formset': formset}
+                    )
                 precio = detalle.cleaned_data['precio_unitario']
                 total += cantidad * precio
 
@@ -477,6 +484,9 @@ class MovimientoManualCreateView(CreateView):
         if form.instance.tipo == 'entrada':
             prod.stock_actual += cant
         else:
+            if prod.stock_actual < cant:
+                form.add_error('cantidad', 'Stock insuficiente para este producto')
+                return self.form_invalid(form)
             prod.stock_actual -= cant
         prod.save()
         messages.success(self.request, "Movimiento registrado correctamente.")
