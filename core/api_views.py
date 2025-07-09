@@ -246,7 +246,12 @@ class EmployeeListCreateView(ListCreateAPIView):
 
     queryset = get_user_model().objects.all().order_by("username")
     serializer_class = EmployeeSerializer
-    permission_classes = [AllowAny]
+    
+    def get_permissions(self):
+        # Only administrators are allowed to list or create employees
+        if self.request.method in ["GET", "POST"]:
+            return [IsAdminUser()]
+        return super().get_permissions()
 
 
 class CurrentUserView(APIView):
