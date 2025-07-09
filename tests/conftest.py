@@ -12,3 +12,12 @@ from django.conf import settings
 
 if 'testserver' not in settings.ALLOWED_HOSTS:
     settings.ALLOWED_HOSTS.append('testserver')
+
+from django.core.management import call_command
+import pytest
+
+
+@pytest.fixture(scope="session", autouse=True)
+def run_migrations():
+    """Ensure the test database schema is up to date."""
+    call_command("migrate", verbosity=0, interactive=False)
