@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
 #categorias de productos
 
 class Categoria(models.Model):
@@ -61,27 +60,6 @@ class DetalleCompra(models.Model):
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
 
-
-# usuarios del sistema
-class Usuario(models.Model):
-    ROL_CHOICES = [
-        ('admin', 'Administrador'),
-        ('empleado', 'Empleado'),
-    ]
-
-    nombre = models.CharField(max_length=100)
-    rol = models.CharField(max_length=20, choices=ROL_CHOICES)
-    correo = models.EmailField(unique=True)
-    contraseña = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.nombre
-    
-    def save(self, *args, **kwargs):
-        if self.contraseña and not self.contraseña.startswith('pbkdf2_'):
-            self.contraseña = make_password(self.contraseña)
-        super().save(*args, **kwargs)
-    
 
 # clientes
 class Cliente(models.Model):
