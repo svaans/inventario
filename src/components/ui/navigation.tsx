@@ -14,7 +14,7 @@ export function Navigation() {
   const isActive = (path: string) => location.pathname === path;
   const { data: user } = useCurrentUser();
 
-  const isAdmin = user?.groups.includes("admin");
+  const isAdmin = user?.is_superuser || user?.groups.includes("admin");
 
   const navItems = [
     ...(isAdmin ? [{ name: "Inventario", path: "/inventory" }] : []),

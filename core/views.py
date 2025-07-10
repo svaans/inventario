@@ -61,7 +61,7 @@ def login_view(request):
             login(request, user)
             if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json":
                 return JsonResponse({"success": True})
-            if user.groups.filter(name="admin").exists():
+            if user.is_superuser or user.groups.filter(name="admin").exists():
                 return redirect("dashboard")
             return redirect("index")
         error_msg = "Usuario o contraseña incorrectos."

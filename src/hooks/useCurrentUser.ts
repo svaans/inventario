@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 export interface CurrentUser {
   username: string;
   groups: string[];
+  is_superuser: boolean;
 }
 
 export function useCurrentUser() {

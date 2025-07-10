@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 class IsAdminUser(BasePermission):
-    """Allow access only to admin group users."""
+    """Allow access to admin group members and superusers."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.groups.filter(name="admin").exists()
@@ -23,8 +23,13 @@ class IsEmployee(BasePermission):
     """Allow access only to employee group users."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.groups.filter(name="empleado").exists()
-    
+        return (
+            request.user.is_authenticated
+            and (
+                request.user.is_superuser
+                or request.user.groups.filter(name="admin").exists()
+            )
+        )
 from .models import (
     Producto,
     Venta,
@@ -261,4 +266,8 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         groups = list(request.user.groups.values_list('name', flat=True))
-        return Response({'username': request.user.username, 'groups': groups})
+        return Response({
+            'username': request.user.username,
+            'groups': groups,
+            'is_superuser': request.user.is_superuser,
+        })
