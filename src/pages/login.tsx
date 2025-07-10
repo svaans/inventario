@@ -10,9 +10,6 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("username", username);
-    formData.append("password", password);
     const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
     // Obtener primero la cookie de CSRF del backend
     await fetch(`${backendUrl}/login/`, { credentials: "include" });
@@ -20,9 +17,10 @@ export default function Login() {
       method: "POST",
       credentials: "include",
       headers: {
+        "Content-Type": "application/json",
         "X-CSRFToken": getCSRFToken(),
       },
-      body: formData,
+      body: JSON.stringify({ username, password }),
     });
     if (res.ok) {
       navigate("/dashboard");

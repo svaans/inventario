@@ -145,3 +145,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+# Allow cross-site POSTs from the Vite dev server during development
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:4173",
+    "http://localhost:8080",
+]

@@ -34,6 +34,8 @@ from django.db.models import Sum
 from collections import defaultdict
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+import json
 
 
 
@@ -43,19 +45,29 @@ def index(request):
 
 login_decorador = method_decorator(login_required, name='dispatch')
 
-
+@ensure_csrf_cookie
 def login_view(request):
     """Authenticate and log in a user using username and password."""
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        if request.content_type == "application/json":
+            data = json.loads(request.body.decode())
+            username = data.get("username")
+            password = data.get("password")
+        else:
+            username = request.POST.get("username")
+            password = request.POST.get("password")
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json":
+                return JsonResponse({"success": True})
             if user.groups.filter(name="admin").exists():
                 return redirect("dashboard")
             return redirect("index")
-        messages.error(request, "Usuario o contraseña incorrectos.")
+        error_msg = "Usuario o contraseña incorrectos."
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.content_type == "application/json":
+            return JsonResponse({"success": False, "error": error_msg}, status=400)
+        messages.error(request, error_msg)
     return render(request, "core/login.html")
     
     
