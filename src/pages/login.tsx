@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
+import { getCSRFToken } from "../utils/csrf";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -13,9 +14,14 @@ export default function Login() {
     formData.append("username", username);
     formData.append("password", password);
     const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    // Obtener primero la cookie de CSRF del backend
+    await fetch(`${backendUrl}/login/`, { credentials: "include" });
     const res = await fetch(`${backendUrl}/login/`, {
       method: "POST",
       credentials: "include",
+      headers: {
+        "X-CSRFToken": getCSRFToken(),
+      },
       body: formData,
     });
     if (res.ok) {
