@@ -94,3 +94,6 @@ export DJANGO_SECRET_KEY='<your secret key>'
 export DJANGO_DEBUG='True'  # or 'False' for production
 export VITE_BACKEND_URL='http://localhost:8000'
 ```
+
+`DJANGO_SECRET_KEY` **must** be set. The application will raise an
+`ImproperlyConfigured` error if this variable is missing.
