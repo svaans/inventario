@@ -6,10 +6,7 @@ import { useCriticalProducts } from "../hooks/useCriticalProducts";
 import CriticalProductsTicker from "../components/inventory/CriticalProductsTicker";
 
 export default function Home() {
-  const {
-    data: criticalProducts = [],
-    isError,
-  } = useCriticalProducts();
+  const { data: criticalProducts = [], isError } = useCriticalProducts();
 
   useEffect(() => {
     if (isError) {
