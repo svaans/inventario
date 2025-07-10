@@ -1,6 +1,6 @@
 from django.urls import path, include
 from . import views
-from .views import CustomLoginView
+from .views import login_view
 from rest_framework.routers import DefaultRouter
 from .api_views import (
     CriticalProductListView,
@@ -46,7 +46,7 @@ urlpatterns = [
     path("movimientos/nuevo/", views.MovimientoManualCreateView.as_view(), name="movimiento_create"),
     path('productos/cargar/', views.CargarProductosView.as_view(), name='cargar_productos'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
-    path('login/', CustomLoginView.as_view(), name='login'),
+    path('login/', login_view, name='login'),
     path('logout/', cerrar_sesion, name='logout'),
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
     path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
