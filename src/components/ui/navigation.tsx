@@ -20,7 +20,7 @@ export function Navigation() {
     ...(isAdmin ? [{ name: "Inventario", path: "/inventory" }] : []),
     ...(user ? [{ name: "Productos", path: "/products" }] : []),
     ...(isAdmin ? [{ name: "Ventas", path: "/sales" }] : []),
-    ...(user ? [{ name: "Empleados", path: "/employees"}] : []),
+    ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),
     ...(isAdmin ? [{ name: "Dashboard", path: "/dashboard" }] : []),
   ];
 
