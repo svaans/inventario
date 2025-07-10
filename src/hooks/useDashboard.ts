@@ -18,7 +18,9 @@ export function useDashboard() {
   return useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard/");
+      const res = await fetch("/api/dashboard/", {
+        credentials: "include",
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch dashboard data");
       }

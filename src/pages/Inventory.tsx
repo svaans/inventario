@@ -20,7 +20,7 @@ import type { Product } from "../hooks/useProducts";
 
 export default function Inventory() {
   const { data: products = [], refetch, isLoading, isError } = useProducts();
-  const { data: dashboard } = useDashboard();
+  const { data: dashboard, isError: dashboardError } = useDashboard();
 
   // Notificamos cualquier error de carga para que el usuario pueda reintentar.
   useEffect(() => {
@@ -32,6 +32,16 @@ export default function Inventory() {
       });
     }
   }, [isError]);
+
+  useEffect(() => {
+    if (dashboardError) {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el dashboard",
+        variant: "destructive",
+      });
+    }
+  }, [dashboardError]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");

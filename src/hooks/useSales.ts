@@ -20,7 +20,9 @@ export function useSales() {
   return useQuery<Sale[]>({
     queryKey: ["sales"],
     queryFn: async () => {
-      const res = await fetch("/api/ventas/");
+      const res = await fetch("/api/ventas/", {
+        credentials: "include",
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch sales");
       }

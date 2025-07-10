@@ -4,11 +4,23 @@ import { Progress } from "../components/ui/progress";
 import { BarChart3, Package, Archive, Calendar, User } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
 import { formatCurrency } from "../utils/formatCurrency";
+import { useEffect } from "react";
+import { toast } from "../hooks/use-toast";
 
 export default function Dashboard() {
   // Mock data - En producción esto vendría de una API
-  const { data } = useDashboard();
+  const { data, isError } = useDashboard();
   const dailyGoal = 500;
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el dashboard",
+        variant: "destructive",
+      });
+    }
+  }, [isError]);
 
   const alerts = data?.alerts.map(a => ({
     type: a.stock_actual <= 0 ? "danger" : "warning",
