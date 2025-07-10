@@ -16,8 +16,13 @@ class IsAdminUser(BasePermission):
     """Allow access to admin group members and superusers."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.groups.filter(name="admin").exists()
-
+        return (
+            request.user.is_authenticated
+            and (
+                request.user.is_superuser
+                or request.user.groups.filter(name="admin").exists()
+            )
+        )
 
 class IsEmployee(BasePermission):
     """Allow access only to employee group users."""
