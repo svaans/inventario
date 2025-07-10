@@ -24,17 +24,6 @@ class IsAdminUser(BasePermission):
             )
         )
 
-class IsEmployee(BasePermission):
-    """Allow access only to employee group users."""
-
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and (
-                request.user.is_superuser
-                or request.user.groups.filter(name="admin").exists()
-            )
-        )
 from .models import (
     Producto,
     Venta,
