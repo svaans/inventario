@@ -93,14 +93,3 @@ Set the following environment variables for your deployment:
 export DJANGO_SECRET_KEY='<your secret key>'
 export DJANGO_DEBUG='True'  # or 'False' for production
 ```
-## FastAPI integration
-
-This project exposes a small FastAPI application along with Django. The FastAPI routes live in [api.py](api.py) and are mounted from [configuracion/asgi.py](configuracion/asgi.py) under the `/fastapi` path.
-
-Start both frameworks together using Uvicorn:
-
-```bash
-uvicorn configuracion.asgi:application --reload
-```
-
-Django views (including the admin) remain available at their normal URLs while the FastAPI endpoints are accessible from `/fastapi`.
