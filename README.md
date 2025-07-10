@@ -92,4 +92,5 @@ Set the following environment variables for your deployment:
 ```bash
 export DJANGO_SECRET_KEY='<your secret key>'
 export DJANGO_DEBUG='True'  # or 'False' for production
+export VITE_BACKEND_URL='http://localhost:8000'
 ```

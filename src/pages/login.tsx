@@ -12,7 +12,8 @@ export default function Login() {
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
-    const res = await fetch("/login/", {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    const res = await fetch(`${backendUrl}/login/`, {
       method: "POST",
       credentials: "include",
       body: formData,
