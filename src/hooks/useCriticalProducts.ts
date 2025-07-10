@@ -13,7 +13,7 @@ export function useCriticalProducts() {
   return useQuery<CriticalProduct[]>({
     queryKey: ["critical-products"],
     queryFn: async () => {
-      const res = await fetch("/api/critical-products/");
+      const res = await fetch("/api/critical-products/", { credentials: "include" });
       if (!res.ok) {
         throw new Error("Failed to fetch critical products");
       }

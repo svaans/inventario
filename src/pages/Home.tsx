@@ -1,10 +1,25 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "../components/ui/button";
+import { toast } from "../hooks/use-toast";
 import { useCriticalProducts } from "../hooks/useCriticalProducts";
 import CriticalProductsTicker from "../components/inventory/CriticalProductsTicker";
 
 export default function Home() {
-  const { data: criticalProducts = [] } = useCriticalProducts();
+  const {
+    data: criticalProducts = [],
+    isError,
+  } = useCriticalProducts();
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los productos críticos",
+        variant: "destructive",
+      });
+    }
+  }, [isError]);
 
   return (
     <div className="min-h-screen flex flex-col bg-panel-gradient px-6 py-12">
