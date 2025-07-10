@@ -13,6 +13,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Search, Plus, Package } from "lucide-react";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
+import { getStockStatus } from "../utils/stockStatus";
 import { useUpdateProduct } from "../hooks/useUpdateProduct";
 import { useDeleteProduct } from "../hooks/useDeleteProduct";
 
@@ -70,12 +71,6 @@ export default function Inventory() {
   const lastUpdated = dashboard?.last_updated
     ? new Date(dashboard.last_updated).toLocaleTimeString()
     : new Date().toLocaleTimeString();
-
-  const getStockStatus = (stock: number, minStock: number) => {
-    if (stock <= minStock) return { label: "Stock Bajo", variant: "destructive" as const };
-    if (stock <= minStock * 1.5) return { label: "Stock Medio", variant: "outline" as const };
-    return { label: "Stock Normal", variant: "secondary" as const };
-  };
 
   useEffect(() => {
     if (editing) {

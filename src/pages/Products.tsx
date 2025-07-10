@@ -15,6 +15,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { getCSRFToken } from "@/utils/csrf";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
+import { getStockStatus } from "../utils/stockStatus";
 
 interface Product {
   id: number;
@@ -243,12 +244,6 @@ export default function Products() {
     // No cerrar el modal si falla
   }
 };
-
-  const getStockStatus = (stock: number, minStock: number) => {
-    if (stock <= minStock) return { label: "Stock Bajo", variant: "destructive" as const };
-    if (stock <= minStock * 1.5) return { label: "Stock Medio", variant: "outline" as const };
-    return { label: "Stock Normal", variant: "secondary" as const };
-  };
 
   const getMargin = (price: number, cost: number) => {
     return ((price - cost) / price * 100).toFixed(1);
