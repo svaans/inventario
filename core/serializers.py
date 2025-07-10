@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from .models import (
@@ -93,13 +94,9 @@ class VentaCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         detalles_data = validated_data.pop("detalles", [])
         request = self.context.get("request")
-        usuario = None
-        if request is not None and hasattr(request, "user") and request.user.is_authenticated:
-            usuario = request.user
-        else:
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            usuario = User.objects.order_by("id").first()
+        if not (request and hasattr(request, "user") and request.user.is_authenticated):
+            raise PermissionDenied("Authentication credentials were not provided.")
+        usuario = request.user
         venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
         total = 0
         for det in detalles_data:
