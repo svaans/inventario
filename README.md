@@ -72,6 +72,14 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
+## Running tests
+
+Run the frontend test suite with:
+
+```bash
+npm run test
+```
+
 ## Running the backend
 
 Install Python dependencies, apply the database migrations and create a Django superuser:
