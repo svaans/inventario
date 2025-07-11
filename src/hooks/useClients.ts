@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../utils/api";
 
 export interface Client {
   id: number;
@@ -10,7 +11,7 @@ export function useClients(search: string) {
     queryKey: ["clients", search],
     queryFn: async () => {
       if (!search) return [];
-      const res = await fetch(`/api/clientes/?search=${encodeURIComponent(search)}`);
+      const res = await apiFetch(`/api/clientes/?search=${encodeURIComponent(search)}`);
       if (!res.ok) {
         throw new Error("Failed to fetch clients");
       }

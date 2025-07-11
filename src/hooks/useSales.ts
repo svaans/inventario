@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../utils/api";
 
 export interface Sale {
   id: number;
@@ -20,7 +21,7 @@ export function useSales() {
   return useQuery<Sale[]>({
     queryKey: ["sales"],
     queryFn: async () => {
-      const res = await fetch("/api/ventas/", {
+      const res = await apiFetch("/api/ventas/", {
         credentials: "include",
       });
       if (!res.ok) {

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../utils/api";
 
 export interface DashboardData {
   sales_today: number;
@@ -18,7 +19,7 @@ export function useDashboard() {
   return useQuery<DashboardData>({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard/", {
+      const res = await apiFetch("/api/dashboard/", {
         credentials: "include",
       });
       if (!res.ok) {

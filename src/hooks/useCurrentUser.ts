@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../utils/api";
 
 export interface CurrentUser {
   username: string;
@@ -10,7 +11,7 @@ export function useCurrentUser() {
   return useQuery<CurrentUser>({
     queryKey: ["current-user"],
     queryFn: async () => {
-      const res = await fetch("/api/me/", { credentials: "include" });
+      const res = await apiFetch("/api/me/", { credentials: "include" });
       if (!res.ok) {
         throw new Error("Not authenticated");
       }

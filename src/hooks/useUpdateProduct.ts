@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { getCSRFToken } from "@/utils/csrf";
+import { apiFetch } from "../utils/api";
 
 export interface UpdateProductPayload {
   id: number;
@@ -12,7 +13,7 @@ export interface UpdateProductPayload {
 export function useUpdateProduct() {
   return useMutation(async (payload: UpdateProductPayload) => {
     const { id, ...data } = payload;
-    const res = await fetch(`/api/productos/${id}/`, {
+    const res = await apiFetch(`/api/productos/${id}/`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

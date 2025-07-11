@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "../utils/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -20,7 +21,7 @@ export default function Employees() {
   const { data: employees = [], refetch } = useQuery<Employee[]>({
     queryKey: ["employees"],
     queryFn: async () => {
-      const res = await fetch("/api/empleados/", { credentials: "include" });
+      const res = await apiFetch("/api/empleados/", { credentials: "include" });
       if (!res.ok) {
         throw new Error("Error al obtener empleados");
       }
@@ -31,7 +32,7 @@ export default function Employees() {
 
   const createEmployee = useMutation(
     async (emp: { username: string; password: string; first_name: string; email: string }) => {
-      const res = await fetch("/api/empleados/", {
+      const res = await apiFetch("/api/empleados/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

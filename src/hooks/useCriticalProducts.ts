@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../utils/api";
 
 export interface CriticalProduct {
   id: number;
@@ -13,7 +14,7 @@ export function useCriticalProducts() {
   return useQuery<CriticalProduct[]>({
     queryKey: ["critical-products"],
     queryFn: async () => {
-      const res = await fetch("/api/critical-products/", { credentials: "include" });
+      const res = await apiFetch("/api/critical-products/", { credentials: "include" });
       if (!res.ok) {
         throw new Error("Failed to fetch critical products");
       }

@@ -6,6 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "./button";
 import { Menu, X, Package } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { apiFetch } from "../../utils/api";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,7 +57,7 @@ export function Navigation() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                fetch("/logout/", { credentials: "include" }).then(() => {
+                apiFetch("/logout/", { credentials: "include" }).then(() => {
                   window.location.href = "/login";
                 });
               }}
@@ -107,7 +108,7 @@ export function Navigation() {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    fetch("/logout/", { credentials: "include" }).then(() => {
+                    apiFetch("/logout/", { credentials: "include" }).then(() => {
                       window.location.href = "/login";
                     });
                   }}

@@ -12,6 +12,7 @@ import { getCSRFToken } from "@/utils/csrf";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { getStockStatus } from "../utils/stockStatus";
+import { apiFetch } from "../utils/api";
 
 
 
@@ -26,7 +27,7 @@ export default function Products() {
     queryKey: ["categories"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/categorias/");
+        const res = await apiFetch("/api/categorias/");
         if (!res.ok) {
           throw new Error(`Failed to fetch categories: ${res.status}`);
         }

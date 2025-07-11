@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCSRFToken } from "@/utils/csrf";
+import { apiFetch } from "../utils/api";
 import type { Product } from "./useProducts";
 
 export function useDeleteProduct() {
@@ -7,7 +8,7 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/productos/${id}/`, {
+      const res = await apiFetch(`/api/productos/${id}/`, {
         method: "DELETE",
         headers: {
           "X-CSRFToken": getCSRFToken(),

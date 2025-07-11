@@ -7,6 +7,7 @@ import { useProducts } from "../hooks/useProducts";
 import { useCreateSale } from "../hooks/useCreateSale";
 import { toast } from "../hooks/use-toast";
 import { formatCurrency } from "../utils/formatCurrency";
+import { apiFetch } from "../utils/api";
 
 interface Item { id:number; nombre:string; precio:number; cantidad:number; stock:number; }
 
@@ -44,7 +45,7 @@ export default function SalesWizard() {
         cliente: clientId ?? undefined,
         detalles: items.map(i => ({ producto: i.id, cantidad: i.cantidad, precio_unitario: i.precio })),
       });
-      const res = await fetch('/api/sales-summary/');
+      const res = await apiFetch('/api/sales-summary/');
       if(res.ok) setSummary(await res.json());
       toast({ title: "Venta registrada" });
       setStep(5);
