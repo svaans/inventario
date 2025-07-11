@@ -10,6 +10,7 @@ from core.models import (
     Venta,
     DetallesVenta,
     Cliente,
+    ComposicionProducto,
 )
 from core.serializers import ProductoSerializer
 
@@ -92,4 +93,56 @@ class ProductoSerializerTest(TestCase):
         detalle_venta.refresh_from_db()
         self.assertEqual(detalle_venta.cantidad, Decimal("2.35"))
         self.assertEqual(detalle_venta.precio_unitario, Decimal("3.46"))
+
+class ComposicionTest(TestCase):
+    def setUp(self):
+        cat_final = Categoria.objects.create(nombre_categoria="Empanadas")
+        cat_ing = Categoria.objects.create(nombre_categoria="Ingredientes")
+        self.har = Producto.objects.create(
+            codigo="I1",
+            nombre="Harina",
+            tipo="ingredientes",
+            es_ingrediente=True,
+            precio=0,
+            stock_actual=1000,
+            stock_minimo=0,
+            unidad_media="g",
+            categoria=cat_ing,
+        )
+        self.carne = Producto.objects.create(
+            codigo="I2",
+            nombre="Carne",
+            tipo="ingredientes",
+            es_ingrediente=True,
+            precio=0,
+            stock_actual=500,
+            stock_minimo=0,
+            unidad_media="g",
+            categoria=cat_ing,
+        )
+        self.final = Producto.objects.create(
+            codigo="F1",
+            nombre="Empanada Carne",
+            tipo="empanada",
+            es_ingrediente=False,
+            precio=1,
+            stock_actual=10,
+            stock_minimo=0,
+            unidad_media="unidad",
+            categoria=cat_final,
+        )
+        ComposicionProducto.objects.create(
+            producto_final=self.final,
+            ingrediente=self.har,
+            cantidad_requerida=100,
+        )
+        ComposicionProducto.objects.create(
+            producto_final=self.final,
+            ingrediente=self.carne,
+            cantidad_requerida=50,
+        )
+
+    def test_unidades_posibles(self):
+        data = ProductoSerializer(self.final).data
+        self.assertEqual(data["unidades_posibles"], 10)
 

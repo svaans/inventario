@@ -239,8 +239,36 @@ export default function Inventory() {
                       {formatCurrency(product.stock * product.price)}
                     </span>
                   </div>
-                  </div>
-                    <div className="pt-2 flex justify-end gap-2">
+                  {!product.es_ingrediente && (
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="text-muted-foreground">🔢 Unidades posibles:</span>
+                      <span className={product.unidades_posibles && product.unidades_posibles < 1 ? "text-destructive font-semibold" : "font-semibold"}>
+                        {product.unidades_posibles ?? "-"}
+                      </span>
+                    </div>
+                  )}
+                  {!product.es_ingrediente && product.ingredientes && product.ingredientes.length > 0 && (
+                    <div className="pt-2">
+                      <table className="w-full text-sm border">
+                        <thead>
+                          <tr className="bg-muted text-left">
+                            <th className="px-1">Ingrediente</th>
+                            <th className="px-1">Cantidad</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {product.ingredientes.map((ing) => (
+                            <tr key={ing.ingrediente}>
+                              <td className="px-1">{ing.ingrediente_nombre}</td>
+                              <td className="px-1">{ing.cantidad_requerida} {ing.unidad}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+                  <div className="pt-2 flex justify-end gap-2">
                       <Button size="sm" onClick={() => setEditing(product)}>Actualizar</Button>
                       <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)}>Eliminar</Button>
                     </div>

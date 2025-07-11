@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from .models import (
@@ -9,6 +10,7 @@ from .models import (
     MovimientoInventario,
     Categoria,
     Cliente,
+    ComposicionProducto,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -32,11 +34,21 @@ class CriticalProductSerializer(serializers.ModelSerializer):
         model = Producto
         fields = ["id", "nombre", "stock_actual", "stock_minimo"]
 
+class ComposicionProductoSerializer(serializers.ModelSerializer):
+    ingrediente_nombre = serializers.CharField(source="ingrediente.nombre", read_only=True)
+    unidad = serializers.CharField(source="ingrediente.unidad_media", read_only=True)
+
+    class Meta:
+        model = ComposicionProducto
+        fields = ["ingrediente", "ingrediente_nombre", "cantidad_requerida", "unidad"]
+
 class ProductoSerializer(serializers.ModelSerializer):
     # Validamos la categoría por su clave primaria para evitar errores
     categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
     categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
+    ingredientes = ComposicionProductoSerializer(many=True, required=False)
+    unidades_posibles = serializers.SerializerMethodField()
     class Meta:
         model = Producto
         fields = [
@@ -45,6 +57,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             "nombre",
             "descripcion",
             "tipo",
+            "es_ingrediente",
             "precio",
             "costo",
             "stock_actual",
@@ -54,6 +67,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             "categoria_nombre",
             "proveedor",
             "proveedor_nombre",
+            "ingredientes",
+            "unidades_posibles",
         ]
         extra_kwargs = {
             "codigo": {"required": True},
@@ -64,6 +79,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             "stock_minimo": {"required": True},
             "unidad_media": {"required": True},
             "tipo": {"required": True},
+            "es_ingrediente": {"required": False},
         }
 
     def validate_nombre(self, value: str) -> str:
@@ -76,6 +92,43 @@ class ProductoSerializer(serializers.ModelSerializer):
                 "Un producto con este nombre ya existe."
             )
         return value
+    
+    def create(self, validated_data):
+        ingredientes_data = validated_data.pop("ingredientes", [])
+        producto = Producto.objects.create(**validated_data)
+        for ing in ingredientes_data:
+            ComposicionProducto.objects.create(
+                producto_final=producto,
+                ingrediente=ing["ingrediente"],
+                cantidad_requerida=ing["cantidad_requerida"],
+            )
+        return producto
+
+    def update(self, instance, validated_data):
+        ingredientes_data = validated_data.pop("ingredientes", None)
+        instance = super().update(instance, validated_data)
+        if ingredientes_data is not None:
+            instance.ingredientes.all().delete()
+            for ing in ingredientes_data:
+                ComposicionProducto.objects.create(
+                    producto_final=instance,
+                    ingrediente=ing["ingrediente"],
+                    cantidad_requerida=ing["cantidad_requerida"],
+                )
+        return instance
+
+    def get_unidades_posibles(self, obj):
+        if obj.es_ingrediente:
+            return None
+        comps = obj.ingredientes.all()
+        if not comps:
+            return None
+        posibles = [
+            float(comp.ingrediente.stock_actual) / float(comp.cantidad_requerida)
+            for comp in comps
+            if comp.cantidad_requerida > 0
+        ]
+        return int(min(posibles)) if posibles else 0
 
 
 class DetallesVentaSerializer(serializers.ModelSerializer):
@@ -107,6 +160,15 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"detalles": "Stock insuficiente para %s" % producto.nombre}
                 )
+            if not producto.es_ingrediente:
+                for comp in producto.ingredientes.all():
+                    requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
+                    if comp.ingrediente.stock_actual < requerido:
+                        raise serializers.ValidationError(
+                            {
+                                "detalles": f"Ingrediente insuficiente para {producto.nombre}: {comp.ingrediente.nombre}"
+                            }
+                        )
             DetallesVenta.objects.create(
                 venta=venta,
                 producto=producto,
@@ -116,6 +178,18 @@ class VentaCreateSerializer(serializers.ModelSerializer):
             total += cantidad * precio
             producto.stock_actual -= cantidad
             producto.save()
+            if not producto.es_ingrediente:
+                for comp in producto.ingredientes.all():
+                    requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
+                    ing = comp.ingrediente
+                    ing.stock_actual -= requerido
+                    ing.save()
+                    MovimientoInventario.objects.create(
+                        producto=ing,
+                        tipo="salida",
+                        cantidad=requerido,
+                        motivo=f"Venta de {producto.nombre}",
+                    )
             MovimientoInventario.objects.create(
                 producto=producto,
                 tipo="salida",

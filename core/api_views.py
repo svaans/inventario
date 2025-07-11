@@ -90,7 +90,13 @@ class ProductoViewSet(viewsets.ModelViewSet):
                 data["categoria"] = int(data["categoria"])
             except (TypeError, ValueError):
                 return Response({"categoria": ["Invalid id"]}, status=status.HTTP_400_BAD_REQUEST)
-
+        if "ingredientes" in data and isinstance(data["ingredientes"], list):
+            for comp in data["ingredientes"]:
+                try:
+                    comp["ingrediente"] = int(comp["ingrediente"])
+                except (TypeError, ValueError, KeyError):
+                    return Response({"ingredientes": ["Invalid ingrediente id"]}, status=status.HTTP_400_BAD_REQUEST)
+                
         serializer = self.get_serializer(data=data)
         if not serializer.is_valid():
             logging.error("Product validation failed: %s", serializer.errors)
@@ -99,6 +105,16 @@ class ProductoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def partial_update(self, request, *args, **kwargs):
+        data = request.data.copy()
+        if "ingredientes" in data and isinstance(data["ingredientes"], list):
+            for comp in data["ingredientes"]:
+                try:
+                    comp["ingrediente"] = int(comp["ingrediente"])
+                except (TypeError, ValueError, KeyError):
+                    return Response({"ingredientes": ["Invalid ingrediente id"]}, status=status.HTTP_400_BAD_REQUEST)
+        return super().partial_update(request, *args, **kwargs)
+    
     def destroy(self, request, *args, **kwargs):
         """Delete a product and register the removal in inventory."""
         instance = self.get_object()

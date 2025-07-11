@@ -12,6 +12,7 @@ import { getCSRFToken } from "../../utils/csrf";
 import { apiFetch } from "../../utils/api";
 import { translateCategory } from "../../utils/categoryTranslations";
 import type { Product } from "../../hooks/useProducts";
+import { useProducts } from "../../hooks/useProducts";
 
 interface NewProduct {
   name: string;
@@ -45,6 +46,12 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     unit: "unidades",
     supplier: "",
   });
+
+  const [ingredients, setIngredients] = useState<{ ingrediente: number; cantidad: string }[]>([]);
+  const [currentIng, setCurrentIng] = useState<{ ingrediente: number; cantidad: string }>({ ingrediente: 0, cantidad: "" });
+
+  const { data: allProducts = [] } = useProducts();
+  const ingredientOptions = allProducts.filter(p => p.es_ingrediente);
 
   const { data: categoriesData = [], isError: catError } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
@@ -96,6 +103,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       nombre: newProduct.name,
       descripcion: newProduct.description,
       tipo: isIngrediente ? "ingredientes" : "empanada",
+      es_ingrediente: isIngrediente,
       costo: parseFloat(newProduct.cost) || 0,
       precio: parseFloat(newProduct.price) || 0,
       stock_actual: parseFloat(newProduct.stock) || 0,
@@ -103,6 +111,12 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       unidad_media: newProduct.unit,
       categoria: categoriaId,
       proveedor: newProduct.supplier || null,
+      ingredientes: isIngrediente
+        ? []
+        : ingredients.map((ing) => ({
+            ingrediente: ing.ingrediente,
+            cantidad_requerida: parseFloat(ing.cantidad) || 0,
+          })),
     };
 
     try {
@@ -161,6 +175,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
         unit: "unidades",
         supplier: "",
       });
+      setIngredients([]);
     } catch (error) {
       console.error(error);
       toast({
@@ -260,18 +275,67 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="minStock">Stock Mínimo</Label>
-              <Input
-                id="minStock"
-                type="number"
-                required
-                value={newProduct.minStock}
-                onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
-              />
-            </div>
+            <Label htmlFor="minStock">Stock Mínimo</Label>
+            <Input
+              id="minStock"
+              type="number"
+              required
+              value={newProduct.minStock}
+              onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
+            />
           </div>
         </div>
-        <div className="flex justify-end gap-2">
+        {/* Ingredientes para productos finales */}
+        {ingredientOptions.length > 0 && (
+          <div className="space-y-2">
+            <Label>Ingredientes</Label>
+            <div className="flex gap-2">
+              <Select
+                value={currentIng.ingrediente ? String(currentIng.ingrediente) : ""}
+                onValueChange={(val) => setCurrentIng({ ...currentIng, ingrediente: Number(val) })}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Ingrediente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ingredientOptions.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                placeholder="Cantidad"
+                value={currentIng.cantidad}
+                onChange={(e) => setCurrentIng({ ...currentIng, cantidad: e.target.value })}
+                className="w-24"
+              />
+              <Button
+                type="button"
+                onClick={() => {
+                  if (currentIng.ingrediente && currentIng.cantidad) {
+                    setIngredients([...ingredients, currentIng]);
+                    setCurrentIng({ ingrediente: 0, cantidad: "" });
+                  }
+                }}
+              >
+                Agregar
+              </Button>
+            </div>
+            {ingredients.length > 0 && (
+              <ul className="list-disc pl-4 text-sm">
+                {ingredients.map((ing, idx) => {
+                  const name = ingredientOptions.find((p) => p.id === ing.ingrediente)?.name || ing.ingrediente;
+                  return (
+                    <li key={idx}>{name}: {ing.cantidad}</li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={closeDialog}>
             Cancelar
           </Button>

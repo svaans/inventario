@@ -22,6 +22,7 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, default="")
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    es_ingrediente = models.BooleanField(default=False)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stock_actual = models.DecimalField(max_digits=10, decimal_places=2)
@@ -29,16 +30,6 @@ class Producto(models.Model):
     unidad_media = models.CharField(max_length=50)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     proveedor = models.ForeignKey('Proveedor', on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return self.nombre
-    
-
-# proveedores
-class Proveedor(models.Model):
-    nombre = models.CharField(max_length=100)
-    contacto = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=200)
 
     def __str__(self):
         return self.nombre
@@ -54,6 +45,17 @@ class Proveedor(models.Model):
         if self.stock_minimo is not None:
             self.stock_minimo = Decimal(str(self.stock_minimo)).quantize(quant, ROUND_HALF_UP)
         super().save(*args, **kwargs)
+
+    
+# proveedores
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=100)
+    contacto = models.CharField(max_length=100)
+    direccion = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.nombre
+
     
 
 # compras
@@ -120,6 +122,27 @@ class DetallesVenta(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        quant = Decimal("0.01")
+        if self.cantidad is not None:
+            self.cantidad = Decimal(str(self.cantidad)).quantize(quant, ROUND_HALF_UP)
+        if self.precio_unitario is not None:
+            self.precio_unitario = Decimal(str(self.precio_unitario)).quantize(quant, ROUND_HALF_UP)
+        super().save(*args, **kwargs)
+
+
+class ComposicionProducto(models.Model):
+    producto_final = models.ForeignKey(
+        Producto, related_name="ingredientes", on_delete=models.CASCADE
+    )
+    ingrediente = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad_requerida = models.FloatField(
+        help_text="Cantidad requerida del ingrediente (en gramos, litros, etc.)"
+    )
+
+    def __str__(self):
+        return f"{self.producto_final.nombre} -> {self.ingrediente.nombre}"
 
 
 # balance mensual

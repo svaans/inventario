@@ -7,12 +7,15 @@ export interface Product {
   description: string;
   categoria: number;
   categoria_nombre: string;
+  es_ingrediente: boolean;
   price: number;
   cost: number;
   stock: number;
   minStock: number;
   unit: string;
   supplier: string;
+  unidades_posibles?: number | null;
+  ingredientes?: { ingrediente: number; ingrediente_nombre: string; cantidad_requerida: number; unidad: string }[];
 }
 
 interface ProductoAPI {
@@ -28,6 +31,14 @@ interface ProductoAPI {
   unidad_media: string;
   proveedor: string | number;
   proveedor_nombre?: string;
+  es_ingrediente?: boolean;
+  unidades_posibles?: number | null;
+  ingredientes?: {
+    ingrediente: number;
+    ingrediente_nombre: string;
+    cantidad_requerida: number;
+    unidad: string;
+  }[];
 }
 
 export function useProducts(search = "", codigo?: string) {
@@ -64,12 +75,15 @@ export function useProducts(search = "", codigo?: string) {
         description: p.descripcion ?? "",
         categoria: parseInt(String(p.categoria)),
         categoria_nombre: translateCategory(p.categoria_nombre ?? "Sin categoría"),
+        es_ingrediente: Boolean(p.es_ingrediente),
         price: parseFloat(String(p.precio)),
         cost: parseFloat(String(p.costo ?? 0)),
         stock: parseFloat(String(p.stock_actual)),
         minStock: parseFloat(String(p.stock_minimo)),
         unit: p.unidad_media,
         supplier: p.proveedor_nombre ?? String(p.proveedor),
+        unidades_posibles: p.unidades_posibles ?? null,
+        ingredientes: p.ingredientes ?? [],
       }));
     },
     refetchOnMount: true,
