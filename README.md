@@ -95,12 +95,10 @@ The React frontend expects the backend to be available at `http://localhost:8000
 
 ## Environment variables
 
-Set the following environment variables for your deployment:
+Copy `.env.example` to `.env` and adjust the values to match your environment:
 
 ```bash
-export DJANGO_SECRET_KEY='<your secret key>'
-export DJANGO_DEBUG='True'  # or 'False' for production
-export VITE_BACKEND_URL='http://localhost:8000'
+cp .env.example .env
 ```
 
 `DJANGO_SECRET_KEY` **must** be set. The application will raise an

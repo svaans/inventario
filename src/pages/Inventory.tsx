@@ -8,9 +8,10 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
+import AddProductDialog from "../components/inventory/AddProductDialog";
 import { InventoryStats } from "../components/inventory/InventoryStats";
 import { Skeleton } from "../components/ui/skeleton";
-import { Search, Plus, Package } from "lucide-react";
+import { Search, Package } from "lucide-react";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { getStockStatus } from "../utils/stockStatus";
@@ -164,10 +165,7 @@ export default function Inventory() {
           <h1 className="text-4xl font-bold text-foreground mb-2">Gestión de Inventario</h1>
           <p className="text-muted-foreground">Control y seguimiento de todos tus productos</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 shadow-golden">
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Producto
-        </Button>
+        <AddProductDialog onProductAdded={refetch} />
       </div>
 
       <InventoryStats 
