@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { getCSRFToken } from "../utils/csrf";
+import { toast } from "../hooks/use-toast";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -25,7 +26,12 @@ export default function Login() {
     if (res.ok) {
       navigate("/dashboard");
     } else {
-      alert("Credenciales inválidas");
+      toast({
+        title: "Error",
+        description:
+          "Credenciales inválidas. Verifica tu usuario y contraseña e intenta de nuevo",
+        variant: "destructive",
+      });
     }
   };
 
