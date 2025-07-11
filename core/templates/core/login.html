@@ -1,25 +1,5 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Iniciar sesión</title>
-</head>
-<body>
-    <h1>Acceso al Sistema</h1>
-    {% if messages %}
-        <ul>
-        {% for message in messages %}
-            <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <label>Usuario:</label><br>
-        <input type="text" name="username" required><br>
-        <label>Contraseña:</label><br>
-        <input type="password" name="password" required><br>
-        <button type="submit">Entrar</button>
-    </form>
-</body>
-</html>
+{% extends "core/base.html" %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block content %}
+<div id="root"></div>
+{% endblock %}
