@@ -5,6 +5,8 @@ import { toast } from "../hooks/use-toast";
 import { useCriticalProducts } from "../hooks/useCriticalProducts";
 import CriticalProductsTicker from "../components/inventory/CriticalProductsTicker";
 import { PackageSearch, LayoutDashboard } from "lucide-react";
+import DailyActivityChart from "../components/DailyActivityChart";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 export default function Home() {
   const { data: criticalProducts = [], isError } = useCriticalProducts();
@@ -64,6 +66,18 @@ export default function Home() {
           <CriticalProductsTicker products={criticalProducts} />
         </section>
       )}
+
+      {/* Actividad del día */}
+      <section className="max-w-5xl mx-auto mb-20">
+        <Card>
+          <CardHeader>
+            <CardTitle>Actividad del Día</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <DailyActivityChart />
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Footer */}
       <footer className="mt-auto text-center text-sm text-muted-foreground border-t pt-6">
