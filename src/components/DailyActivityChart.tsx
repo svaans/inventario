@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis } from "recharts";
+import { useInventoryActivity } from "../hooks/useInventoryActivity";
 
 interface Point {
   time: string;
@@ -7,16 +8,15 @@ interface Point {
 }
 
 export default function DailyActivityChart() {
+  const { data: activity } = useInventoryActivity();
   const data = useMemo<Point[]>(() => {
-    const points: Point[] = [];
-    for (let h = 8; h <= 20; h++) {
-      points.push({
-        time: `${String(h).padStart(2, "0")}:00`,
-        value: Math.random() * 100,
-      });
-    }
-    return points;
-  }, []);
+    if (!activity || activity.length === 0) return [];
+    const max = Math.max(...activity.map((p) => p.value), 1);
+    return activity.map((p) => ({
+      time: p.hour,
+      value: (p.value / max) * 100,
+    }));
+  }, [activity]);
 
   return (
     <div className="w-full h-48">

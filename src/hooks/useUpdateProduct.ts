@@ -11,21 +11,23 @@ export interface UpdateProductPayload {
 }
 
 export function useUpdateProduct() {
-  return useMutation(async (payload: UpdateProductPayload) => {
-    const { id, ...data } = payload;
-    const res = await apiFetch(`/api/productos/${id}/`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCSRFToken(),
-      },
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Error al actualizar producto");
-    }
-    return res.json();
+  return useMutation({
+    mutationFn: async (payload: UpdateProductPayload) => {
+      const { id, ...data } = payload;
+      const res = await apiFetch(`/api/productos/${id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken(),
+        },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Error al actualizar producto");
+      }
+      return res.json();
+    },
   });
 }

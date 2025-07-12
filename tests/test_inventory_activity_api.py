@@ -1,0 +1,39 @@
+from django.test import TestCase
+from django.contrib.auth.models import User, Group
+from rest_framework.test import APIClient
+from core.models import Categoria, Producto, MovimientoInventario
+
+
+class InventoryActivityAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        user = User.objects.create_user(username="emp", password="pass")
+        empleado_group, _ = Group.objects.get_or_create(name="empleado")
+        user.groups.add(empleado_group)
+        self.client.force_authenticate(user=user)
+        cat = Categoria.objects.create(nombre_categoria="General")
+        prod = Producto.objects.create(
+            codigo="P1",
+            nombre="Producto",
+            tipo="empanada",
+            precio=1,
+            costo=0.5,
+            stock_actual=10,
+            stock_minimo=1,
+            unidad_media="u",
+            categoria=cat,
+        )
+        MovimientoInventario.objects.create(
+            producto=prod,
+            tipo="entrada",
+            cantidad=5,
+            motivo="test",
+        )
+
+    def test_endpoint_returns_hourly_data(self):
+        resp = self.client.get("/api/inventory-activity/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(len(data), 13)
+        self.assertIn("hour", data[0])
+        self.assertIn("value", data[0])

@@ -254,6 +254,28 @@ class DailySalesSummary(APIView):
         total = qs.aggregate(total=Sum('total'))['total'] or 0
         count = qs.count()
         return Response({'count': count, 'total': total})
+    
+
+class InventoryActivityView(APIView):
+    """Return hourly inventory movement counts for today."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = now().date()
+        records = MovimientoInventario.objects.filter(fecha__date=today)
+
+        hours = {h: 0 for h in range(8, 21)}
+        for m in records:
+            hour = m.fecha.hour
+            if 8 <= hour <= 20:
+                hours[hour] += 1
+
+        data = [
+            {"hour": f"{h:02d}:00", "value": count}
+            for h, count in sorted(hours.items())
+        ]
+        return Response(data)
 
 
 class EmployeeListCreateView(ListCreateAPIView):

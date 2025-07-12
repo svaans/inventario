@@ -10,6 +10,7 @@ from .api_views import (
     CategoriaListView,
     ClienteListView,
     DailySalesSummary,
+    InventoryActivityView,
     EmployeeListCreateView,
     CurrentUserView,
 )
@@ -55,6 +56,7 @@ urlpatterns = [
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),
     path('api/sales-summary/', DailySalesSummary.as_view(), name='sales_summary_api'),
+    path('api/inventory-activity/', InventoryActivityView.as_view(), name='inventory_activity_api'),
     path('api/me/', CurrentUserView.as_view(), name='current_user_api'),
     path('password_reset/',
          auth_views.PasswordResetView.as_view(
