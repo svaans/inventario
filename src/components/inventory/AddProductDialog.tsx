@@ -56,7 +56,9 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   const { data: categoriesData = [], isError: catError } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
     queryFn: async () => {
-      const res = await apiFetch("/api/categorias/");
+      const res = await apiFetch("/api/categorias/", {
+        credentials: "include",
+      });
       if (!res.ok) {
         throw new Error(`Failed to fetch categories: ${res.status}`);
       }
