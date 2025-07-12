@@ -67,6 +67,20 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     staleTime: Infinity,
   });
 
+  const selectedCategory = categoriesData.find(c => c.id === newProduct.categoria);
+  const isIngredientCategory = selectedCategory?.nombre_categoria?.toLowerCase().includes("ingred") ?? false;
+
+  useEffect(() => {
+    if (isIngredientCategory) {
+      if (newProduct.unit !== "kg" && newProduct.unit !== "lb") {
+        setNewProduct((np) => ({ ...np, unit: "kg" }));
+      }
+    } else if (newProduct.unit !== "unidades") {
+      setNewProduct((np) => ({ ...np, unit: "unidades" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIngredientCategory]);
+
   useEffect(() => {
     if (catError) {
       toast({
@@ -286,7 +300,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="stock">Stock Inicial</Label>
+              <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
               <Input
                 id="stock"
                 type="number"
@@ -296,7 +310,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               />
             </div>
             <div className="grid gap-2">
-            <Label htmlFor="minStock">Stock Mínimo</Label>
+            <Label htmlFor="minStock">{isIngredientCategory ? "Peso Mínimo" : "Stock Mínimo"}</Label>
             <Input
               id="minStock"
               type="number"
@@ -306,8 +320,25 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             />
           </div>
         </div>
+        {isIngredientCategory && (
+          <div className="grid gap-2">
+            <Label htmlFor="unit">Unidad de Peso</Label>
+            <Select
+              value={newProduct.unit}
+              onValueChange={(val) => setNewProduct({ ...newProduct, unit: val })}
+            >
+              <SelectTrigger id="unit">
+                <SelectValue placeholder="Unidad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kg">kg</SelectItem>
+                <SelectItem value="lb">lb</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {/* Ingredientes para productos finales */}
-        {ingredientOptions.length > 0 && (
+        {!isIngredientCategory && ingredientOptions.length > 0 && (
           <div className="space-y-2">
             <Label>Ingredientes</Label>
             <div className="flex gap-2">
