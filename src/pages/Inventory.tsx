@@ -97,8 +97,12 @@ export default function Inventory() {
       toast({ title: "Producto actualizado" });
       setEditing(null);
       await refetch();
-    } catch {
-      toast({ title: "Error", description: "No se pudo actualizar el producto", variant: "destructive" });
+    } catch (err) {
+      console.error(err);
+      const description = err instanceof Error && err.message
+        ? `No se pudo actualizar el producto: ${err.message}`
+        : "No se pudo actualizar el producto";
+      toast({ title: "Error", description, variant: "destructive" });
     }
   };
 
