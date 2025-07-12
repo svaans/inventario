@@ -49,7 +49,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
 
   const [ingredients, setIngredients] = useState<{ ingrediente: number; cantidad: string }[]>([]);
   const [currentIng, setCurrentIng] = useState<{ ingrediente: number; cantidad: string }>({ ingrediente: 0, cantidad: "" });
-
+  const [possibleUnits, setPossibleUnits] = useState<number | null>(null);
   const { data: allProducts = [] } = useProducts();
   const ingredientOptions = allProducts.filter(p => p.es_ingrediente);
 
@@ -74,6 +74,25 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       });
     }
   }, [catError]);
+
+  useEffect(() => {
+    if (ingredients.length === 0) {
+      setPossibleUnits(null);
+      return;
+    }
+    const values = ingredients.map(ing => {
+      const opt = ingredientOptions.find(p => p.id === ing.ingrediente);
+      const req = parseFloat(ing.cantidad) || 0;
+      if (!opt || req <= 0) return Infinity;
+      return opt.stock / req;
+    });
+    const finite = values.filter(v => Number.isFinite(v));
+    if (finite.length === 0) {
+      setPossibleUnits(null);
+    } else {
+      setPossibleUnits(Math.floor(Math.min(...finite)));
+    }
+  }, [ingredients, ingredientOptions]);
 
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.categoria) {
@@ -310,6 +329,9 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 onChange={(e) => setCurrentIng({ ...currentIng, cantidad: e.target.value })}
                 className="w-24"
               />
+              <span className="self-center text-sm text-muted-foreground">
+                {ingredientOptions.find(p => p.id === currentIng.ingrediente)?.unit ?? ''}
+              </span>
               <Button
                 type="button"
                 onClick={() => {
@@ -323,14 +345,23 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               </Button>
             </div>
             {ingredients.length > 0 && (
-              <ul className="list-disc pl-4 text-sm">
-                {ingredients.map((ing, idx) => {
-                  const name = ingredientOptions.find((p) => p.id === ing.ingrediente)?.name || ing.ingrediente;
-                  return (
-                    <li key={idx}>{name}: {ing.cantidad}</li>
-                  );
-                })}
-              </ul>
+              <>
+                <ul className="list-disc pl-4 text-sm">
+                  {ingredients.map((ing, idx) => {
+                    const opt = ingredientOptions.find((p) => p.id === ing.ingrediente);
+                    const name = opt?.name || ing.ingrediente;
+                    const unit = opt?.unit || "";
+                    return (
+                      <li key={idx}>{name}: {ing.cantidad} {unit}</li>
+                    );
+                  })}
+                </ul>
+                {possibleUnits !== null && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Unidades posibles según stock actual: {possibleUnits}
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}
