@@ -80,6 +80,10 @@ Run the frontend test suite with:
 npm run test
 ```
 
+The backend tests use `pytest` and expect environment variables defined in
+`tests/.env.test`. These settings are loaded automatically when running the
+tests, so adjust them if you need custom values.
+
 ## Running the backend
 
 Install Python dependencies, apply the database migrations and create a Django superuser:
@@ -100,6 +104,8 @@ Copy `.env.example` to `.env` and adjust the values to match your environment:
 ```bash
 cp .env.example .env
 ```
+
+Tests read additional settings from `tests/.env.test`.
 
 `DJANGO_SECRET_KEY` **must** be set. The application will raise an
 `ImproperlyConfigured` error if this variable is missing.

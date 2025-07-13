@@ -1,11 +1,23 @@
 import os
 import sys
-import django
+from pathlib import Path
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'configuracion.settings')
+# Load environment variables for tests
+env_file = Path(__file__).resolve().parent / ".env.test"
+if env_file.exists():
+    with env_file.open() as f:
+        for line in f:
+            if not line.strip() or line.startswith("#"):
+                continue
+            key, _, value = line.strip().partition("=")
+            if key and _:
+                os.environ.setdefault(key, value)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "configuracion.settings")
 # Ensure project root is on sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
+import django
 django.setup()
 
 from django.conf import settings
