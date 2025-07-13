@@ -186,7 +186,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           minStock: parseFloat(String(created.stock_minimo)),
           unit: created.unidad_media,
           supplier: created.proveedor_nombre ?? String(created.proveedor),
-        },
+        } as Product,
       ]);
       closeDialog();
 
@@ -229,7 +229,11 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           Nuevo Producto
         </Button>
       </DialogTrigger>
-      <DialogContent aria-describedby="add-product-description" className="sm:max-w-[425px]">
+      <DialogContent
+        key={isIngredientCategory ? "ingrediente" : "producto"}
+        aria-describedby="add-product-description"
+        className="sm:max-w-[425px]"
+      >
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Producto</DialogTitle>
           <DialogDescription id="add-product-description">
@@ -262,7 +266,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               value={newProduct.categoria ? String(newProduct.categoria) : ""}
               onValueChange={(value) => setNewProduct({ ...newProduct, categoria: Number(value) })}
             >
-              <SelectTrigger id="categoria" required>
+              <SelectTrigger id="categoria">
                 <SelectValue placeholder="Selecciona una categoría" />
               </SelectTrigger>
               <SelectContent>
