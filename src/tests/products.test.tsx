@@ -1,6 +1,7 @@
 // src/tests/products.test.tsx
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeAll } from "vitest";
+import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 beforeAll(() => {
@@ -26,7 +27,7 @@ vi.mock("@/hooks/useCriticalProducts", () => ({
 }));
 
 // MOCK 3: fetch de categorías
-global.fetch = vi.fn((url) => {
+global.fetch = vi.fn((url: any) => {
   if (url === "/api/categorias/") {
     return Promise.resolve({
       ok: true,
@@ -40,7 +41,7 @@ global.fetch = vi.fn((url) => {
     });
   }
   return Promise.reject(new Error("URL no reconocida"));
-}) as typeof fetch;
+}) as unknown as typeof fetch;
 
 // Importar después de mocks
 import Inventory from "@/pages/Inventory";

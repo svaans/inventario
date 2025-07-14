@@ -169,7 +169,7 @@ export default function Inventory() {
           <h1 className="text-4xl font-bold text-foreground mb-2">Gestión de Inventario</h1>
           <p className="text-muted-foreground">Control y seguimiento de todos tus productos</p>
         </div>
-        <AddProductDialog onProductAdded={refetch} />
+        <AddProductDialog onProductAdded={async () => { await refetch(); }} />
       </div>
 
       <InventoryStats 

@@ -8,7 +8,6 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Search, Package } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
-import { getCSRFToken } from "@/utils/csrf";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { getStockStatus } from "../utils/stockStatus";
@@ -17,7 +16,7 @@ import { apiFetch } from "../utils/api";
 
 
 export default function Products() {
-  const { data: products = [], refetch, isLoading, isError } = useProducts();
+  const { data: products = [], isLoading, isError } = useProducts();
 
   // Obtener categorías desde Django con React Query
   const {

@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "18.2.0",

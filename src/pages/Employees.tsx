@@ -30,8 +30,8 @@ export default function Employees() {
     },
   });
 
-  const createEmployee = useMutation(
-    async (emp: { username: string; password: string; first_name: string; email: string }) => {
+  const createEmployee = useMutation<any, Error, { username: string; password: string; first_name: string; email: string }>({
+    mutationFn: async (emp: { username: string; password: string; first_name: string; email: string }) => {
       const res = await apiFetch("/api/empleados/", {
         method: "POST",
         headers: {
@@ -47,12 +47,10 @@ export default function Employees() {
       }
       return res.json();
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["employees"] });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    },
+  });
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ username: "", password: "", first_name: "", email: "" });
