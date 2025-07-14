@@ -1,4 +1,5 @@
 from django.db.models import F, Sum
+from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
 from datetime import timedelta
 import logging
@@ -32,6 +33,7 @@ from .models import (
     Compra,
     Categoria,
     Cliente,
+    Transaccion,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -41,6 +43,7 @@ from .serializers import (
     CategoriaSerializer,
     ClienteSerializer,
     EmployeeSerializer,
+    TransaccionSerializer,
 )
 
 
@@ -305,3 +308,86 @@ class CurrentUserView(APIView):
             'groups': groups,
             'is_superuser': request.user.is_superuser,
         })
+
+
+class TransaccionViewSet(viewsets.ModelViewSet):
+    """CRUD API para transacciones de flujo de caja."""
+
+    queryset = Transaccion.objects.all().order_by("-fecha")
+    serializer_class = TransaccionSerializer
+
+    def get_permissions(self):
+        if self.request.method in ["GET", "OPTIONS", "HEAD"]:
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        categoria = self.request.query_params.get("categoria")
+        responsable = self.request.query_params.get("responsable")
+        start = self.request.query_params.get("start")
+        end = self.request.query_params.get("end")
+        tipo = self.request.query_params.get("tipo")
+        if categoria:
+            qs = qs.filter(categoria=categoria)
+        if responsable:
+            qs = qs.filter(responsable_id=responsable)
+        if start:
+            qs = qs.filter(fecha__gte=start)
+        if end:
+            qs = qs.filter(fecha__lte=end)
+        if tipo:
+            qs = qs.filter(tipo=tipo)
+        return qs
+
+
+class FlujoCajaReportView(APIView):
+    """Reportes de flujo de caja por periodo."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        period = request.query_params.get("period", "month")
+        qs = Transaccion.objects.all()
+        categoria = request.query_params.get("categoria")
+        responsable = request.query_params.get("responsable")
+        start = request.query_params.get("start")
+        end = request.query_params.get("end")
+        if categoria:
+            qs = qs.filter(categoria=categoria)
+        if responsable:
+            qs = qs.filter(responsable_id=responsable)
+        if start:
+            qs = qs.filter(fecha__gte=start)
+        if end:
+            qs = qs.filter(fecha__lte=end)
+
+        if period == "year":
+            trunc = TruncYear("fecha")
+            days_span = 365
+        elif period == "quarter":
+            trunc = TruncQuarter("fecha")
+            days_span = 90
+        else:
+            trunc = TruncMonth("fecha")
+            days_span = 30
+
+        grouped = (
+            qs.annotate(p=trunc)
+            .values("p", "tipo")
+            .annotate(total=Sum("monto"))
+            .order_by("p")
+        )
+
+        result = []
+        for item in grouped:
+            promedio = float(item["total"]) / days_span
+            result.append(
+                {
+                    "period": item["p"],
+                    "tipo": item["tipo"],
+                    "total": float(item["total"]),
+                    "promedio_diario": promedio,
+                }
+            )
+        return Response(result)

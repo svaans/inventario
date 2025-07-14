@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from decimal import Decimal, ROUND_HALF_UP
 #categorias de productos
 
@@ -170,3 +171,66 @@ class MovimientoInventario(models.Model):
 
     def __str__(self):
         return f"{self.tipo.title()} - {self.producto.nombre} ({self.cantidad})"
+
+
+
+class Transaccion(models.Model):
+    """Registro de ingresos y egresos operativos."""
+
+    TIPO_CHOICES = [
+        ("ingreso", "Ingreso"),
+        ("egreso", "Egreso"),
+    ]
+
+    CANAL_INGRESO_CHOICES = [
+        ("mostrador", "Mostrador"),
+        ("delivery", "Delivery"),
+        ("pedido_grande", "Pedidos grandes"),
+    ]
+
+    CATEGORIA_EGRESO_CHOICES = [
+        ("materia_prima", "Materia prima"),
+        ("sueldos", "Sueldos"),
+        ("alquiler", "Alquiler"),
+        ("servicios", "Servicios"),
+        ("mantenimiento", "Mantenimiento"),
+        ("otros", "Otros"),
+    ]
+
+    fecha = models.DateField()
+    monto = models.DecimalField(max_digits=12, decimal_places=2)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    categoria = models.CharField(max_length=50)
+    canal = models.CharField(max_length=20, blank=True)
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    comprobante = models.FileField(upload_to="comprobantes/", null=True, blank=True)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["fecha"])]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} {self.monto} - {self.fecha}"
+
+    def clean(self):
+        if self.tipo == "egreso":
+            exists = (
+                Transaccion.objects.filter(
+                    fecha=self.fecha,
+                    monto=self.monto,
+                    tipo="egreso",
+                    categoria=self.categoria,
+                    responsable=self.responsable,
+                )
+                .exclude(pk=self.pk)
+                .exists()
+            )
+            if exists:
+                raise ValidationError("Egreso duplicado")
+
+    def save(self, *args, **kwargs):
+        quant = Decimal("0.01")
+        if self.monto is not None:
+            self.monto = Decimal(str(self.monto)).quantize(quant, ROUND_HALF_UP)
+        self.full_clean()
+        super().save(*args, **kwargs)

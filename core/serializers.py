@@ -13,6 +13,7 @@ from .models import (
     Categoria,
     Cliente,
     ComposicionProducto,
+    Transaccion,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -235,3 +236,33 @@ class EmployeeSerializer(serializers.ModelSerializer):
         empleado_group, _ = Group.objects.get_or_create(name="empleado")
         user.groups.add(empleado_group)
         return user
+
+
+class TransaccionSerializer(serializers.ModelSerializer):
+    """Serializer para registrar ingresos y egresos."""
+
+    class Meta:
+        model = Transaccion
+        fields = [
+            "id",
+            "fecha",
+            "monto",
+            "tipo",
+            "categoria",
+            "canal",
+            "responsable",
+            "comprobante",
+            "descripcion",
+        ]
+
+    def validate(self, attrs):
+        if attrs.get("tipo") == "egreso":
+            if Transaccion.objects.filter(
+                fecha=attrs.get("fecha"),
+                monto=attrs.get("monto"),
+                tipo="egreso",
+                categoria=attrs.get("categoria"),
+                responsable=attrs.get("responsable"),
+            ).exists():
+                raise serializers.ValidationError("Egreso duplicado")
+        return attrs

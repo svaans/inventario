@@ -13,6 +13,8 @@ from .api_views import (
     InventoryActivityView,
     EmployeeListCreateView,
     CurrentUserView,
+    TransaccionViewSet,
+    FlujoCajaReportView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -26,6 +28,7 @@ def cerrar_sesion(request):
 
 router = DefaultRouter()
 router.register(r'api/productos', ProductoViewSet, basename="productos")
+router.register(r'api/transacciones', TransaccionViewSet, basename="transacciones")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),
@@ -52,6 +55,7 @@ urlpatterns = [
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
     path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
+    path('api/flujo-caja/', FlujoCajaReportView.as_view(), name='flujo_caja_api'),
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),
