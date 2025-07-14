@@ -12,7 +12,7 @@ import Products from "./pages/Products";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
+import Login from "./pages/login";
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
 // recupera el foco. Esto ayuda a mantener la UI actualizada sin recargar

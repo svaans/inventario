@@ -95,26 +95,28 @@ class ProductoSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", [])
-        producto = Producto.objects.create(**validated_data)
-        for ing in ingredientes_data:
-            ComposicionProducto.objects.create(
-                producto_final=producto,
-                ingrediente=ing["ingrediente"],
-                cantidad_requerida=ing["cantidad_requerida"],
-            )
+        with transaction.atomic():
+            producto = Producto.objects.create(**validated_data)
+            for ing in ingredientes_data:
+                ComposicionProducto.objects.create(
+                    producto_final=producto,
+                    ingrediente=ing["ingrediente"],
+                    cantidad_requerida=ing["cantidad_requerida"],
+                )
         return producto
 
     def update(self, instance, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", None)
-        instance = super().update(instance, validated_data)
-        if ingredientes_data is not None:
-            instance.ingredientes.all().delete()
-            for ing in ingredientes_data:
-                ComposicionProducto.objects.create(
-                    producto_final=instance,
-                    ingrediente=ing["ingrediente"],
-                    cantidad_requerida=ing["cantidad_requerida"],
-                )
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            if ingredientes_data is not None:
+                instance.ingredientes.all().delete()
+                for ing in ingredientes_data:
+                    ComposicionProducto.objects.create(
+                        producto_final=instance,
+                        ingrediente=ing["ingrediente"],
+                        cantidad_requerida=ing["cantidad_requerida"],
+                    )
         return instance
 
     def get_unidades_posibles(self, obj):
@@ -150,54 +152,55 @@ class VentaCreateSerializer(serializers.ModelSerializer):
         if not (request and hasattr(request, "user") and request.user.is_authenticated):
             raise PermissionDenied("Authentication credentials were not provided.")
         usuario = request.user
-        venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
-        total = 0
-        for det in detalles_data:
-            producto = det["producto"]
-            cantidad = det["cantidad"]
-            precio = det["precio_unitario"]
-            if producto.stock_actual < cantidad:
-                raise serializers.ValidationError(
-                    {"detalles": "Stock insuficiente para %s" % producto.nombre}
-                )
-            if not producto.es_ingrediente:
-                for comp in producto.ingredientes.all():
-                    requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                    if comp.ingrediente.stock_actual < requerido:
-                        raise serializers.ValidationError(
-                            {
-                                "detalles": f"Ingrediente insuficiente para {producto.nombre}: {comp.ingrediente.nombre}"
-                            }
-                        )
-            DetallesVenta.objects.create(
-                venta=venta,
-                producto=producto,
-                cantidad=cantidad,
-                precio_unitario=precio,
-            )
-            total += cantidad * precio
-            producto.stock_actual -= cantidad
-            producto.save()
-            if not producto.es_ingrediente:
-                for comp in producto.ingredientes.all():
-                    requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                    ing = comp.ingrediente
-                    ing.stock_actual -= requerido
-                    ing.save()
-                    MovimientoInventario.objects.create(
-                        producto=ing,
-                        tipo="salida",
-                        cantidad=requerido,
-                        motivo=f"Venta de {producto.nombre}",
+        with transaction.atomic():
+            venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
+            total = 0
+            for det in detalles_data:
+                producto = det["producto"]
+                cantidad = det["cantidad"]
+                precio = det["precio_unitario"]
+                if producto.stock_actual < cantidad:
+                    raise serializers.ValidationError(
+                        {"detalles": "Stock insuficiente para %s" % producto.nombre}
                     )
-            MovimientoInventario.objects.create(
-                producto=producto,
-                tipo="salida",
-                cantidad=cantidad,
-                motivo="Venta",
-            )
-        venta.total = total
-        venta.save()
+                if not producto.es_ingrediente:
+                    for comp in producto.ingredientes.all():
+                        requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
+                        if comp.ingrediente.stock_actual < requerido:
+                            raise serializers.ValidationError(
+                                {
+                                    "detalles": f"Ingrediente insuficiente para {producto.nombre}: {comp.ingrediente.nombre}"
+                                }
+                            )
+                DetallesVenta.objects.create(
+                    venta=venta,
+                    producto=producto,
+                    cantidad=cantidad,
+                    precio_unitario=precio,
+                )
+                total += cantidad * precio
+                producto.stock_actual -= cantidad
+                producto.save()
+                if not producto.es_ingrediente:
+                    for comp in producto.ingredientes.all():
+                        requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
+                        ing = comp.ingrediente
+                        ing.stock_actual -= requerido
+                        ing.save()
+                        MovimientoInventario.objects.create(
+                            producto=ing,
+                            tipo="salida",
+                            cantidad=requerido,
+                            motivo=f"Venta de {producto.nombre}",
+                        )
+                MovimientoInventario.objects.create(
+                    producto=producto,
+                    tipo="salida",
+                    cantidad=cantidad,
+                    motivo="Venta",
+                )
+            venta.total = total
+            venta.save()
         return venta
 
 
