@@ -50,26 +50,21 @@ export function useProducts(search = "", codigo?: string) {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       if (codigo) params.append("codigo", codigo);
+      // Solicitar un gran page_size para obtener todos los productos de una sola vez
+      params.append("page_size", "1000");
 
-      // DRF pagina los resultados; para evitar perder productos entre páginas
-      // iteramos hasta que la API no devuelva más enlaces "next".
-      let url = `/api/productos/?${params.toString()}`;
-      const all: ProductoAPI[] = [];
-      while (url) {
-        const res = await fetch(url, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Failed to fetch products", res.status, text);
-          throw new Error("Failed to fetch products");
-        }
-        const data = await res.json();
-        all.push(...(data.results ?? data));
-        // "next" puede venir como URL absoluta; la convertimos en ruta relativa.
-        url = data.next ? data.next.replace(/^https?:\/\/[^/]+/, "") : "";
+      const url = `/api/productos/?${params.toString()}`;
+      const res = await fetch(url, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Failed to fetch products", res.status, text);
+        throw new Error("Failed to fetch products");
       }
-      return all.map((p: ProductoAPI) => ({
+      const data = await res.json();
+      const productos = data.results ?? data;
+      return productos.map((p: ProductoAPI) => ({
         id: p.id,
         name: p.nombre,
         description: p.descripcion ?? "",

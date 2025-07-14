@@ -3,10 +3,11 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// @ts-expect-error: sin tipos disponibles
 import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig(({ mode }) => ({
+  // 🌐 Servidor local
+  cacheDir: `node_modules/.vite_rebuild_${Date.now()}`,
   server: {
     host: "::",
     port: 8080,
@@ -17,6 +18,8 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
+
+  // 🧩 Plugins
   plugins: [
     react(),
     mode === "development" && componentTagger(),
@@ -28,44 +31,48 @@ export default defineConfig(({ mode }) => ({
     }),
   ].filter(Boolean),
 
-  // 🔧 Solución crítica para evitar el error de React desincronizado
+  // 📦 Resolución de módulos
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ["react", "react-dom", "react-dom/client"],
+    // 👇 deduplicación crítica para evitar múltiples Reacts
+    dedupe: ["react", "react-dom"],
   },
 
+  // 🧠 Optimización de dependencias para evitar dobles cargas
   optimizeDeps: {
-    include: ["react", "react-dom", "react-dom/client"],
+    include: ["react", "react-dom"],
   },
 
+  // 🏗️ Configuración del build
   build: {
-    chunkSizeWarningLimit: 800, // opcional, para advertencias de tamaño
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // 🔁 Separación lógica con orden controlado
           if (id.includes("node_modules")) {
-            if (/[\\/]react[\\/]/.test(id)) return "react"; // react/react-dom primero
+            if (/[\\/]react[\\/]/.test(id)) return "react";
             if (id.includes("@tanstack/react-query")) return "react-query";
             if (id.includes("react-router-dom")) return "react-router-dom";
             if (id.includes("lucide-react")) return "lucide-react";
-            if (id.match(/[\\/]@radix-ui[\\/]/)) return "radix"; // radix después de React
+            if (id.match(/[\\/]@radix-ui[\\/]/)) return "radix";
           }
           if (id.includes(path.resolve(__dirname, "src/utils"))) {
             return "utils";
           }
         },
       },
-      preserveEntrySignatures: "strict", // 🛡️ asegura orden de carga
+      preserveEntrySignatures: "strict",
     },
   },
 
+  // 🧪 Configuración de testing
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/setupTests.ts",
   },
 }));
+
 
