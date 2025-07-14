@@ -3,6 +3,8 @@ from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.db import transaction
+from django.db.models import F
 from .models import (
     Producto,
     Venta,
@@ -156,7 +158,8 @@ class VentaCreateSerializer(serializers.ModelSerializer):
             venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
             total = 0
             for det in detalles_data:
-                producto = det["producto"]
+                prod_id = det["producto"].id
+                producto = Producto.objects.select_for_update().get(id=prod_id)
                 cantidad = det["cantidad"]
                 precio = det["precio_unitario"]
                 if producto.stock_actual < cantidad:
@@ -164,7 +167,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                         {"detalles": "Stock insuficiente para %s" % producto.nombre}
                     )
                 if not producto.es_ingrediente:
-                    for comp in producto.ingredientes.all():
+                    for comp in producto.ingredientes.select_related("ingrediente"):
                         requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
                         if comp.ingrediente.stock_actual < requerido:
                             raise serializers.ValidationError(
@@ -179,16 +182,19 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     precio_unitario=precio,
                 )
                 total += cantidad * precio
-                producto.stock_actual -= cantidad
-                producto.save()
+                Producto.objects.filter(id=producto.id).update(
+                    stock_actual=F("stock_actual") - cantidad
+                )
+                producto.stock_actual -= Decimal(str(cantidad))
                 if not producto.es_ingrediente:
-                    for comp in producto.ingredientes.all():
+                    for comp in producto.ingredientes.select_related("ingrediente"):
                         requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                        ing = comp.ingrediente
-                        ing.stock_actual -= requerido
-                        ing.save()
+                        Producto.objects.filter(id=comp.ingrediente.id).update(
+                            stock_actual=F("stock_actual") - requerido
+                        )
+                        comp.ingrediente.stock_actual -= requerido
                         MovimientoInventario.objects.create(
-                            producto=ing,
+                            producto=comp.ingrediente,
                             tipo="salida",
                             cantidad=requerido,
                             motivo=f"Venta de {producto.nombre}",
