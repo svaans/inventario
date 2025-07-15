@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
-from core.models import Categoria, Producto, Venta, DetallesVenta, Transaccion, DevolucionProducto
-from core.utils import compile_monthly_metrics
+from inventario.models import Categoria, Producto, Venta, DetallesVenta, DevolucionProducto
+from finanzas.models import Transaccion
+from finanzas.utils import compile_monthly_metrics
 
 class MonthlyMetricsTest(TestCase):
     def setUp(self):

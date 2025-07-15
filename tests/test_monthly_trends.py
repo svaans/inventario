@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import Categoria, Producto, MovimientoInventario, Venta, DetallesVenta, DevolucionProducto, HistorialPrecio
+from inventario.models import Categoria, Producto, MovimientoInventario, Venta, DetallesVenta, DevolucionProducto, HistorialPrecio
 from datetime import datetime
 
 class MonthlyTrendsAPITest(TestCase):

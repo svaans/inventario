@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import Transaccion
+from finanzas.models import Transaccion
 from django.utils import timezone
 from unittest.mock import patch
 from datetime import timezone as dt_timezone

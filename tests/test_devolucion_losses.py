@@ -1,8 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import Categoria, Producto, Venta, DetallesVenta, DevolucionProducto
-
+from inventario.models import Categoria, Producto, Venta, DetallesVenta, DevolucionProducto
 class DevolucionLossesAPITest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")

@@ -2,15 +2,14 @@ from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
 from datetime import date
-from core.models import (
+from inventario.models import (
     Categoria,
     Producto,
     Venta,
     DetallesVenta,
     ComposicionProducto,
-    EventoEspecial,
-    CapacidadTurno,
 )
+from produccion.models import EventoEspecial, CapacidadTurno
 
 
 class ProductionPlanAPITest(TestCase):

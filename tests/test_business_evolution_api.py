@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import Categoria, Producto, Cliente, Venta, DetallesVenta, Transaccion
+from inventario.models import Categoria, Producto, Cliente, Venta, DetallesVenta
+from finanzas.models import Transaccion
 from datetime import date
 
 class BusinessEvolutionAPITest(TestCase):

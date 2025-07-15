@@ -1,8 +1,8 @@
 import datetime
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
-from core.models import Categoria, Producto, LoteMateriaPrima
-from core.utils import consumir_ingrediente_fifo, lotes_por_vencer
+from inventario.models import Categoria, Producto, LoteMateriaPrima
+from inventario.utils import consumir_ingrediente_fifo, lotes_por_vencer
 
 class FIFOExpirationTest(TestCase):
     def setUp(self):

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import Categoria, Producto, MovimientoInventario
+from inventario.models import Categoria, Producto, MovimientoInventario
 
 
 class InventoryActivityAPITest(TestCase):

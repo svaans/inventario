@@ -4,8 +4,8 @@ from rest_framework.test import APIRequestFactory
 from django.db import close_old_connections
 from rest_framework import serializers
 import threading
-from core.models import Categoria, Producto
-from core.serializers import VentaCreateSerializer
+from inventario.models import Categoria, Producto
+from inventario.serializers import VentaCreateSerializer
 
 class ConcurrentSaleTest(TransactionTestCase):
     def setUp(self):

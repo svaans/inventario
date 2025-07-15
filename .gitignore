@@ -183,7 +183,7 @@ cython_debug/
 # Temporary exports
 tmp/
 desarrollo/
-inventario/
+!inventario/
 
 
 # Logs

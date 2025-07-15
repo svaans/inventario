@@ -2,8 +2,8 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
-from core.models import Categoria, Producto
-from core.serializers import VentaCreateSerializer
+from inventario.models import Categoria, Producto
+from inventario.serializers import VentaCreateSerializer
 
 class NegativeStockTest(TestCase):
     def setUp(self):

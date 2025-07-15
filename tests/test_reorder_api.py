@@ -1,8 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import Categoria, Producto, Proveedor, Compra, DetalleCompra
-
+from inventario.models import Categoria, Producto, Proveedor, Compra, DetalleCompra
 
 class ReorderAPITest(TestCase):
     def setUp(self):

@@ -1,7 +1,7 @@
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from core.models import RegistroTurno
+from produccion.models import RegistroTurno
 
 class ShiftLogAPITest(TransactionTestCase):
     def setUp(self):

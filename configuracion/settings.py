@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'core',
+    'inventario',
+    'finanzas',
+    'produccion',
 ]
 
 MIDDLEWARE = [

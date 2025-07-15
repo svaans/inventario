@@ -1,8 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
-from core.models import Categoria, Producto, Venta, DetallesVenta, Transaccion, DevolucionProducto
-from core.profitability import monthly_profitability_ranking
-
+from inventario.models import Categoria, Producto, Venta, DetallesVenta, DevolucionProducto
+from finanzas.models import Transaccion
+from finanzas.profitability import monthly_profitability_ranking
 class ProfitabilityRankingTest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")

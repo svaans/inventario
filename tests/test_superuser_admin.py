@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
-from core.models import Categoria, Proveedor
+from inventario.models import Categoria, Proveedor
 
 class SuperuserAdminTest(TestCase):
     def setUp(self):

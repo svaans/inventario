@@ -1,8 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIRequestFactory
-from core.models import Categoria, Producto, ComposicionProducto
-from core.serializers import VentaCreateSerializer
+from inventario.models import Categoria, Producto, ComposicionProducto
+from inventario.serializers import VentaCreateSerializer
 
 class IngredientSaleTest(TestCase):
     def setUp(self):
@@ -52,7 +52,7 @@ class IngredientSaleTest(TestCase):
         serializer.save()
 
         # update recipe for lot L1
-        from core.serializers import ProductoSerializer
+        from inventario.serializers import ProductoSerializer
 
         update_data = {
             "ingredientes": [

@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from unittest.mock import patch
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
-from core.models import Categoria, Producto, ComposicionProducto, MovimientoInventario
-from core.serializers import ProductoSerializer, VentaCreateSerializer
+from inventario.models import Categoria, Producto, ComposicionProducto, MovimientoInventario
+from inventario.serializers import ProductoSerializer, VentaCreateSerializer
 
 class ProductoAtomicityTest(TestCase):
     def setUp(self):
@@ -40,7 +40,7 @@ class ProductoAtomicityTest(TestCase):
         }
         serializer = ProductoSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        with patch("core.serializers.ComposicionProducto.objects.create", side_effect=Exception("fail")):
+        with patch("inventario.models.ComposicionProducto.objects.create", side_effect=Exception("fail")):
             with self.assertRaises(Exception):
                 serializer.save()
         self.assertEqual(Producto.objects.filter(codigo="T_P1").count(), 0)
@@ -79,6 +79,6 @@ class VentaAtomicityTest(TestCase):
             serializer.save()
         self.assertEqual(Producto.objects.get(id=self.producto.id).stock_actual, 5)
         self.assertEqual(MovimientoInventario.objects.count(), 0)
-        from core.models import Venta, DetallesVenta
+        from inventario.models import Venta, DetallesVenta
         self.assertEqual(Venta.objects.count(), 0)
         self.assertEqual(DetallesVenta.objects.count(), 0)

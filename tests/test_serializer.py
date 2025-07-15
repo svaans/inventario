@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from decimal import Decimal
-from core.models import (
+from inventario.models import (
     Producto,
     Categoria,
     Proveedor,
@@ -12,7 +12,7 @@ from core.models import (
     Cliente,
     ComposicionProducto,
 )
-from core.serializers import ProductoSerializer
+from inventario.serializers import ProductoSerializer
 
 class ProductoSerializerTest(TestCase):
     def setUp(self):
