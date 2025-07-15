@@ -175,7 +175,7 @@ class MovimientoInventario(models.Model):
 
 
 class Transaccion(models.Model):
-    """Registro de ingresos y egresos operativos."""
+    """Registro de ingresos y egresos del flujo de caja."""
 
     TIPO_CHOICES = [
         ("ingreso", "Ingreso"),
@@ -215,6 +215,14 @@ class Transaccion(models.Model):
     monto = models.DecimalField(max_digits=12, decimal_places=2)
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     categoria = models.CharField(max_length=50)
+    operativo = models.BooleanField(default=True)
+    ACTIVIDAD_CHOICES = [
+        ("produccion", "Producción"),
+        ("distribucion", "Distribución"),
+        ("administracion", "Administración"),
+        ("otros", "Otros"),
+    ]
+    actividad = models.CharField(max_length=20, choices=ACTIVIDAD_CHOICES, blank=True)
     canal = models.CharField(max_length=20, blank=True)
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     comprobante = models.FileField(upload_to="comprobantes/", null=True, blank=True)

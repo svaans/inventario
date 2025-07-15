@@ -221,6 +221,25 @@ class DashboardStatsView(APIView):
                 tipo_costo='variable'
             ).aggregate(total=Sum('monto'))['total'] or 0
         )
+        operational_costs = (
+            Transaccion.objects.filter(
+                tipo='egreso',
+                fecha__range=[month_start, today],
+                operativo=True,
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        )
+        non_operational_costs = (
+            Transaccion.objects.filter(
+                tipo='egreso',
+                fecha__range=[month_start, today],
+                operativo=False,
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        )
+        total_egresos = float(operational_costs + non_operational_costs)
+        non_operational_percent = (
+            (float(non_operational_costs) / total_egresos * 100)
+            if total_egresos else 0.0
+        )
         ventas_mes = Venta.objects.filter(fecha__range=[month_start, today]).aggregate(total=Sum('total'))['total'] or 0
         break_even = None
         if ventas_mes:
@@ -261,6 +280,9 @@ class DashboardStatsView(APIView):
             'production_today': production_today,
             'fixed_costs': fixed_costs,
             'variable_costs': variable_costs,
+            'operational_costs': float(operational_costs),
+            'non_operational_costs': float(non_operational_costs),
+            'non_operational_percent': non_operational_percent,
             'break_even': break_even,
             'top_products': top_products,
             'week_sales': week_sales,

@@ -1,8 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
-import { BarChart3, Package, Archive, Calendar, User } from "lucide-react";
+import { BarChart3, Package, Archive, Calendar, User, AlertTriangle } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
 import CostPieChart from "../components/finance/CostPieChart";
+import OperationalPieChart from "../components/finance/OperationalPieChart";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { formatCurrency } from "../utils/formatCurrency";
 import { useEffect } from "react";
 import { toast } from "../hooks/use-toast";
@@ -150,6 +152,26 @@ export default function Dashboard() {
               Punto de equilibrio:
               {data?.break_even ? ` ${formatCurrency(data.break_even)}` : " N/A"}
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Operational Costs */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Gastos Operativos</CardTitle>
+            <CardDescription>Operativos vs no operativos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <OperationalPieChart operational={data?.operational_costs ?? 0} nonOperational={data?.non_operational_costs ?? 0} />
+            {data && data.non_operational_percent > 15 && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Atención</AlertTitle>
+                <AlertDescription>
+                  Los costos no operativos superan el 15% de los egresos.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>

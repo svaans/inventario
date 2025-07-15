@@ -249,6 +249,8 @@ class TransaccionSerializer(serializers.ModelSerializer):
             "monto",
             "tipo",
             "categoria",
+            "operativo",
+            "actividad",
             "tipo_costo",
             "revisado",
             "canal",

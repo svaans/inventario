@@ -11,6 +11,9 @@ export interface DashboardData {
   production_today: number;
   fixed_costs: number;
   variable_costs: number;
+  operational_costs: number;
+  non_operational_costs: number;
+  non_operational_percent: number;
   break_even: number | null;
   top_products: { producto__nombre: string; total_vendido: number }[];
   week_sales: { day: string; total: number }[];
