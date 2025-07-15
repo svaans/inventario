@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import transaction, OperationalError
 from django.db.models import F
-from .utils import consumir_ingrediente_fifo
+from .utils import consumir_ingrediente_fifo, vender_producto_final_fifo
 from .models import (
     Producto,
     Venta,
@@ -248,13 +248,30 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 comps = item["comps"]
                 locked_ingredientes = item["ings"]
 
-                DetallesVenta.objects.create(
-                    venta=venta,
-                    producto=producto,
-                    cantidad=cantidad,
-                    precio_unitario=precio,
-                    lote=lote,
-                )
+                consumos = []
+                if not producto.es_ingrediente:
+                    try:
+                        consumos = vender_producto_final_fifo(producto, cantidad)
+                    except ValueError:
+                        raise serializers.ValidationError({"detalles": f"Stock de lotes insuficiente para {producto.nombre}"})
+                if consumos:
+                    for lpf, cant_lote in consumos:
+                        DetallesVenta.objects.create(
+                            venta=venta,
+                            producto=producto,
+                            cantidad=cant_lote,
+                            precio_unitario=precio,
+                            lote=lpf.codigo,
+                            lote_final=lpf,
+                        )
+                else:
+                    DetallesVenta.objects.create(
+                        venta=venta,
+                        producto=producto,
+                        cantidad=cantidad,
+                        precio_unitario=precio,
+                        lote=lote,
+                    )
                 total += cantidad * precio
                 try:
                     Producto.objects.filter(id=producto.id).update(
@@ -305,7 +322,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 
             venta.total = total
             venta.save()
-            
+
         return venta
 
 

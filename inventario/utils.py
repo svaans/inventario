@@ -5,6 +5,8 @@ from core.utils import (
     enviar_alertas_vencimiento,
     detectar_faltantes,
     auto_reordenar,
+    vender_producto_final_fifo,
+
 )
 
 __all__ = [
@@ -14,4 +16,5 @@ __all__ = [
     "enviar_alertas_vencimiento",
     "detectar_faltantes",
     "auto_reordenar",
+    "vender_producto_final_fifo",
 ]

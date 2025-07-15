@@ -1,16 +1,15 @@
 from django.test import TestCase
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APIRequestFactory
 from django.contrib.auth.models import User, Group
 from inventario.models import (
     Categoria,
     Producto,
     Venta,
-    DetallesVenta,
-    DevolucionProducto,
     LoteMateriaPrima,
     LoteProductoFinal,
     UsoLoteMateriaPrima,
 )
+from inventario.serializers import VentaCreateSerializer
 
 
 class TraceabilityAPITest(TestCase):
@@ -20,6 +19,7 @@ class TraceabilityAPITest(TestCase):
         self.user.groups.add(admin_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
+        self.factory = APIRequestFactory()
 
         cat = Categoria.objects.create(nombre_categoria="Insumos")
         self.ing = Producto.objects.create(
@@ -41,7 +41,7 @@ class TraceabilityAPITest(TestCase):
             es_ingrediente=False,
             precio=2,
             costo=1,
-            stock_actual=10,
+            stock_actual=15,
             stock_minimo=2,
             unidad_media="u",
             categoria=cat,
@@ -50,32 +50,56 @@ class TraceabilityAPITest(TestCase):
             codigo="L1",
             producto=self.ing,
             fecha_recepcion="2024-01-01",
-            cantidad_inicial=50,
+            cantidad_inicial=40,
         )
-        self.lote_final = LoteProductoFinal.objects.create(
+        self.lote_final1 = LoteProductoFinal.objects.create(
             codigo="FP1",
             producto=self.final,
             fecha_produccion="2024-01-02",
-            cantidad_producida=20,
+            cantidad_producida=5,
+        )
+        self.lote_final2 = LoteProductoFinal.objects.create(
+            codigo="FP2",
+            producto=self.final,
+            fecha_produccion="2024-01-03",
+            cantidad_producida=10,
         )
         UsoLoteMateriaPrima.objects.create(
             lote_materia_prima=self.lote_ing,
-            lote_producto_final=self.lote_final,
+            lote_producto_final=self.lote_final1,
             fecha="2024-01-02",
-            cantidad=10,
+            cantidad=20,
         )
-        venta = Venta.objects.create(fecha="2024-01-03", total=4, usuario=self.user)
-        DetallesVenta.objects.create(
-            venta=venta,
-            producto=self.final,
-            cantidad=2,
-            precio_unitario=2,
-            lote="FP1",
-            lote_final=self.lote_final,
+        UsoLoteMateriaPrima.objects.create(
+            lote_materia_prima=self.lote_ing,
+            lote_producto_final=self.lote_final2,
+            fecha="2024-01-03",
+            cantidad=20,
         )
+
+        request = self.factory.post("/ventas/")
+        request.user = self.user
+        data = {
+            "fecha": "2024-01-04",
+            "cliente": None,
+            "detalles": [
+                {"producto": self.final.id, "cantidad": 8, "precio_unitario": 2}
+            ],
+        }
+        serializer = VentaCreateSerializer(data=data, context={"request": request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        self.final.refresh_from_db()
+        self.lote_final1.refresh_from_db()
+        self.lote_final2.refresh_from_db()
+        self.assertEqual(float(self.lote_final1.cantidad_vendida), 5)
+        self.assertEqual(float(self.lote_final2.cantidad_vendida), 3)
+
+        from inventario.models import DevolucionProducto
         DevolucionProducto.objects.create(
-            fecha="2024-01-04",
-            lote="FP1",
+            fecha="2024-01-05",
+            lote="FP2",
             producto=self.final,
             motivo="Defecto",
             cantidad=1,
@@ -87,9 +111,11 @@ class TraceabilityAPITest(TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertEqual(data["lote"], "L1")
-        self.assertEqual(len(data["usos"]), 1)
-        uso = data["usos"][0]
-        self.assertEqual(uso["lote_final"], "FP1")
-        self.assertEqual(uso["vendidos"], 2)
-        self.assertEqual(uso["devueltos"], 1)
-        self.assertEqual(uso["en_stock"], 17)
+        self.assertEqual(len(data["usos"]), 2)
+        usos = {u["lote_final"]: u for u in data["usos"]}
+        self.assertEqual(usos["FP1"]["vendidos"], 5)
+        self.assertEqual(usos["FP1"]["devueltos"], 0)
+        self.assertEqual(usos["FP1"]["en_stock"], 0)
+        self.assertEqual(usos["FP2"]["vendidos"], 3)
+        self.assertEqual(usos["FP2"]["devueltos"], 1)
+        self.assertEqual(usos["FP2"]["en_stock"], 6)

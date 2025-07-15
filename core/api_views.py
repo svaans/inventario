@@ -904,10 +904,7 @@ class TraceabilityView(APIView):
         for uso in lote.usos.select_related("lote_producto_final", "lote_producto_final__producto"):
             lpf = uso.lote_producto_final
             vendidos = (
-                DetallesVenta.objects.filter(lote_final=lpf).aggregate(total=Sum("cantidad"))[
-                    "total"
-                ]
-                or 0
+                lpf.detallesventa_set.aggregate(total=Sum("cantidad"))["total"] or 0
             )
             devueltos = (
                 DevolucionProducto.objects.filter(lote=lpf.codigo).aggregate(total=Sum("cantidad"))[

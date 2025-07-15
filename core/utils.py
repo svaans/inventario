@@ -54,6 +54,48 @@ def consumir_ingrediente_fifo(producto: Producto, cantidad: Decimal) -> None:
             break
     if restante > 0:
         raise ValueError("No hay suficiente materia prima disponible")
+    
+
+def vender_producto_final_fifo(
+    producto: Producto, cantidad: Decimal
+) -> List[tuple["LoteProductoFinal", Decimal]]:
+    """Consume stock de productos finales aplicando FIFO por lote.
+
+    Devuelve una lista con los lotes utilizados y la cantidad tomada de cada uno.
+    """
+
+    from .models import LoteProductoFinal
+
+    restante = cantidad
+    lotes = (
+        LoteProductoFinal.objects.filter(producto=producto)
+        .order_by("fecha_produccion", "id")
+        .select_for_update()
+    )
+
+    consumos: List[tuple[LoteProductoFinal, Decimal]] = []
+    if not lotes.exists():
+        return consumos
+
+    for lote in lotes:
+        disponible = (
+            lote.cantidad_producida - lote.cantidad_vendida - lote.cantidad_devuelta
+        )
+        if disponible <= 0:
+            continue
+        usar = min(disponible, restante)
+        if usar > 0:
+            lote.cantidad_vendida += usar
+            lote.save()
+            consumos.append((lote, usar))
+            restante -= usar
+        if restante <= 0:
+            break
+
+    if restante > 0:
+        raise ValueError("No hay suficiente producto final disponible")
+
+    return consumos
 
 
 def calcular_perdidas_devolucion(
