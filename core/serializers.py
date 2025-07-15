@@ -15,6 +15,7 @@ from .models import (
     ComposicionProducto,
     Transaccion,
     DevolucionProducto,
+    RegistroTurno,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -338,3 +339,29 @@ class DevolucionSerializer(serializers.ModelSerializer):
             "reembolso",
             "sustitucion",
         ]
+
+
+class RegistroTurnoSerializer(serializers.ModelSerializer):
+    empleados = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=get_user_model().objects.all()
+    )
+    eficiencia = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RegistroTurno
+        fields = [
+            "id",
+            "fecha",
+            "turno",
+            "empleados",
+            "produccion",
+            "ventas",
+            "horas_trabajadas",
+            "productos_defectuosos",
+            "devoluciones",
+            "observaciones",
+            "eficiencia",
+        ]
+
+    def get_eficiencia(self, obj) -> float:
+        return obj.eficiencia

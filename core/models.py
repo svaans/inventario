@@ -371,3 +371,32 @@ class CapacidadTurno(models.Model):
 
     def __str__(self) -> str:
         return f"{self.fecha} {self.turno}: {self.capacidad}"
+
+
+class RegistroTurno(models.Model):
+    """Registro de producción y ventas por turno de los empleados."""
+
+    fecha = models.DateField()
+    turno = models.CharField(max_length=10, choices=CapacidadTurno.TURNO_CHOICES)
+    empleados = models.ManyToManyField(settings.AUTH_USER_MODEL)
+    produccion = models.PositiveIntegerField(default=0)
+    ventas = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    horas_trabajadas = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    productos_defectuosos = models.PositiveIntegerField(default=0)
+    devoluciones = models.PositiveIntegerField(default=0)
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-fecha", "turno"]
+
+    def __str__(self) -> str:
+        return f"{self.fecha} {self.turno}" 
+
+    @property
+    def eficiencia(self) -> float:
+        """Unidades producidas por hora por persona."""
+        empleados = self.empleados.count() or 1
+        horas = float(self.horas_trabajadas or 0)
+        if horas <= 0:
+            return 0.0
+        return float(self.produccion) / (horas * empleados)

@@ -37,6 +37,7 @@ from .models import (
     Transaccion,
     DevolucionProducto,
     HistorialPrecio,
+    RegistroTurno,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -48,6 +49,7 @@ from .serializers import (
     EmployeeSerializer,
     TransaccionSerializer,
     DevolucionSerializer,
+    RegistroTurnoSerializer,
 )
 from .utils import calcular_perdidas_devolucion
 from .analytics import (
@@ -857,3 +859,15 @@ class ProductionPlanView(APIView):
             target = now().date()
         plan = generar_plan(target)
         return Response(plan)
+
+
+class RegistroTurnoViewSet(viewsets.ModelViewSet):
+    """CRUD API para registros de turnos del personal."""
+
+    queryset = RegistroTurno.objects.all().order_by("-fecha", "turno")
+    serializer_class = RegistroTurnoSerializer
+
+    def get_permissions(self):
+        if self.request.method in ["GET", "OPTIONS", "HEAD"]:
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
