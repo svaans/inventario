@@ -16,6 +16,7 @@ from .api_views import (
     TransaccionViewSet,
     DevolucionViewSet,
     DevolucionRatesView,
+    DevolucionLossReportView,
     FlujoCajaReportView,
     BusinessEvolutionView,
 )
@@ -40,6 +41,7 @@ urlpatterns = [
     path('productos/', views.ProductoListView.as_view(), name='producto_list'),
     path("inventario/reporte/", views.ReporteInventarioView.as_view(), name="reporte_inventario"),
     path("inventario/exportar/", views.exportar_inventario_excel, name="exportar_inventario_excel"),
+    path('devoluciones/perdidas/exportar/', views.exportar_perdidas_excel, name='exportar_perdidas_excel'),
     path('productos/nuevo/', views.ProductoCreateView.as_view(), name='producto_create'),
     path('productos/<int:pk>/editar/', views.ProductoUpdateView.as_view(), name='producto_update'),
     path('productos/<int:pk>/eliminar/', views.ProductoDeleteView.as_view(), name='producto_delete'),
@@ -62,6 +64,7 @@ urlpatterns = [
     path('api/flujo-caja/', FlujoCajaReportView.as_view(), name='flujo_caja_api'),
     path('api/business-evolution/', BusinessEvolutionView.as_view(), name='business_evolution_api'),
     path('api/devoluciones/rates/', DevolucionRatesView.as_view(), name='devolucion_rates_api'),
+    path('api/devoluciones/losses/', DevolucionLossReportView.as_view(), name='devolucion_losses_api'),
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),

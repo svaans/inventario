@@ -28,6 +28,7 @@ from reportlab.pdfgen import canvas
 from django.contrib import messages
 from django.core.files.storage import default_storage
 from openpyxl import load_workbook
+from .utils import calcular_perdidas_devolucion
 from django.views.generic import TemplateView
 from django.utils.timezone import now
 from django.db.models import Sum
@@ -513,3 +514,34 @@ class CriticalProductListView(View):
             'id', 'nombre', 'stock_actual', 'stock_minimo'
         )
         return JsonResponse(list(productos_criticos), safe=False)
+    
+
+@login_required
+def exportar_perdidas_excel(request):
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    data = calcular_perdidas_devolucion(start, end)
+
+    wb = Workbook()
+    ws_cause = wb.active
+    ws_cause.title = 'Por causa'
+    ws_cause.append(['Motivo', 'Perdida'])
+    for causa, total in data['by_cause'].items():
+        ws_cause.append([causa, total])
+
+    ws_month = wb.create_sheet('Por mes')
+    ws_month.append(['Mes', 'Perdida'])
+    for mes, total in data['by_month'].items():
+        ws_month.append([mes, total])
+
+    ws_type = wb.create_sheet('Por tipo')
+    ws_type.append(['Tipo', 'Perdida'])
+    for tipo, total in data['by_type'].items():
+        ws_type.append([tipo, total])
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=perdidas.xlsx'
+    wb.save(response)
+    return response

@@ -47,6 +47,7 @@ from .serializers import (
     TransaccionSerializer,
     DevolucionSerializer,
 )
+from .utils import calcular_perdidas_devolucion
 
 
 class CriticalProductPagination(PageNumberPagination):
@@ -624,3 +625,23 @@ class DevolucionRatesView(APIView):
             "por_proveedor": result_prov,
             "por_responsable": result_resp,
         })
+
+
+class DevolucionLossReportView(APIView):
+    """Reporte de pérdidas económicas por devoluciones."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        start = request.query_params.get("start")
+        end = request.query_params.get("end")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+        if month and year and not start and not end:
+            start = datetime(int(year), int(month), 1).date()
+            if int(month) == 12:
+                end = datetime(int(year) + 1, 1, 1).date()
+            else:
+                end = datetime(int(year), int(month) + 1, 1).date()
+        data = calcular_perdidas_devolucion(start, end)
+        return Response(data)
