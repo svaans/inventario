@@ -1,7 +1,7 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Count
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import timedelta, datetime
 import logging
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -435,4 +435,109 @@ class FlujoCajaReportView(APIView):
                     "promedio_diario": promedio,
                 }
             )
+        return Response(result)
+class BusinessEvolutionView(APIView):
+    """Resumen histórico del negocio con proyecciones."""
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        period = request.query_params.get("period", "month")
+        category = request.query_params.get("category")
+        canal = request.query_params.get("canal")
+        ventas = Venta.objects.all()
+        if category:
+            ventas = ventas.filter(detallesventa__producto__categoria_id=category)
+        ingresos = Transaccion.objects.filter(tipo="ingreso")
+        egresos = Transaccion.objects.filter(tipo="egreso")
+        if canal:
+            ingresos = ingresos.filter(canal=canal)
+        if period == "quarter":
+            trunc = TruncQuarter("fecha")
+        else:
+            trunc = TruncMonth("fecha")
+        sales_group = (
+            ventas.annotate(p=trunc)
+            .values("p")
+            .annotate(count=Count("id"), total=Sum("total"))
+            .order_by("p")
+        )
+        ing_group = (
+            ingresos.annotate(p=trunc)
+            .values("p")
+            .annotate(total=Sum("monto"))
+            .order_by("p")
+        )
+        eg_group = (
+            egresos.annotate(p=trunc)
+            .values("p")
+            .annotate(total=Sum("monto"))
+            .order_by("p")
+        )
+        ingresos_dict = {r["p"]: float(r["total"]) for r in ing_group}
+        egresos_dict = {r["p"]: float(r["total"]) for r in eg_group}
+
+        first_sales = {}
+        for item in ventas.filter(cliente__isnull=False).order_by("fecha").values("cliente_id", "fecha"):
+            cid = item["cliente_id"]
+            if cid not in first_sales:
+                first_sales[cid] = item["fecha"]
+        new_clients = {}
+        for d in first_sales.values():
+            if period == "quarter":
+                q_month = ((d.month - 1) // 3) * 3 + 1
+                key = d.replace(month=q_month, day=1)
+            else:
+                key = d.replace(day=1)
+            new_clients[key] = new_clients.get(key, 0) + 1
+
+        result = []
+        prev_income = None
+        for item in sales_group:
+            p = item["p"]
+            income = ingresos_dict.get(p, 0.0)
+            expense = egresos_dict.get(p, 0.0)
+            net_income = income - expense
+            margin = (net_income / income * 100) if income else 0.0
+            growth = ((income - prev_income) / prev_income * 100) if prev_income else 0.0
+            result.append({
+                "period": p.isoformat(),
+                "sales": item["count"],
+                "new_clients": new_clients.get(p, 0),
+                "net_income": net_income,
+                "profit_margin": margin,
+                "growth": growth,
+            })
+            prev_income = income
+
+        y = [r["net_income"] for r in result]
+        n = len(y)
+        if n >= 2:
+            x = list(range(n))
+            x_mean = sum(x) / n
+            y_mean = sum(y) / n
+            denom = sum((xi - x_mean) ** 2 for xi in x)
+            slope = sum((xi - x_mean) * (yi - y_mean) for xi, yi in zip(x, y)) / denom if denom else 0.0
+            intercept = y_mean - slope * x_mean
+            if slope > 0:
+                last_period = datetime.fromisoformat(result[-1]["period"])
+                for i in range(1, 4):
+                    if period == "quarter":
+                        month = ((last_period.month - 1) // 3) * 3 + 1 + 3 * i
+                    else:
+                        month = last_period.month + i
+                    year = last_period.year
+                    while month > 12:
+                        month -= 12
+                        year += 1
+                    next_date = last_period.replace(year=year, month=month, day=1)
+                    pred = intercept + slope * (n - 1 + i)
+                    result.append({
+                        "period": next_date.isoformat(),
+                        "sales": None,
+                        "new_clients": None,
+                        "net_income": pred,
+                        "profit_margin": None,
+                        "growth": None,
+                        "projected": True,
+                    })
         return Response(result)

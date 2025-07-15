@@ -11,6 +11,7 @@ import SalesWizard from "./pages/SalesWizard";
 import Products from "./pages/Products";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
+import BusinessEvolution from "./pages/BusinessEvolution";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/login";
 // Configuramos React Query con un tiempo de stale más amplio para evitar
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/sales" element={<Sales />} />
           <Route path="/sales/new" element={<SalesWizard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/evolucion" element={<BusinessEvolution />} />
           <Route path="/employees" element={<Employees />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -23,6 +23,7 @@ export function Navigation() {
     ...(isAdmin ? [{ name: "Ventas", path: "/sales" }] : []),
     ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),
     ...(isAdmin ? [{ name: "Dashboard", path: "/dashboard" }] : []),
+    ...(isAdmin ? [{ name: "Evolución", path: "/evolucion" }] : []),
   ];
 
   return (
