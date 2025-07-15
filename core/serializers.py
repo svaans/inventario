@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import F
+from .utils import consumir_ingrediente_fifo
 from .models import (
     Producto,
     Venta,
@@ -16,6 +17,7 @@ from .models import (
     Transaccion,
     DevolucionProducto,
     RegistroTurno,
+    LoteMateriaPrima,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -228,14 +230,9 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                         comps = []
                     for comp in comps:
                         requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                        Producto.objects.filter(id=comp.ingrediente.id).update(
-                            stock_actual=F("stock_actual") - requerido
-                        )
-                        comp.ingrediente.refresh_from_db()
-                        if comp.ingrediente.stock_actual < 0:
-                            Producto.objects.filter(id=comp.ingrediente.id).update(
-                                stock_actual=F("stock_actual") + requerido
-                            )
+                        try:
+                            consumir_ingrediente_fifo(comp.ingrediente, requerido)
+                        except ValueError:
                             raise serializers.ValidationError(
                                 {
                                     "detalles": f"Ingrediente insuficiente para {producto.nombre}: {comp.ingrediente.nombre}"

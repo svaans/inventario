@@ -117,11 +117,12 @@ class LoteMateriaPrimaAdmin(admin.ModelAdmin):
         'codigo',
         'producto',
         'fecha_recepcion',
+        'fecha_vencimiento',
         'cantidad_inicial',
         'cantidad_usada',
         'fecha_agotado',
     )
-    list_filter = ('producto', 'fecha_recepcion')
+    list_filter = ('producto', 'fecha_recepcion', 'fecha_vencimiento')
 
 
 @admin.register(LoteProductoFinal)

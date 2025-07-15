@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
 
@@ -11,8 +11,46 @@ from django.conf import settings
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
-from .models import DevolucionProducto, Venta, Transaccion, Producto, MonthlyReport
+from .models import (
+    DevolucionProducto,
+    Venta,
+    Transaccion,
+    Producto,
+    MonthlyReport,
+    LoteMateriaPrima,
+)
 from .analytics import purchase_recommendations
+
+
+def consumir_ingrediente_fifo(producto: Producto, cantidad: Decimal) -> None:
+    """Consume materia prima aplicando rotación FIFO."""
+    restante = cantidad
+    lotes = (
+        LoteMateriaPrima.objects.filter(
+            producto=producto, fecha_agotado__isnull=True
+        )
+        .order_by("fecha_recepcion")
+        .select_for_update()
+    )
+    if not lotes.exists():
+        # Fallback al stock del producto si no hay lotes registrados
+        disponible = producto.stock_actual
+        if disponible < cantidad:
+            raise ValueError("No hay suficiente materia prima disponible")
+        producto.stock_actual -= cantidad
+        producto.save()
+        return
+    for lote in lotes:
+        disponible = lote.cantidad_disponible
+        if disponible <= 0:
+            continue
+        usar = min(disponible, restante)
+        lote.consumir(usar)
+        restante -= usar
+        if restante <= 0:
+            break
+    if restante > 0:
+        raise ValueError("No hay suficiente materia prima disponible")
 
 
 def calcular_perdidas_devolucion(
@@ -167,3 +205,34 @@ def send_monthly_report(year: int, month: int) -> None:
     email = EmailMessage(subject=subject, body=message, to=recipients)
     email.attach(f"reporte_{month:02d}_{year}.pdf", pdf, "application/pdf")
     email.send()
+
+
+def lotes_por_vencer(dias: int = 7) -> List[LoteMateriaPrima]:
+    """Devuelve los lotes que vencerán en los próximos ``dias``."""
+    limite = date.today() + timedelta(days=dias)
+    return list(
+        LoteMateriaPrima.objects.filter(
+            fecha_vencimiento__lte=limite, fecha_agotado__isnull=True
+        )
+    )
+
+
+def enviar_alertas_vencimiento(dias: int = 7) -> None:
+    """Envía alertas por correo de los lotes próximos a vencer."""
+    lotes = lotes_por_vencer(dias)
+    if not lotes:
+        return
+    lines = [
+        f"{lote.codigo} - {lote.producto.nombre} vence {lote.fecha_vencimiento}"
+        for lote in lotes
+    ]
+    mensaje = "\n".join(lines)
+    subject = "Lotes próximos a vencer"
+    recipients = list(
+        settings.AUTH_USER_MODEL.objects.filter(is_superuser=True).values_list(
+            "email", flat=True
+        )
+    )
+    if recipients:
+        email = EmailMessage(subject=subject, body=mensaje, to=recipients)
+        email.send()

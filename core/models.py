@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import date
 #categorias de productos
 
 class Categoria(models.Model):
@@ -346,6 +347,41 @@ class LoteMateriaPrima(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.producto.nombre}"
+    
+
+    @property
+    def fecha_ingreso(self):
+        """Alias para la fecha de recepción."""
+        return self.fecha_recepcion
+
+    @property
+    def cantidad_disponible(self):
+        return self.cantidad_inicial - self.cantidad_usada
+
+    def consumir(self, cantidad):
+        from datetime import date
+        if cantidad > self.cantidad_disponible:
+            raise ValueError("Stock insuficiente en el lote")
+        self.cantidad_usada += cantidad
+        if self.cantidad_disponible <= 0 and not self.fecha_agotado:
+            self.fecha_agotado = date.today()
+        self.save()
+
+    @property
+    def dias_para_vencer(self):
+        from datetime import date
+        return (self.fecha_vencimiento - date.today()).days
+
+    @property
+    def descuento_sugerido(self):
+        dias = self.dias_para_vencer
+        if dias <= 0:
+            return 0.5
+        if dias <= 3:
+            return 0.3
+        if dias <= 7:
+            return 0.1
+        return 0.0
 
 
 class LoteProductoFinal(models.Model):
