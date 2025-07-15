@@ -249,11 +249,14 @@ class TransaccionSerializer(serializers.ModelSerializer):
             "monto",
             "tipo",
             "categoria",
+            "tipo_costo",
+            "revisado",
             "canal",
             "responsable",
             "comprobante",
             "descripcion",
         ]
+        read_only_fields = ["tipo_costo", "revisado"]
 
     def validate(self, attrs):
         if attrs.get("tipo") == "egreso":

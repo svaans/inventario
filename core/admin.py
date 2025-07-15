@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db import models
 from .models import (
     Categoria, Producto, Proveedor, Compra, DetalleCompra,
-    Cliente, Venta, DetallesVenta, Balance
+    Cliente, Venta, DetallesVenta, Balance, Transaccion
 )
 
 class StockBajoFilter(admin.SimpleListFilter):
@@ -63,6 +63,19 @@ class DetallesVentaAdmin(admin.ModelAdmin):
 class BalanceAdmin(admin.ModelAdmin):
     list_display = ('mes', 'anio', 'total_ingresos', 'total_egresos', 'utilidad')
     list_filter = ('anio',)
+
+@admin.register(Transaccion)
+class TransaccionAdmin(admin.ModelAdmin):
+    list_display = (
+        'fecha',
+        'monto',
+        'tipo',
+        'categoria',
+        'tipo_costo',
+        'revisado',
+        'responsable',
+    )
+    list_filter = ('tipo', 'categoria', 'tipo_costo', 'revisado', 'fecha')
 
 
 

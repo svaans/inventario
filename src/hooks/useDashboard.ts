@@ -9,6 +9,9 @@ export interface DashboardData {
   out_stock: number;
   inventory_value: number;
   production_today: number;
+  fixed_costs: number;
+  variable_costs: number;
+  break_even: number | null;
   top_products: { producto__nombre: string; total_vendido: number }[];
   week_sales: { day: string; total: number }[];
   alerts: { nombre: string; stock_actual: number; stock_minimo: number }[];

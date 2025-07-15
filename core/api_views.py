@@ -207,6 +207,26 @@ class DashboardStatsView(APIView):
         ).exclude(motivo='Compra').aggregate(total=Sum('cantidad'))['total'] or 0
 
         month_start = today.replace(day=1)
+        fixed_costs = (
+            Transaccion.objects.filter(
+                tipo='egreso',
+                fecha__range=[month_start, today],
+                tipo_costo='fijo'
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        )
+        variable_costs = (
+            Transaccion.objects.filter(
+                tipo='egreso',
+                fecha__range=[month_start, today],
+                tipo_costo='variable'
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        )
+        ventas_mes = Venta.objects.filter(fecha__range=[month_start, today]).aggregate(total=Sum('total'))['total'] or 0
+        break_even = None
+        if ventas_mes:
+            cm_ratio = 1 - (variable_costs / ventas_mes)
+            if cm_ratio > 0:
+                break_even = float(fixed_costs) / cm_ratio
         top_products_qs = (
             DetallesVenta.objects.filter(venta__fecha__range=[month_start, today])
             .values('producto__nombre')
@@ -239,6 +259,9 @@ class DashboardStatsView(APIView):
             'out_stock': out_stock,
             'inventory_value': inventory_value,
             'production_today': production_today,
+            'fixed_costs': fixed_costs,
+            'variable_costs': variable_costs,
+            'break_even': break_even,
             'top_products': top_products,
             'week_sales': week_sales,
             'alerts': alerts,

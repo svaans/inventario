@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Progress } from "../components/ui/progress";
 import { BarChart3, Package, Archive, Calendar, User } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
+import CostPieChart from "../components/finance/CostPieChart";
 import { formatCurrency } from "../utils/formatCurrency";
 import { useEffect } from "react";
 import { toast } from "../hooks/use-toast";
@@ -88,7 +89,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Top Products */}
         <Card>
           <CardHeader>
@@ -134,6 +135,21 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Cost Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Costos Mensuales</CardTitle>
+            <CardDescription>Fijos vs variables</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CostPieChart fixed={data?.fixed_costs ?? 0} variable={data?.variable_costs ?? 0} />
+            <p className="text-center text-sm mt-4">
+              Punto de equilibrio:
+              {data?.break_even ? ` ${formatCurrency(data.break_even)}` : " N/A"}
+            </p>
           </CardContent>
         </Card>
       </div>

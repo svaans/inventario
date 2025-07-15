@@ -190,12 +190,26 @@ class Transaccion(models.Model):
 
     CATEGORIA_EGRESO_CHOICES = [
         ("materia_prima", "Materia prima"),
+        ("empaque", "Empaque"),
+        ("transporte_pedido", "Transporte por pedido"),
+        ("comisiones", "Comisiones"),
         ("sueldos", "Sueldos"),
+        ("seguros", "Seguros"),
         ("alquiler", "Alquiler"),
         ("servicios", "Servicios"),
         ("mantenimiento", "Mantenimiento"),
         ("otros", "Otros"),
     ]
+
+    COSTO_FIJO_CATEGORIAS = {"alquiler", "sueldos", "seguros", "servicios"}
+    COSTO_VARIABLE_CATEGORIAS = {
+        "materia_prima",
+        "empaque",
+        "transporte_pedido",
+        "comisiones",
+    }
+
+    TIPO_COSTO_CHOICES = [("fijo", "Fijo"), ("variable", "Variable")]
 
     fecha = models.DateField()
     monto = models.DecimalField(max_digits=12, decimal_places=2)
@@ -205,6 +219,8 @@ class Transaccion(models.Model):
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     comprobante = models.FileField(upload_to="comprobantes/", null=True, blank=True)
     descripcion = models.TextField(blank=True)
+    tipo_costo = models.CharField(max_length=10, choices=TIPO_COSTO_CHOICES, blank=True)
+    revisado = models.BooleanField(default=False)
 
     class Meta:
         indexes = [models.Index(fields=["fecha"])]
@@ -232,5 +248,13 @@ class Transaccion(models.Model):
         quant = Decimal("0.01")
         if self.monto is not None:
             self.monto = Decimal(str(self.monto)).quantize(quant, ROUND_HALF_UP)
+        if self.tipo == "egreso":
+            if not self.tipo_costo:
+                if self.categoria in self.COSTO_FIJO_CATEGORIAS:
+                    self.tipo_costo = "fijo"
+                elif self.categoria in self.COSTO_VARIABLE_CATEGORIAS:
+                    self.tipo_costo = "variable"
+            if self.pk is None:
+                self.revisado = False
         self.full_clean()
         super().save(*args, **kwargs)
