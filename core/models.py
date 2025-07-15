@@ -325,3 +325,18 @@ class DevolucionProducto(models.Model):
         if self.cantidad is not None:
             self.cantidad = Decimal(str(self.cantidad)).quantize(quant, ROUND_HALF_UP)
         super().save(*args, **kwargs)
+
+
+class MonthlyReport(models.Model):
+    """Notas y reporte mensual generado."""
+
+    month = models.IntegerField()
+    year = models.IntegerField()
+    notes = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("month", "year")
+
+    def __str__(self) -> str:
+        return f"{self.month:02d}/{self.year}"

@@ -13,6 +13,7 @@ from .models import (
     Balance,
     Transaccion,
     DevolucionProducto,
+    MonthlyReport,
 )
 
 class StockBajoFilter(admin.SimpleListFilter):
@@ -106,6 +107,11 @@ class DevolucionProductoAdmin(admin.ModelAdmin):
 class HistorialPrecioAdmin(admin.ModelAdmin):
     list_display = ('producto', 'precio', 'costo', 'fecha')
     list_filter = ('producto', 'fecha')
+
+
+@admin.register(MonthlyReport)
+class MonthlyReportAdmin(admin.ModelAdmin):
+    list_display = ('month', 'year', 'created')
 
 
 
