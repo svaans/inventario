@@ -1,4 +1,5 @@
-from django.db.models import F, Sum, Count
+from django.db import models
+from django.db.models import F, Sum, Count, Case, When, Avg
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
 from datetime import timedelta, datetime, date
@@ -738,4 +739,102 @@ class InventoryAnalysisView(APIView):
             "rotacion": rotation,
             "asociaciones": associations,
             "recomendaciones": recs,
+        })
+
+
+class MonthlyTrendsView(APIView):
+    """Estadísticas mensuales para análisis de tendencias."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        year = int(request.query_params.get("year", now().year))
+        start = date(year, 1, 1)
+        end = date(year + 1, 1, 1)
+
+        movs = (
+            MovimientoInventario.objects.filter(fecha__date__gte=start, fecha__date__lt=end)
+            .annotate(m=TruncMonth("fecha"))
+            .values("m", "producto__nombre", "producto__es_ingrediente")
+            .annotate(
+                entradas=Sum(
+                    Case(
+                        When(tipo="entrada", then=F("cantidad")),
+                        default=0,
+                        output_field=models.DecimalField(max_digits=12, decimal_places=2),
+                    )
+                ),
+                salidas=Sum(
+                    Case(
+                        When(tipo="salida", then=F("cantidad")),
+                        default=0,
+                        output_field=models.DecimalField(max_digits=12, decimal_places=2),
+                    )
+                ),
+            )
+            .order_by("m")
+        )
+        stock = [
+            {
+                "period": m["m"].isoformat(),
+                "producto": m["producto__nombre"],
+                "ingrediente": m["producto__es_ingrediente"],
+                "neto": float(m["entradas"] or 0) - float(m["salidas"] or 0),
+            }
+            for m in movs
+        ]
+
+        ventas = (
+            DetallesVenta.objects.filter(venta__fecha__gte=start, venta__fecha__lt=end)
+            .annotate(m=TruncMonth("venta__fecha"))
+            .values("m", "producto__categoria__nombre_categoria")
+            .annotate(
+                total=Sum(
+                    models.ExpressionWrapper(
+                        F("cantidad") * F("precio_unitario"),
+                        output_field=models.DecimalField(max_digits=12, decimal_places=2),
+                    )
+                )
+            )
+            .order_by("m")
+        )
+        sales = [
+            {
+                "period": v["m"].isoformat(),
+                "categoria": v["producto__categoria__nombre_categoria"],
+                "total": float(v["total"] or 0),
+            }
+            for v in ventas
+        ]
+
+        losses_dict = calcular_perdidas_devolucion(start, end).get("by_month", {})
+        losses = [
+            {"period": k, "loss": v}
+            for k, v in sorted(losses_dict.items())
+        ]
+
+        precios = (
+            HistorialPrecio.objects.filter(
+                fecha__date__gte=start,
+                fecha__date__lt=end,
+                producto__es_ingrediente=True,
+            )
+            .annotate(m=TruncMonth("fecha"))
+            .values("m")
+            .annotate(avg=Avg("costo"))
+            .order_by("m")
+        )
+        prices = [
+            {
+                "period": p["m"].isoformat(),
+                "precio_promedio": float(p["avg"] or 0),
+            }
+            for p in precios
+        ]
+
+        return Response({
+            "stock": stock,
+            "sales": sales,
+            "losses": losses,
+            "prices": prices,
         })

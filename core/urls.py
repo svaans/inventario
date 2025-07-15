@@ -22,6 +22,7 @@ from .api_views import (
     PriceHistoryView,
     MarginImpactView,
     InventoryAnalysisView,
+    MonthlyTrendsView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -71,6 +72,7 @@ urlpatterns = [
     path('api/price-history/', PriceHistoryView.as_view(), name='price_history_api'),
     path('api/margin-impact/', MarginImpactView.as_view(), name='margin_impact_api'),
     path('api/inventory-analysis/', InventoryAnalysisView.as_view(), name='inventory_analysis_api'),
+    path('api/monthly-trends/', MonthlyTrendsView.as_view(), name='monthly_trends_api'),
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),

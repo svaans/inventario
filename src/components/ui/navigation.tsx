@@ -24,6 +24,7 @@ export function Navigation() {
     ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),
     ...(isAdmin ? [{ name: "Dashboard", path: "/dashboard" }] : []),
     ...(isAdmin ? [{ name: "Evolución", path: "/evolucion" }] : []),
+    ...(isAdmin ? [{ name: "Tendencias", path: "/tendencias" }] : []),
   ];
 
   return (
