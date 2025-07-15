@@ -35,3 +35,48 @@ class IngredientSaleTest(TestCase):
         self.assertEqual(float(self.final.stock_actual), 8)
         self.assertEqual(float(self.har.stock_actual), 800)
         self.assertEqual(float(self.carne.stock_actual), 400)
+
+    def test_recipe_update_by_lot(self):
+        factory = APIRequestFactory()
+        request = factory.post("/ventas/")
+        request.user = self.user
+        data = {
+            "fecha": "2024-01-01",
+            "cliente": None,
+            "detalles": [
+                {"producto": self.final.id, "cantidad": 1, "precio_unitario": 1},
+            ],
+        }
+        serializer = VentaCreateSerializer(data=data, context={"request": request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        # update recipe for lot L1
+        from core.serializers import ProductoSerializer
+
+        update_data = {
+            "ingredientes": [
+                {"ingrediente": self.har.id, "cantidad_requerida": 120, "lote": "L1"},
+                {"ingrediente": self.carne.id, "cantidad_requerida": 60, "lote": "L1"},
+            ]
+        }
+        p_ser = ProductoSerializer(instance=self.final, data=update_data, partial=True)
+        self.assertTrue(p_ser.is_valid(), p_ser.errors)
+        p_ser.save()
+
+        data2 = {
+            "fecha": "2024-01-02",
+            "cliente": None,
+            "detalles": [
+                {"producto": self.final.id, "cantidad": 1, "precio_unitario": 1, "lote": "L1"},
+            ],
+        }
+        serializer2 = VentaCreateSerializer(data=data2, context={"request": request})
+        self.assertTrue(serializer2.is_valid(), serializer2.errors)
+        serializer2.save()
+
+        self.har.refresh_from_db()
+        self.carne.refresh_from_db()
+        # First sale consumed 100g/50g, second 120g/60g
+        self.assertEqual(float(self.har.stock_actual), 780)
+        self.assertEqual(float(self.carne.stock_actual), 390)

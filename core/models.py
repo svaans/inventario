@@ -123,6 +123,7 @@ class DetallesVenta(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    lote = models.CharField(max_length=50, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         quant = Decimal("0.01")
@@ -141,6 +142,8 @@ class ComposicionProducto(models.Model):
     cantidad_requerida = models.FloatField(
         help_text="Cantidad requerida del ingrediente (en gramos, litros, etc.)"
     )
+    lote = models.CharField(max_length=50, null=True, blank=True)
+    activo = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.producto_final.nombre} -> {self.ingrediente.nombre}"

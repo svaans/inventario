@@ -41,10 +41,12 @@ class CriticalProductSerializer(serializers.ModelSerializer):
 class ComposicionProductoSerializer(serializers.ModelSerializer):
     ingrediente_nombre = serializers.CharField(source="ingrediente.nombre", read_only=True)
     unidad = serializers.CharField(source="ingrediente.unidad_media", read_only=True)
+    lote = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    activo = serializers.BooleanField(required=False)
 
     class Meta:
         model = ComposicionProducto
-        fields = ["ingrediente", "ingrediente_nombre", "cantidad_requerida", "unidad"]
+        fields = ["ingrediente", "ingrediente_nombre", "cantidad_requerida", "unidad", "lote", "activo"]
 
 class ProductoSerializer(serializers.ModelSerializer):
     # Validamos la categoría por su clave primaria para evitar errores
@@ -106,6 +108,8 @@ class ProductoSerializer(serializers.ModelSerializer):
                     producto_final=producto,
                     ingrediente=ing["ingrediente"],
                     cantidad_requerida=ing["cantidad_requerida"],
+                    lote=ing.get("lote"),
+                    activo=ing.get("activo", True),
                 )
         return producto
 
@@ -114,12 +118,20 @@ class ProductoSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             instance = super().update(instance, validated_data)
             if ingredientes_data is not None:
-                instance.ingredientes.all().delete()
+                lote = None
+                if ingredientes_data and isinstance(ingredientes_data[0], dict):
+                    lote = ingredientes_data[0].get("lote")
+                if lote is None:
+                    instance.ingredientes.filter(lote__isnull=True, activo=True).update(activo=False)
+                else:
+                    instance.ingredientes.filter(lote=lote, activo=True).update(activo=False)
                 for ing in ingredientes_data:
                     ComposicionProducto.objects.create(
                         producto_final=instance,
                         ingrediente=ing["ingrediente"],
                         cantidad_requerida=ing["cantidad_requerida"],
+                        lote=ing.get("lote"),
+                        activo=ing.get("activo", True),
                     )
         return instance
 
@@ -138,9 +150,10 @@ class ProductoSerializer(serializers.ModelSerializer):
 
 
 class DetallesVentaSerializer(serializers.ModelSerializer):
+    lote = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     class Meta:
         model = DetallesVenta
-        fields = ["producto", "cantidad", "precio_unitario"]
+        fields = ["producto", "cantidad", "precio_unitario", "lote"]
 
 
 class VentaCreateSerializer(serializers.ModelSerializer):
@@ -164,12 +177,20 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 producto = Producto.objects.select_for_update().get(id=prod_id)
                 cantidad = det["cantidad"]
                 precio = det["precio_unitario"]
+                lote = det.get("lote")
                 if producto.stock_actual < cantidad:
                     raise serializers.ValidationError(
                         {"detalles": "Stock insuficiente para %s" % producto.nombre}
                     )
                 if not producto.es_ingrediente:
-                    for comp in producto.ingredientes.select_related("ingrediente"):
+                    comps = producto.ingredientes.select_related("ingrediente")
+                    if lote is None:
+                        comps = comps.filter(lote__isnull=True, activo=True)
+                    else:
+                        comps = comps.filter(lote=lote, activo=True)
+                    if not comps.exists():
+                        comps = []
+                    for comp in comps:
                         requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
                         if comp.ingrediente.stock_actual < requerido:
                             raise serializers.ValidationError(
@@ -182,6 +203,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     producto=producto,
                     cantidad=cantidad,
                     precio_unitario=precio,
+                    lote=lote,
                 )
                 total += cantidad * precio
                 Producto.objects.filter(id=producto.id).update(
@@ -189,7 +211,14 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 )
                 producto.stock_actual -= Decimal(str(cantidad))
                 if not producto.es_ingrediente:
-                    for comp in producto.ingredientes.select_related("ingrediente"):
+                    comps = producto.ingredientes.select_related("ingrediente")
+                    if lote is None:
+                        comps = comps.filter(lote__isnull=True, activo=True)
+                    else:
+                        comps = comps.filter(lote=lote, activo=True)
+                    if not comps.exists():
+                        comps = []
+                    for comp in comps:
                         requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
                         Producto.objects.filter(id=comp.ingrediente.id).update(
                             stock_actual=F("stock_actual") - requerido
