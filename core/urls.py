@@ -19,6 +19,8 @@ from .api_views import (
     DevolucionLossReportView,
     FlujoCajaReportView,
     BusinessEvolutionView,
+    PriceHistoryView,
+    MarginImpactView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -65,6 +67,8 @@ urlpatterns = [
     path('api/business-evolution/', BusinessEvolutionView.as_view(), name='business_evolution_api'),
     path('api/devoluciones/rates/', DevolucionRatesView.as_view(), name='devolucion_rates_api'),
     path('api/devoluciones/losses/', DevolucionLossReportView.as_view(), name='devolucion_losses_api'),
+    path('api/price-history/', PriceHistoryView.as_view(), name='price_history_api'),
+    path('api/margin-impact/', MarginImpactView.as_view(), name='margin_impact_api'),
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),

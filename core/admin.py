@@ -9,6 +9,7 @@ from .models import (
     Cliente,
     Venta,
     DetallesVenta,
+    HistorialPrecio,
     Balance,
     Transaccion,
     DevolucionProducto,
@@ -99,6 +100,12 @@ class DevolucionProductoAdmin(admin.ModelAdmin):
         'sustitucion',
     )
     list_filter = ('fecha', 'producto')
+
+
+@admin.register(HistorialPrecio)
+class HistorialPrecioAdmin(admin.ModelAdmin):
+    list_display = ('producto', 'precio', 'costo', 'fecha')
+    list_filter = ('producto', 'fecha')
 
 
 

@@ -36,6 +36,7 @@ class Producto(models.Model):
         return self.nombre
     
     def save(self, *args, **kwargs):
+        """Guardar el producto y registrar cambios de precio o costo."""
         quant = Decimal("0.01")
         if self.precio is not None:
             self.precio = Decimal(str(self.precio)).quantize(quant, ROUND_HALF_UP)
@@ -45,7 +46,40 @@ class Producto(models.Model):
             self.stock_actual = Decimal(str(self.stock_actual)).quantize(quant, ROUND_HALF_UP)
         if self.stock_minimo is not None:
             self.stock_minimo = Decimal(str(self.stock_minimo)).quantize(quant, ROUND_HALF_UP)
+        
+        old_precio = None
+        old_costo = None
+        if self.pk:
+            prev = Producto.objects.filter(pk=self.pk).first()
+            if prev:
+                old_precio = prev.precio
+                old_costo = prev.costo
         super().save(*args, **kwargs)
+
+
+        if old_precio is None or old_precio != self.precio or old_costo != self.costo:
+            HistorialPrecio.objects.create(
+                producto=self,
+                precio=self.precio,
+                costo=self.costo,
+            )
+
+
+class HistorialPrecio(models.Model):
+    """Registro de precios y costos históricos por producto."""
+
+    producto = models.ForeignKey(
+        Producto, related_name="historial", on_delete=models.CASCADE
+    )
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha"]
+
+    def __str__(self) -> str:
+        return f"{self.producto.nombre} - {self.fecha:%Y-%m-%d}"
 
     
 # proveedores

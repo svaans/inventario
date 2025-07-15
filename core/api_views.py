@@ -1,7 +1,7 @@
 from django.db.models import F, Sum, Count
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 import logging
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -35,6 +35,7 @@ from .models import (
     Cliente,
     Transaccion,
     DevolucionProducto,
+    HistorialPrecio,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -645,3 +646,72 @@ class DevolucionLossReportView(APIView):
                 end = datetime(int(year), int(month) + 1, 1).date()
         data = calcular_perdidas_devolucion(start, end)
         return Response(data)
+
+
+class PriceHistoryView(APIView):
+    """Lista el historial de precios para un producto."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        producto = request.query_params.get("producto")
+        if not producto:
+            return Response([], status=status.HTTP_400_BAD_REQUEST)
+        qs = HistorialPrecio.objects.filter(producto_id=producto).order_by("fecha")
+        data = [
+            {
+                "fecha": h.fecha.isoformat(),
+                "precio": float(h.precio),
+                "costo": float(h.costo),
+            }
+            for h in qs
+        ]
+        return Response(data)
+
+
+class MarginImpactView(APIView):
+    """Muestra cómo los cambios de precios afectan al margen operativo."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        year = int(request.query_params.get("year", now().year))
+
+        cambios = (
+            HistorialPrecio.objects.filter(fecha__year=year)
+            .annotate(m=TruncMonth("fecha"))
+            .values("m")
+            .annotate(count=Count("id"))
+        )
+        cambios_map = {c["m"].date(): c["count"] for c in cambios}
+
+        ingresos = (
+            Transaccion.objects.filter(tipo="ingreso", fecha__year=year)
+            .annotate(m=TruncMonth("fecha"))
+            .values("m")
+            .annotate(total=Sum("monto"))
+        )
+        egresos = (
+            Transaccion.objects.filter(tipo="egreso", fecha__year=year)
+            .annotate(m=TruncMonth("fecha"))
+            .values("m")
+            .annotate(total=Sum("monto"))
+        )
+        ing_map = {i["m"].date(): i["total"] for i in ingresos}
+        egr_map = {e["m"].date(): e["total"] for e in egresos}
+
+        result = []
+        for month in range(1, 13):
+            dt = date(year, month, 1)
+            income = float(ing_map.get(dt, 0) or 0)
+            expense = float(egr_map.get(dt, 0) or 0)
+            margin = (income - expense) / income * 100 if income else 0.0
+            result.append(
+                {
+                    "period": dt.isoformat(),
+                    "margin": margin,
+                    "price_increases": cambios_map.get(dt, 0),
+                }
+            )
+
+        return Response(result)
