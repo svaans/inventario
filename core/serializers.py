@@ -209,7 +209,14 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 Producto.objects.filter(id=producto.id).update(
                     stock_actual=F("stock_actual") - cantidad
                 )
-                producto.stock_actual -= Decimal(str(cantidad))
+                producto.refresh_from_db()
+                if producto.stock_actual < 0:
+                    Producto.objects.filter(id=producto.id).update(
+                        stock_actual=F("stock_actual") + cantidad
+                    )
+                    raise serializers.ValidationError(
+                        {"detalles": f"Stock insuficiente para {producto.nombre}"}
+                    )
                 if not producto.es_ingrediente:
                     comps = producto.ingredientes.select_related("ingrediente")
                     if lote is None:
@@ -223,7 +230,16 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                         Producto.objects.filter(id=comp.ingrediente.id).update(
                             stock_actual=F("stock_actual") - requerido
                         )
-                        comp.ingrediente.stock_actual -= requerido
+                        comp.ingrediente.refresh_from_db()
+                        if comp.ingrediente.stock_actual < 0:
+                            Producto.objects.filter(id=comp.ingrediente.id).update(
+                                stock_actual=F("stock_actual") + requerido
+                            )
+                            raise serializers.ValidationError(
+                                {
+                                    "detalles": f"Ingrediente insuficiente para {producto.nombre}: {comp.ingrediente.nombre}"
+                                }
+                            )
                         MovimientoInventario.objects.create(
                             producto=comp.ingrediente,
                             tipo="salida",
