@@ -49,6 +49,12 @@ from .serializers import (
     DevolucionSerializer,
 )
 from .utils import calcular_perdidas_devolucion
+from .analytics import (
+    _parse_date,
+    rotation_report,
+    association_rules,
+    purchase_recommendations,
+)
 
 
 class CriticalProductPagination(PageNumberPagination):
@@ -715,3 +721,21 @@ class MarginImpactView(APIView):
             )
 
         return Response(result)
+
+
+class InventoryAnalysisView(APIView):
+    """Analiza patrones de rotación y ventas."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        start = _parse_date(request.query_params.get("start"))
+        end = _parse_date(request.query_params.get("end"))
+        rotation = rotation_report(start, end)
+        associations = association_rules(start, end)
+        recs = purchase_recommendations(start, end)
+        return Response({
+            "rotacion": rotation,
+            "asociaciones": associations,
+            "recomendaciones": recs,
+        })
