@@ -341,6 +341,7 @@ class LoteMateriaPrima(models.Model):
         limit_choices_to={"es_ingrediente": True},
     )
     fecha_recepcion = models.DateField()
+    fecha_vencimiento = models.DateField(default=date.today)
     cantidad_inicial = models.DecimalField(max_digits=10, decimal_places=2)
     cantidad_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     fecha_agotado = models.DateField(null=True, blank=True)

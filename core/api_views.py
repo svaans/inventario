@@ -18,12 +18,9 @@ class IsAdminUser(BasePermission):
     """Allow access to admin group members and superusers."""
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and (
-                request.user.is_superuser
-                or request.user.groups.filter(name="admin").exists()
-            )
+        return request.user.is_authenticated and (
+            request.user.is_superuser
+            or request.user.groups.filter(name="admin").exists()
         )
 
 from .models import (
@@ -53,7 +50,11 @@ from .serializers import (
     DevolucionSerializer,
     RegistroTurnoSerializer,
 )
-from .utils import calcular_perdidas_devolucion
+from .utils import (
+    calcular_perdidas_devolucion,
+    detectar_faltantes,
+    auto_reordenar,
+)
 from .analytics import (
     _parse_date,
     rotation_report,
@@ -74,8 +75,9 @@ class CriticalProductListView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Producto.objects.filter(stock_actual__lte=F("stock_minimo")).order_by("nombre")
-
+        return Producto.objects.filter(stock_actual__lte=F("stock_minimo")).order_by(
+            "nombre"
+        )
 
 class ProductoPagination(PageNumberPagination):
     page_size = 20
@@ -110,13 +112,18 @@ class ProductoViewSet(viewsets.ModelViewSet):
             try:
                 data["categoria"] = int(data["categoria"])
             except (TypeError, ValueError):
-                return Response({"categoria": ["Invalid id"]}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"categoria": ["Invalid id"]}, status=status.HTTP_400_BAD_REQUEST
+                )
         if "ingredientes" in data and isinstance(data["ingredientes"], list):
             for comp in data["ingredientes"]:
                 try:
                     comp["ingrediente"] = int(comp["ingrediente"])
                 except (TypeError, ValueError, KeyError):
-                    return Response({"ingredientes": ["Invalid ingrediente id"]}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"ingredientes": ["Invalid ingrediente id"]},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 
         serializer = self.get_serializer(data=data)
         if not serializer.is_valid():
@@ -254,7 +261,14 @@ class DashboardStatsView(APIView):
         total_egresos = float(operational_costs + non_operational_costs)
         non_operational_percent = (
             (float(non_operational_costs) / total_egresos * 100)
-            if total_egresos else 0.0
+            if total_egresos
+            else 0.0
+        )
+        ventas_mes = (
+            Venta.objects.filter(fecha__range=[month_start, today]).aggregate(
+                total=Sum("total")
+            )["total"]
+            or 0
         )
         ventas_mes = Venta.objects.filter(fecha__range=[month_start, today]).aggregate(total=Sum('total'))['total'] or 0
         break_even = None
@@ -922,3 +936,19 @@ class TraceabilityView(APIView):
             "usos": usos_data,
         }
         return Response(data)
+
+
+class ReorderSuggestionView(APIView):
+    """Sugiere y confirma reordenes automáticos."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        horizon = int(request.query_params.get("horizon", 7))
+        sugerencias = detectar_faltantes(horizon)
+        return Response(sugerencias)
+
+    def post(self, request):
+        horizon = int(request.data.get("horizon", 7))
+        ids = auto_reordenar(confirmar=True, horizon_days=horizon)
+        return Response({"compras": ids})

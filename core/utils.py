@@ -16,6 +16,9 @@ from .models import (
     Venta,
     Transaccion,
     Producto,
+    Compra,
+    DetalleCompra,
+    MovimientoInventario,
     MonthlyReport,
     LoteMateriaPrima,
 )
@@ -236,3 +239,69 @@ def enviar_alertas_vencimiento(dias: int = 7) -> None:
     if recipients:
         email = EmailMessage(subject=subject, body=mensaje, to=recipients)
         email.send()
+
+
+def detectar_faltantes(horizon_days: int = 7) -> List[Dict[str, Any]]:
+    """Devuelve sugerencias de compra para insumos con bajo stock."""
+    proyeccion = purchase_recommendations(horizon_days=horizon_days)
+    rec_map = {p["producto"]: p["cantidad"] for p in proyeccion}
+    sugerencias: List[Dict[str, Any]] = []
+    for prod in Producto.objects.filter(es_ingrediente=True):
+        demanda = rec_map.get(prod.id, 0.0)
+        if (
+            float(prod.stock_actual) < float(prod.stock_minimo)
+            or float(prod.stock_actual) < demanda
+        ):
+            qty = max(float(prod.stock_minimo), demanda) - float(prod.stock_actual)
+            sugerencias.append(
+                {
+                    "producto": prod.id,
+                    "nombre": prod.nombre,
+                    "proveedor": prod.proveedor_id,
+                    "cantidad": round(qty, 2),
+                }
+            )
+    return sugerencias
+
+
+def auto_reordenar(confirmar: bool = False, horizon_days: int = 7) -> List[int]:
+    """Genera órdenes de compra si hay faltantes y ``confirmar`` es True."""
+    sugerencias = detectar_faltantes(horizon_days)
+    if not confirmar or not sugerencias:
+        return []
+
+    hoy = date.today()
+    compras_creadas = []
+    by_prov: Dict[int, List[Dict[str, Any]]] = {}
+    for s in sugerencias:
+        prov = s["proveedor"]
+        if prov is None:
+            continue
+        by_prov.setdefault(prov, []).append(s)
+
+    for prov_id, items in by_prov.items():
+        compra = Compra.objects.create(proveedor_id=prov_id, fecha=hoy, total=0)
+        total = Decimal("0")
+        for item in items:
+            prod = Producto.objects.get(id=item["producto"])
+            precio = prod.costo or Decimal("0")
+            cantidad = Decimal(str(item["cantidad"]))
+            DetalleCompra.objects.create(
+                compra=compra,
+                producto=prod,
+                cantidad=cantidad,
+                precio_unitario=precio,
+            )
+            prod.stock_actual += cantidad
+            prod.save()
+            MovimientoInventario.objects.create(
+                producto=prod,
+                tipo="entrada",
+                cantidad=cantidad,
+                motivo="Reorden automático",
+            )
+            total += cantidad * precio
+        compra.total = total
+        compra.save()
+        compras_creadas.append(compra.id)
+    return compras_creadas

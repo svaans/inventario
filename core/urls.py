@@ -26,6 +26,7 @@ from .api_views import (
     ProductionPlanView,
     RegistroTurnoViewSet,
     TraceabilityView,
+    ReorderSuggestionView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -38,10 +39,10 @@ def cerrar_sesion(request):
 
 
 router = DefaultRouter()
-router.register(r'api/productos', ProductoViewSet, basename="productos")
-router.register(r'api/transacciones', TransaccionViewSet, basename="transacciones")
-router.register(r'api/devoluciones', DevolucionViewSet, basename="devoluciones")
-router.register(r'api/shift-logs', RegistroTurnoViewSet, basename="shiftlogs")
+router.register(r"api/productos", ProductoViewSet, basename="productos")
+router.register(r"api/transacciones", TransaccionViewSet, basename="transacciones")
+router.register(r"api/devoluciones", DevolucionViewSet, basename="devoluciones")
+router.register(r"api/shift-logs", RegistroTurnoViewSet, basename="shiftlogs")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),
