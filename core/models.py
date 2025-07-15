@@ -266,3 +266,25 @@ class Transaccion(models.Model):
                 self.revisado = False
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class DevolucionProducto(models.Model):
+    """Registro de productos devueltos o defectuosos."""
+
+    fecha = models.DateField()
+    lote = models.CharField(max_length=50)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    motivo = models.CharField(max_length=200)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    reembolso = models.BooleanField(default=False)
+    sustitucion = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.producto.nombre} - {self.fecha}"
+
+    def save(self, *args, **kwargs):
+        quant = Decimal("0.01")
+        if self.cantidad is not None:
+            self.cantidad = Decimal(str(self.cantidad)).quantize(quant, ROUND_HALF_UP)
+        super().save(*args, **kwargs)

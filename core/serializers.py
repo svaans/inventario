@@ -14,6 +14,7 @@ from .models import (
     Cliente,
     ComposicionProducto,
     Transaccion,
+    DevolucionProducto,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -271,3 +272,24 @@ class TransaccionSerializer(serializers.ModelSerializer):
             ).exists():
                 raise serializers.ValidationError("Egreso duplicado")
         return attrs
+
+
+class DevolucionSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source="producto.nombre", read_only=True)
+    responsable_nombre = serializers.CharField(source="responsable.username", read_only=True)
+
+    class Meta:
+        model = DevolucionProducto
+        fields = [
+            "id",
+            "fecha",
+            "lote",
+            "producto",
+            "producto_nombre",
+            "motivo",
+            "cantidad",
+            "responsable",
+            "responsable_nombre",
+            "reembolso",
+            "sustitucion",
+        ]

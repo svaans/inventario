@@ -34,6 +34,7 @@ from .models import (
     Categoria,
     Cliente,
     Transaccion,
+    DevolucionProducto,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -44,6 +45,7 @@ from .serializers import (
     ClienteSerializer,
     EmployeeSerializer,
     TransaccionSerializer,
+    DevolucionSerializer,
 )
 
 
@@ -541,3 +543,84 @@ class BusinessEvolutionView(APIView):
                         "projected": True,
                     })
         return Response(result)
+
+
+class DevolucionViewSet(viewsets.ModelViewSet):
+    """CRUD API para registros de devoluciones y defectos."""
+
+    queryset = DevolucionProducto.objects.all().order_by("-fecha")
+    serializer_class = DevolucionSerializer
+
+    def get_permissions(self):
+        if self.request.method in ["GET", "OPTIONS", "HEAD"]:
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
+
+
+class DevolucionRatesView(APIView):
+    """Calcula tasas de devolución por producto, proveedor y responsable."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        today = now().date()
+        month = int(request.query_params.get("month", today.month))
+        year = int(request.query_params.get("year", today.year))
+
+        devs = DevolucionProducto.objects.filter(fecha__year=year, fecha__month=month)
+        sales = DetallesVenta.objects.filter(venta__fecha__year=year, venta__fecha__month=month)
+
+        sales_by_product = {
+            d["producto"]: d["total"] for d in sales.values("producto").annotate(total=Sum("cantidad"))
+        }
+
+        result_prod = []
+        for item in devs.values("producto", "producto__nombre", "lote").annotate(total=Sum("cantidad")):
+            sold = sales_by_product.get(item["producto"], 0)
+            rate = float(item["total"]) / float(sold) * 100 if sold else 0.0
+            result_prod.append(
+                {
+                    "producto": item["producto"],
+                    "nombre": item["producto__nombre"],
+                    "lote": item["lote"],
+                    "tasa": rate,
+                    "alerta": rate > 5,
+                }
+            )
+
+        sales_by_provider = {
+            d["producto__proveedor"]: d["total"]
+            for d in sales.values("producto__proveedor").annotate(total=Sum("cantidad"))
+        }
+
+        result_prov = []
+        for item in devs.values("producto__proveedor", "producto__proveedor__nombre").annotate(total=Sum("cantidad")):
+            prov = item["producto__proveedor"]
+            sold = sales_by_provider.get(prov, 0)
+            rate = float(item["total"]) / float(sold) * 100 if sold else 0.0
+            result_prov.append(
+                {
+                    "proveedor": prov,
+                    "nombre": item["producto__proveedor__nombre"],
+                    "tasa": rate,
+                }
+            )
+
+        result_resp = []
+        for item in devs.values("responsable", "responsable__username").annotate(total=Sum("cantidad")):
+            prods = devs.filter(responsable_id=item["responsable"]).values_list("producto", flat=True).distinct()
+            total_sales = sum(sales_by_product.get(pid, 0) for pid in prods)
+            rate = float(item["total"]) / float(total_sales) * 100 if total_sales else 0.0
+            result_resp.append(
+                {
+                    "responsable": item["responsable"],
+                    "nombre": item["responsable__username"],
+                    "tasa": rate,
+                }
+            )
+
+        return Response({
+            "por_producto": result_prod,
+            "por_proveedor": result_prov,
+            "por_responsable": result_resp,
+        })

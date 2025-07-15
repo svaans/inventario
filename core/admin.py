@@ -1,8 +1,17 @@
 from django.contrib import admin
 from django.db import models
 from .models import (
-    Categoria, Producto, Proveedor, Compra, DetalleCompra,
-    Cliente, Venta, DetallesVenta, Balance, Transaccion
+    Categoria,
+    Producto,
+    Proveedor,
+    Compra,
+    DetalleCompra,
+    Cliente,
+    Venta,
+    DetallesVenta,
+    Balance,
+    Transaccion,
+    DevolucionProducto,
 )
 
 class StockBajoFilter(admin.SimpleListFilter):
@@ -76,6 +85,20 @@ class TransaccionAdmin(admin.ModelAdmin):
         'responsable',
     )
     list_filter = ('tipo', 'categoria', 'tipo_costo', 'revisado', 'fecha')
+
+
+@admin.register(DevolucionProducto)
+class DevolucionProductoAdmin(admin.ModelAdmin):
+    list_display = (
+        'fecha',
+        'lote',
+        'producto',
+        'cantidad',
+        'responsable',
+        'reembolso',
+        'sustitucion',
+    )
+    list_filter = ('fecha', 'producto')
 
 
 

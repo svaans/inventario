@@ -14,6 +14,8 @@ from .api_views import (
     EmployeeListCreateView,
     CurrentUserView,
     TransaccionViewSet,
+    DevolucionViewSet,
+    DevolucionRatesView,
     FlujoCajaReportView,
     BusinessEvolutionView,
 )
@@ -30,6 +32,7 @@ def cerrar_sesion(request):
 router = DefaultRouter()
 router.register(r'api/productos', ProductoViewSet, basename="productos")
 router.register(r'api/transacciones', TransaccionViewSet, basename="transacciones")
+router.register(r'api/devoluciones', DevolucionViewSet, basename="devoluciones")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),
@@ -58,6 +61,7 @@ urlpatterns = [
     path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
     path('api/flujo-caja/', FlujoCajaReportView.as_view(), name='flujo_caja_api'),
     path('api/business-evolution/', BusinessEvolutionView.as_view(), name='business_evolution_api'),
+    path('api/devoluciones/rates/', DevolucionRatesView.as_view(), name='devolucion_rates_api'),
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),
