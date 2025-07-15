@@ -340,3 +340,34 @@ class MonthlyReport(models.Model):
 
     def __str__(self) -> str:
         return f"{self.month:02d}/{self.year}"
+
+
+class EventoEspecial(models.Model):
+    """Fechas con eventos o festivos que afectan la demanda."""
+
+    fecha = models.DateField(unique=True)
+    nombre = models.CharField(max_length=100)
+    factor_demanda = models.FloatField(default=1.0)
+
+    def __str__(self) -> str:
+        return f"{self.nombre} ({self.fecha})"
+
+
+class CapacidadTurno(models.Model):
+    """Capacidad de producción disponible por turno."""
+
+    TURNO_CHOICES = [
+        ("manana", "Mañana"),
+        ("tarde", "Tarde"),
+        ("noche", "Noche"),
+    ]
+
+    fecha = models.DateField()
+    turno = models.CharField(max_length=10, choices=TURNO_CHOICES)
+    capacidad = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ("fecha", "turno")
+
+    def __str__(self) -> str:
+        return f"{self.fecha} {self.turno}: {self.capacidad}"

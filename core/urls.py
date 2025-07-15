@@ -23,6 +23,7 @@ from .api_views import (
     MarginImpactView,
     InventoryAnalysisView,
     MonthlyTrendsView,
+    ProductionPlanView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -78,6 +79,7 @@ urlpatterns = [
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),
     path('api/sales-summary/', DailySalesSummary.as_view(), name='sales_summary_api'),
     path('api/inventory-activity/', InventoryActivityView.as_view(), name='inventory_activity_api'),
+    path('api/production-plan/', ProductionPlanView.as_view(), name='production_plan_api'),
     path('api/me/', CurrentUserView.as_view(), name='current_user_api'),
     path('password_reset/',
          auth_views.PasswordResetView.as_view(

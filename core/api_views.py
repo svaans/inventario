@@ -56,6 +56,7 @@ from .analytics import (
     association_rules,
     purchase_recommendations,
 )
+from .planning import generar_plan
 
 
 class CriticalProductPagination(PageNumberPagination):
@@ -838,3 +839,21 @@ class MonthlyTrendsView(APIView):
             "losses": losses,
             "prices": prices,
         })
+
+
+class ProductionPlanView(APIView):
+    """Sugerencias de producción diaria basadas en ventas históricas."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        fecha_str = request.query_params.get("fecha")
+        if fecha_str:
+            try:
+                target = date.fromisoformat(fecha_str)
+            except ValueError:
+                return Response({"error": "Fecha inválida"}, status=400)
+        else:
+            target = now().date()
+        plan = generar_plan(target)
+        return Response(plan)
