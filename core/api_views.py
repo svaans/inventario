@@ -38,6 +38,8 @@ from .models import (
     DevolucionProducto,
     HistorialPrecio,
     RegistroTurno,
+    LoteMateriaPrima,
+    LoteProductoFinal,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -871,3 +873,52 @@ class RegistroTurnoViewSet(viewsets.ModelViewSet):
         if self.request.method in ["GET", "OPTIONS", "HEAD"]:
             return [IsAuthenticated()]
         return [IsAdminUser()]
+
+
+class TraceabilityView(APIView):
+    """Devuelve el historial de uso de un lote de materia prima."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, codigo):
+        try:
+            lote = LoteMateriaPrima.objects.get(codigo=codigo)
+        except LoteMateriaPrima.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+
+        usos_data = []
+        for uso in lote.usos.select_related("lote_producto_final", "lote_producto_final__producto"):
+            lpf = uso.lote_producto_final
+            vendidos = (
+                DetallesVenta.objects.filter(lote_final=lpf).aggregate(total=Sum("cantidad"))[
+                    "total"
+                ]
+                or 0
+            )
+            devueltos = (
+                DevolucionProducto.objects.filter(lote=lpf.codigo).aggregate(total=Sum("cantidad"))[
+                    "total"
+                ]
+                or 0
+            )
+            en_stock = lpf.cantidad_producida - vendidos - devueltos
+            usos_data.append(
+                {
+                    "lote_final": lpf.codigo,
+                    "producto_final": lpf.producto.nombre,
+                    "fecha_produccion": lpf.fecha_produccion,
+                    "fecha_uso": uso.fecha,
+                    "cantidad_utilizada": uso.cantidad,
+                    "vendidos": vendidos,
+                    "devueltos": devueltos,
+                    "en_stock": en_stock,
+                }
+            )
+
+        data = {
+            "lote": lote.codigo,
+            "producto": lote.producto.nombre,
+            "fecha_recepcion": lote.fecha_recepcion,
+            "usos": usos_data,
+        }
+        return Response(data)

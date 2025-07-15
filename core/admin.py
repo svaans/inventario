@@ -10,6 +10,9 @@ from .models import (
     Venta,
     DetallesVenta,
     HistorialPrecio,
+    LoteMateriaPrima,
+    LoteProductoFinal,
+    UsoLoteMateriaPrima,
     Balance,
     Transaccion,
     DevolucionProducto,
@@ -107,6 +110,42 @@ class DevolucionProductoAdmin(admin.ModelAdmin):
 class HistorialPrecioAdmin(admin.ModelAdmin):
     list_display = ('producto', 'precio', 'costo', 'fecha')
     list_filter = ('producto', 'fecha')
+
+@admin.register(LoteMateriaPrima)
+class LoteMateriaPrimaAdmin(admin.ModelAdmin):
+    list_display = (
+        'codigo',
+        'producto',
+        'fecha_recepcion',
+        'cantidad_inicial',
+        'cantidad_usada',
+        'fecha_agotado',
+    )
+    list_filter = ('producto', 'fecha_recepcion')
+
+
+@admin.register(LoteProductoFinal)
+class LoteProductoFinalAdmin(admin.ModelAdmin):
+    list_display = (
+        'codigo',
+        'producto',
+        'fecha_produccion',
+        'cantidad_producida',
+        'cantidad_vendida',
+        'cantidad_devuelta',
+    )
+    list_filter = ('producto', 'fecha_produccion')
+
+
+@admin.register(UsoLoteMateriaPrima)
+class UsoLoteMateriaPrimaAdmin(admin.ModelAdmin):
+    list_display = (
+        'lote_materia_prima',
+        'lote_producto_final',
+        'fecha',
+        'cantidad',
+    )
+    list_filter = ('fecha',)
 
 
 @admin.register(MonthlyReport)

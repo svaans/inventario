@@ -158,6 +158,9 @@ class DetallesVenta(models.Model):
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     lote = models.CharField(max_length=50, null=True, blank=True)
+    lote_final = models.ForeignKey(
+        'LoteProductoFinal', null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     def save(self, *args, **kwargs):
         quant = Decimal("0.01")
@@ -325,6 +328,64 @@ class DevolucionProducto(models.Model):
         if self.cantidad is not None:
             self.cantidad = Decimal(str(self.cantidad)).quantize(quant, ROUND_HALF_UP)
         super().save(*args, **kwargs)
+
+
+class LoteMateriaPrima(models.Model):
+    """Lotes de ingredientes o materia prima."""
+
+    codigo = models.CharField(max_length=50, unique=True)
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE,
+        limit_choices_to={"es_ingrediente": True},
+    )
+    fecha_recepcion = models.DateField()
+    cantidad_inicial = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fecha_agotado = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.codigo} - {self.producto.nombre}"
+
+
+class LoteProductoFinal(models.Model):
+    """Lote producido para un producto final."""
+
+    codigo = models.CharField(max_length=50, unique=True)
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE,
+        limit_choices_to={"es_ingrediente": False},
+    )
+    fecha_produccion = models.DateField()
+    cantidad_producida = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad_vendida = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cantidad_devuelta = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    ingredientes = models.ManyToManyField(
+        LoteMateriaPrima,
+        through="UsoLoteMateriaPrima",
+        related_name="lotes_finales",
+    )
+
+    def __str__(self):
+        return f"{self.codigo} - {self.producto.nombre}"
+
+
+class UsoLoteMateriaPrima(models.Model):
+    """Registro de utilización de un lote de materia prima en un lote final."""
+
+    lote_materia_prima = models.ForeignKey(
+        LoteMateriaPrima, related_name="usos", on_delete=models.CASCADE
+    )
+    lote_producto_final = models.ForeignKey(
+        LoteProductoFinal, related_name="usos", on_delete=models.CASCADE
+    )
+    fecha = models.DateField()
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.lote_materia_prima.codigo} -> {self.lote_producto_final.codigo}"
 
 
 class MonthlyReport(models.Model):
