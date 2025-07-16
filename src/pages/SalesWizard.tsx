@@ -20,7 +20,9 @@ export default function SalesWizard() {
   const [prodSearch, setProdSearch] = useState("");
   const [barcode, setBarcode] = useState("");
   const { data: products = [] } = useProducts(prodSearch, barcode);
-  const finalProducts = products.filter((p) => !p.es_ingrediente);
+  const finalProducts = products.filter(
+    (p) => p.categoria_nombre !== "Ingredientes"
+  );
   const [items, setItems] = useState<Item[]>([]);
   const createSale = useCreateSale();
   const today = new Date().toISOString().slice(0,10);

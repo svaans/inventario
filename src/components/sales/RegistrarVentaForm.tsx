@@ -45,7 +45,9 @@ export default function RegistrarVentaForm({
   const [items, setItems] = useState<Item[]>([]);
   const today = new Date().toISOString().slice(0, 10);
 
-  const finalProducts = products.filter((p) => !p.es_ingrediente);
+  const finalProducts = products.filter(
+    (p) => p.categoria_nombre !== "Ingredientes"
+  );
   const filtered = finalProducts.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
