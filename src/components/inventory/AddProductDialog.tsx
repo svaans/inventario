@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../hooks/use-toast";
 import { Button } from "../ui/button";
@@ -72,25 +72,29 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
 
   // Reset dependent fields when the category changes
   useEffect(() => {
-    setIngredients([]);
-    setCurrentIng({ ingrediente: 0, cantidad: "" });
-    setPossibleUnits(null);
-    setNewProduct((np) => {
-      const updated: Partial<NewProduct> = { ...np };
-      if (!isIngredientCategory) {
-        updated.supplier = "";
-        updated.unit = "unidades";
-      } else {
-        updated.unit = np.unit === "kg" || np.unit === "lb" ? np.unit : "kg";
-      }
-      if (!isIngredientCategory && !isBeverageCategory) {
-        updated.stock = "";
-      }
-      if (!isFinalCategory) {
-        updated.minStock = "";
-      }
-      return updated as NewProduct;
-    });
+    const timeout = setTimeout(() => {
+      setIngredients([]);
+      setCurrentIng({ ingrediente: 0, cantidad: "" });
+      setPossibleUnits(null);
+      setNewProduct((np) => {
+        const updated: Partial<NewProduct> = { ...np };
+        if (!isIngredientCategory) {
+          updated.supplier = "";
+          updated.unit = "unidades";
+        } else {
+          updated.unit = np.unit === "kg" || np.unit === "lb" ? np.unit : "kg";
+        }
+        if (!isIngredientCategory && !isBeverageCategory) {
+          updated.stock = "";
+        }
+        if (!isFinalCategory) {
+          updated.minStock = "";
+        }
+        return updated as NewProduct;
+      });
+    }, 50); // permite que Radix cierre el menú antes del unmount
+
+    return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newProduct.categoria]);
 
@@ -304,10 +308,11 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           console.error("Formulario roto:", error);
         }}
       >
-        <DialogContent
-          aria-describedby="add-product-description"
-          className="sm:max-w-[425px]"
-        >
+    <DialogContent
+      key="dialog-agregar-producto"
+      aria-describedby="add-product-description"
+      className="sm:max-w-[425px]"
+    >
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Producto</DialogTitle>
           <DialogDescription id="add-product-description">
@@ -348,7 +353,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                   placeholder={catLoading ? "Cargando categorías..." : "Selecciona una categoría"}
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent forceMount>
                 {categoriesData.map((cat) => (
                   <SelectItem key={cat.id} value={String(cat.id)}>
                     {translateCategory(cat.nombre_categoria)}
@@ -382,7 +387,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             </div>
           </div>
           { newProduct.categoria > 0 && (isIngredientCategory || isBeverageCategory) && (
-            <div className="grid grid-cols-2 gap-4">
+            <div key={isIngredientCategory ? "ingredient-stock" : "beverage-stock"} className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
                 <Input
@@ -408,7 +413,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             </div>
           )}
           {newProduct.categoria > 0 && isFinalCategory && (
-            <div className="grid gap-2">
+            <div key="final-minStock" className="grid gap-2">
               <Label htmlFor="minStock">Stock Mínimo</Label>
               <Input
                 id="minStock"
@@ -420,7 +425,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             </div>
             )}
           {newProduct.categoria > 0 && isIngredientCategory && (
-            <>
+            <React.Fragment key="ingredient-extra">
               <div className="grid gap-2">
                 <Label htmlFor="unit">Unidad de Peso</Label>
                 <Select
@@ -430,7 +435,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                   <SelectTrigger id="unit">
                     <SelectValue placeholder="Unidad" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent forceMount>
                     <SelectItem value="kg">kg</SelectItem>
                     <SelectItem value="lb">lb</SelectItem>
                   </SelectContent>
@@ -444,11 +449,11 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                   onChange={(e) => setNewProduct({ ...newProduct, supplier: e.target.value })}
                 />
               </div>
-            </>
+            </React.Fragment>
           )}
           {/* Ingredientes para productos finales */}
           {newProduct.categoria > 0 && isFinalCategory && ingredientOptions.length > 0 && (
-          <div className="space-y-2">
+          <div key="final-ingredients" className="space-y-2">
             <Label>Ingredientes</Label>
             <div className="flex gap-2">
               <Select
@@ -458,7 +463,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Ingrediente" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent forceMount>
                   {ingredientOptions.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                   ))}
