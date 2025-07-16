@@ -30,7 +30,7 @@ export default function Employees() {
     },
   });
 
-  const createEmployee = useMutation<any, Error, { username: string; password: string; first_name: string; email: string }>({
+  const createEmployee = useMutation<unknown, Error, { username: string; password: string; first_name: string; email: string }>({
     mutationFn: async (emp: { username: string; password: string; first_name: string; email: string }) => {
       const res = await apiFetch("/api/empleados/", {
         method: "POST",

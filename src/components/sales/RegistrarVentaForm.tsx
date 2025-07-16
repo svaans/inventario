@@ -104,7 +104,7 @@ export default function RegistrarVentaForm({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[500px] p-4 flex flex-col gap-4">
+      <SheetContent side="right" className="w-[500px] p-4 flex flex-col gap-4 text-foreground">
         <SheetHeader>
           <SheetTitle>Registrar Venta</SheetTitle>
         </SheetHeader>

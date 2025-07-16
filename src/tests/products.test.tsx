@@ -27,7 +27,7 @@ vi.mock("@/hooks/useCriticalProducts", () => ({
 }));
 
 // MOCK 3: fetch de categorías
-global.fetch = vi.fn((url: any) => {
+global.fetch = vi.fn((url: string) => {
   if (url === "/api/categorias/") {
     return Promise.resolve({
       ok: true,
