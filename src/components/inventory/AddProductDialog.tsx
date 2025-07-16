@@ -54,7 +54,11 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   const { data: allProducts = [] } = useProducts();
   const ingredientOptions = allProducts.filter(p => p.es_ingrediente);
 
-  const { data: categoriesData = [], isError: catError } = useQuery<{ id: number; nombre_categoria: string }[]>({
+  const {
+    data: categoriesData = [],
+    isError: catError,
+    isLoading: catLoading,
+  } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
     queryFn: fetchCategories,
     staleTime: Infinity,
@@ -319,11 +323,16 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           <div className="grid gap-2">
             <Label htmlFor="categoria">Categoría*</Label>
             <Select
+            disabled={catLoading}
               value={newProduct.categoria ? String(newProduct.categoria) : ""}
-              onValueChange={(value) => setNewProduct({ ...newProduct, categoria: Number(value) })}
+              onValueChange={(value) =>
+                setNewProduct({ ...newProduct, categoria: Number(value) })
+              }
             >
               <SelectTrigger id="categoria">
-                <SelectValue placeholder="Selecciona una categoría" />
+                <SelectValue
+                  placeholder={catLoading ? "Cargando categorías..." : "Selecciona una categoría"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {categoriesData.map((cat) => (
