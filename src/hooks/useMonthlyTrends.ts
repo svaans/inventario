@@ -37,7 +37,9 @@ export function useMonthlyTrends(year?: number) {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (year) params.append("year", String(year));
-      const res = await apiFetch(`/api/monthly-trends/?${params.toString()}`);
+      const res = await apiFetch(`/api/monthly-trends/?${params.toString()}`, {
+        credentials: "include",
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch monthly trends");
       }

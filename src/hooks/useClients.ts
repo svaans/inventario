@@ -11,7 +11,9 @@ export function useClients(search: string) {
     queryKey: ["clients", search],
     queryFn: async () => {
       if (!search) return [];
-      const res = await apiFetch(`/api/clientes/?search=${encodeURIComponent(search)}`);
+      const res = await apiFetch(`/api/clientes/?search=${encodeURIComponent(search)}`, {
+        credentials: "include",
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch clients");
       }

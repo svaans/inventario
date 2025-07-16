@@ -45,7 +45,9 @@ export default function SalesWizard() {
         cliente: clientId ?? undefined,
         detalles: items.map(i => ({ producto: i.id, cantidad: i.cantidad, precio_unitario: i.precio })),
       });
-      const res = await apiFetch('/api/sales-summary/');
+      const res = await apiFetch('/api/sales-summary/', {
+        credentials: 'include',
+      });
       if(res.ok) setSummary(await res.json());
       toast({ title: "Venta registrada" });
       setStep(5);

@@ -26,7 +26,9 @@ export default function Products() {
     queryKey: ["categories"],
     queryFn: async () => {
       try {
-        const res = await apiFetch("/api/categorias/");
+        const res = await apiFetch("/api/categorias/", {
+          credentials: "include",
+        });
         if (!res.ok) {
           throw new Error(`Failed to fetch categories: ${res.status}`);
         }
