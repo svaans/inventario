@@ -5,3 +5,4 @@ reportlab
 # For API integration with React
 django-cors-headers
 djangorestframework
+requests
