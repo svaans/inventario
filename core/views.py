@@ -328,9 +328,9 @@ def exportar_balance_excel(request):
 
     ws.append(["Balance del Mes", f"{balance.mes:02d}/{balance.anio}"])
     ws.append([])
-    ws.append(["Total Ingresos (€)", balance.total_ingresos])
-    ws.append(["Total Egresos (€)", balance.total_egresos])
-    ws.append(["Utilidad (€)", balance.utilidad])
+    ws.append(["Total Ingresos (COP)", balance.total_ingresos])
+    ws.append(["Total Egresos (COP)", balance.total_egresos])
+    ws.append(["Utilidad (COP)", balance.utilidad])
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -357,9 +357,9 @@ def exportar_balance_pdf(request):
 
     p.setFont("Helvetica", 12)
     p.drawString(50, 760, f"Mes/Año: {balance.mes:02d}/{balance.anio}")
-    p.drawString(50, 730, f"Total Ingresos: € {balance.total_ingresos}")
-    p.drawString(50, 710, f"Total Egresos: € {balance.total_egresos}")
-    p.drawString(50, 690, f"Utilidad: € {balance.utilidad}")
+    p.drawString(50, 730, f"Total Ingresos: $ {balance.total_ingresos}")
+    p.drawString(50, 710, f"Total Egresos: $ {balance.total_egresos}")
+    p.drawString(50, 690, f"Utilidad: $ {balance.utilidad}")
 
     p.showPage()
     p.save()

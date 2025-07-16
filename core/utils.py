@@ -212,11 +212,11 @@ def generate_monthly_report_pdf(data: Dict[str, Any], notes: str = "") -> bytes:
     p.drawString(200, y, "Resumen Mensual")
     y -= 40
     p.setFont("Helvetica", 12)
-    p.drawString(50, y, f"Ventas totales: € {data['total_sales']}")
+    p.drawString(50, y, f"Ventas totales: $ {data['total_sales']}")
     y -= 20
-    p.drawString(50, y, f"Costos operativos: € {data['operating_costs']}")
+    p.drawString(50, y, f"Costos operativos: $ {data['operating_costs']}")
     y -= 20
-    p.drawString(50, y, f"Pérdidas por devoluciones: € {data['losses_returns']}")
+    p.drawString(50, y, f"Pérdidas por devoluciones: $ {data['losses_returns']}")
     y -= 20
     p.drawString(50, y, "Inventario crítico: " + str(len(data['critical_inventory'])))
     y -= 20
