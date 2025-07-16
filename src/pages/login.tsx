@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../components/ui/button";
 import { getCSRFToken } from "../utils/csrf";
 import { toast } from "../hooks/use-toast";
@@ -8,6 +9,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -24,6 +26,7 @@ export default function Login() {
       body: JSON.stringify({ username, password }),
     });
     if (res.ok) {
+      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
       navigate("/dashboard");
     } else {
       toast({
