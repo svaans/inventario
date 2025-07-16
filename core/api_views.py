@@ -22,6 +22,29 @@ class IsAdminUser(BasePermission):
             request.user.is_superuser
             or request.user.groups.filter(name="admin").exists()
         )
+    
+class BaseGroupPermission(BasePermission):
+    """Base permission checking membership in a specific group or admin."""
+
+    group_name: str = ""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and (
+            request.user.is_superuser
+            or request.user.groups.filter(name__in=["admin", self.group_name]).exists()
+        )
+
+
+class IsVentasUser(BaseGroupPermission):
+    group_name = "ventas"
+
+
+class IsProduccionUser(BaseGroupPermission):
+    group_name = "produccion"
+
+
+class IsFinanzasUser(BaseGroupPermission):
+    group_name = "finanzas"
 
 from .models import (
     Producto,
@@ -189,10 +212,7 @@ class VentaListCreateView(ListCreateAPIView):
     pagination_class = VentaPagination
 
 
-    def get_permissions(self):
-        if self.request.method == "POST":
-            return [IsAuthenticated()]
-        return [IsAdminUser()]
+    permission_classes = [IsVentasUser]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -391,10 +411,7 @@ class TransaccionViewSet(viewsets.ModelViewSet):
     queryset = Transaccion.objects.all().order_by("-fecha")
     serializer_class = TransaccionSerializer
 
-    def get_permissions(self):
-        if self.request.method in ["GET", "OPTIONS", "HEAD"]:
-            return [IsAuthenticated()]
-        return [IsAdminUser()]
+    permission_classes = [IsFinanzasUser]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -419,7 +436,7 @@ class TransaccionViewSet(viewsets.ModelViewSet):
 class FlujoCajaReportView(APIView):
     """Reportes de flujo de caja por periodo."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsFinanzasUser]
 
     def get(self, request):
         period = request.query_params.get("period", "month")
@@ -468,7 +485,7 @@ class FlujoCajaReportView(APIView):
         return Response(result)
 class BusinessEvolutionView(APIView):
     """Resumen histórico del negocio con proyecciones."""
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsFinanzasUser]
 
     def get(self, request):
         period = request.query_params.get("period", "month")
@@ -862,7 +879,7 @@ class MonthlyTrendsView(APIView):
 class ProductionPlanView(APIView):
     """Sugerencias de producción diaria basadas en ventas históricas."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsProduccionUser]
 
     def get(self, request):
         fecha_str = request.query_params.get("fecha")
@@ -883,10 +900,7 @@ class RegistroTurnoViewSet(viewsets.ModelViewSet):
     queryset = RegistroTurno.objects.all().order_by("-fecha", "turno")
     serializer_class = RegistroTurnoSerializer
 
-    def get_permissions(self):
-        if self.request.method in ["GET", "OPTIONS", "HEAD"]:
-            return [IsAuthenticated()]
-        return [IsAdminUser()]
+    permission_classes = [IsProduccionUser]
 
 
 class TraceabilityView(APIView):

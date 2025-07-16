@@ -34,6 +34,8 @@ from django.utils.timezone import now
 from django.db.models import Sum
 from collections import defaultdict
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from functools import wraps
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 import json
@@ -45,6 +47,27 @@ def index(request):
     return render(request, 'core/index.html', {'alerta_stock': productos_bajo_stock})
 
 login_decorador = method_decorator(login_required, name='dispatch')
+
+
+def group_decorator(group: str):
+    """Return a method decorator enforcing membership in the given group or admin."""
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped(request, *args, **kwargs):
+            user = request.user
+            if not user.is_authenticated:
+                return redirect("login")
+            if not (
+                user.is_superuser
+                or user.groups.filter(name__in=["admin", group]).exists()
+            ):
+                return HttpResponseForbidden()
+            return view_func(request, *args, **kwargs)
+
+        return _wrapped
+
+    return method_decorator(decorator, name="dispatch")
 
 @ensure_csrf_cookie
 def login_view(request):
@@ -123,6 +146,7 @@ class ProductoDeleteView(DeleteView):
 
     
 
+@group_decorator("ventas")
 class VentaCreateView(CreateView):
     model = Venta
     form_class = VentaForm
@@ -183,7 +207,7 @@ class VentaCreateView(CreateView):
         
         return render(request, self.template_name, {'form': form, 'formset': formset})
 
-@login_decorador
+@group_decorator("ventas")
 class VentaListView(ListView):
     model = Venta
     template_name = 'core/venta_list.html'
@@ -249,7 +273,7 @@ class CompraListView(ListView):
     context_object_name = 'compras'
     ordering = ['-fecha']
 
-@login_decorador
+@group_decorator("finanzas")
 class BalanceView(FormView):
     template_name = 'core/balance.html'
     form_class = BalanceForm
@@ -290,6 +314,7 @@ class MovimientoInventarioListView(ListView):
     context_object_name = 'movimientos'
     ordering = ['-fecha']
 
+@group_decorator("finanzas")
 def exportar_balance_excel(request):
     # Obtener último balance generado
     balance = Balance.objects.order_by('-anio', '-mes').first()
@@ -314,6 +339,7 @@ def exportar_balance_excel(request):
     wb.save(response)
     return response
 
+@group_decorator("finanzas")
 def exportar_balance_pdf(request):
     balance = Balance.objects.order_by('-anio', '-mes').first()
 

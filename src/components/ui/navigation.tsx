@@ -16,15 +16,18 @@ export function Navigation() {
   const { data: user } = useCurrentUser();
 
   const isAdmin = user?.is_superuser || user?.groups.includes("admin");
+  const isVentas = isAdmin || user?.groups.includes("ventas");
+  const isProduccion = isAdmin || user?.groups.includes("produccion");
+  const isFinanzas = isAdmin || user?.groups.includes("finanzas");
 
   const navItems = [
-    ...(isAdmin ? [{ name: "Inventario", path: "/inventory" }] : []),
+    ...(isAdmin || isProduccion ? [{ name: "Inventario", path: "/inventory" }] : []),
     ...(user ? [{ name: "Productos", path: "/products" }] : []),
-    ...(isAdmin ? [{ name: "Ventas", path: "/sales" }] : []),
+    ...(isVentas ? [{ name: "Ventas", path: "/sales" }] : []),
     ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),
-    ...(isAdmin ? [{ name: "Dashboard", path: "/dashboard" }] : []),
-    ...(isAdmin ? [{ name: "Evolución", path: "/evolucion" }] : []),
-    ...(isAdmin ? [{ name: "Tendencias", path: "/tendencias" }] : []),
+    ...(isFinanzas ? [{ name: "Dashboard", path: "/dashboard" }] : []),
+    ...(isFinanzas ? [{ name: "Evolución", path: "/evolucion" }] : []),
+    ...(isFinanzas ? [{ name: "Tendencias", path: "/tendencias" }] : []),
   ];
 
   return (
