@@ -20,6 +20,7 @@ export default function SalesWizard() {
   const [prodSearch, setProdSearch] = useState("");
   const [barcode, setBarcode] = useState("");
   const { data: products = [] } = useProducts(prodSearch, barcode);
+  const finalProducts = products.filter((p) => !p.es_ingrediente);
   const [items, setItems] = useState<Item[]>([]);
   const createSale = useCreateSale();
   const today = new Date().toISOString().slice(0,10);
@@ -77,7 +78,7 @@ export default function SalesWizard() {
           <Input value={barcode} onChange={e=>setBarcode(e.target.value)} placeholder="Escanear código" className="mb-2" />
           <Input value={prodSearch} onChange={e=>setProdSearch(e.target.value)} placeholder="Buscar producto" />
           <div className="border rounded-md max-h-40 overflow-auto">
-            {products.map(p => (
+            {finalProducts.map(p => (
               <div key={p.id} className="p-2 hover:bg-muted cursor-pointer" onClick={()=>addProduct({id:p.id,nombre:p.name,precio:p.price,cantidad:1,stock:p.stock})}>
                 {p.name} - {formatCurrency(p.price)}
               </div>

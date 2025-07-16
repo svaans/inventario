@@ -159,7 +159,6 @@ export default function RegistrarVentaForm({
             ) : (
               <div className="rounded border">
                 <Table containerClassName="max-h-[240px]">
-                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Producto</TableHead>
