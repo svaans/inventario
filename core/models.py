@@ -498,3 +498,20 @@ class RegistroTurno(models.Model):
         if horas <= 0:
             return 0.0
         return float(self.produccion) / (horas * empleados)
+
+
+class PlanProduccion(models.Model):
+    """Registro de cantidades planificadas y reales por producto y fecha."""
+
+    fecha = models.DateField()
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    sugerido = models.PositiveIntegerField()
+    ajustado = models.PositiveIntegerField()
+    real = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("fecha", "producto")
+        ordering = ["fecha", "producto"]
+
+    def __str__(self) -> str:
+        return f"{self.fecha} {self.producto.nombre}"

@@ -14,14 +14,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useBusinessEvolution } from "../hooks/useBusinessEvolution";
 import { apiFetch } from "../utils/api";
 import { formatCurrency } from "../utils/formatCurrency";
+import { Skeleton } from "../components/ui/skeleton";
 
 export default function BusinessEvolution() {
   const [period, setPeriod] = useState("month");
   const [category, setCategory] = useState<string | undefined>();
 
-  const { data = [] } = useBusinessEvolution(period, { category });
+  const {
+    data = [],
+    isLoading,
+    isError,
+  } = useBusinessEvolution(period, { category });
 
-  const { data: categories = [] } = useQuery<{ id: number; nombre_categoria: string }[]>({
+  const {
+    data: categories = [],
+    isLoading: catLoading,
+    isError: catError,
+  } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await apiFetch("/api/categorias/");
@@ -30,6 +39,24 @@ export default function BusinessEvolution() {
     },
     staleTime: Infinity,
   });
+
+  if (isLoading || catLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  if (isError || catError) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <p className="text-destructive">Error al cargar los datos de evoluci&oacute;n.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
