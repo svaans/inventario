@@ -45,7 +45,8 @@ export default function RegistrarVentaForm({
   const [items, setItems] = useState<Item[]>([]);
   const today = new Date().toISOString().slice(0, 10);
 
-  const filtered = products.filter((p) =>
+  const finalProducts = products.filter((p) => !p.es_ingrediente);
+  const filtered = finalProducts.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -103,12 +104,15 @@ export default function RegistrarVentaForm({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[500px] p-6 flex flex-col gap-4 text-foreground">
-        <SheetHeader>
-          <SheetTitle className="text-2xl font-bold">Registrar Venta</SheetTitle>
-        </SheetHeader>
+      <SheetContent
+        side="right"
+        className="flex h-full w-[500px] flex-col justify-between gap-4 p-6 text-foreground"
+      >
+        <div className="flex flex-col gap-4 overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-2xl font-bold">Registrar Venta</SheetTitle>
+          </SheetHeader>
 
-        <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
           <div className="grid gap-2">
             <label className="text-sm font-medium">Buscar producto</label>
             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -153,7 +157,8 @@ export default function RegistrarVentaForm({
                 Aún no se han agregado productos.
               </p>
             ) : (
-              <div className="overflow-y-auto max-h-[240px] rounded border">
+              <div className="rounded border">
+                <Table containerClassName="max-h-[240px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
