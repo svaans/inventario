@@ -75,13 +75,22 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     setIngredients([]);
     setCurrentIng({ ingrediente: 0, cantidad: "" });
     setPossibleUnits(null);
-    setNewProduct((np) => ({
-      ...np,
-      supplier: isIngredientCategory ? np.supplier : "",
-      stock: isIngredientCategory || isBeverageCategory ? np.stock : "",
-      minStock: isFinalCategory ? np.minStock : "",
-      unit: isIngredientCategory ? (np.unit === "kg" || np.unit === "lb" ? np.unit : "kg") : "unidades",
-    }));
+    setNewProduct((np) => {
+      const updated: Partial<NewProduct> = { ...np };
+      if (!isIngredientCategory) {
+        updated.supplier = "";
+        updated.unit = "unidades";
+      } else {
+        updated.unit = np.unit === "kg" || np.unit === "lb" ? np.unit : "kg";
+      }
+      if (!isIngredientCategory && !isBeverageCategory) {
+        updated.stock = "";
+      }
+      if (!isFinalCategory) {
+        updated.minStock = "";
+      }
+      return updated as NewProduct;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newProduct.categoria]);
 
@@ -289,7 +298,12 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           Nuevo Producto
         </Button>
       </DialogTrigger>
-      <ErrorBoundary fallback={<p className="p-4 text-red-600">Error al cargar formulario</p>}>
+      <ErrorBoundary
+        fallback={<p className="p-4 text-red-600">Error al cargar formulario</p>}
+        onError={(error) => {
+          console.error("Formulario roto:", error);
+        }}
+      >
         <DialogContent
           aria-describedby="add-product-description"
           className="sm:max-w-[425px]"
@@ -367,7 +381,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               />
             </div>
           </div>
-          { (isIngredientCategory || isBeverageCategory) && (
+          { newProduct.categoria > 0 && (isIngredientCategory || isBeverageCategory) && (
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
@@ -393,7 +407,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               )}
             </div>
           )}
-          {isFinalCategory && (
+          {newProduct.categoria > 0 && isFinalCategory && (
             <div className="grid gap-2">
               <Label htmlFor="minStock">Stock Mínimo</Label>
               <Input
@@ -405,7 +419,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               />
             </div>
             )}
-          {isIngredientCategory && (
+          {newProduct.categoria > 0 && isIngredientCategory && (
             <>
               <div className="grid gap-2">
                 <Label htmlFor="unit">Unidad de Peso</Label>
@@ -433,7 +447,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             </>
           )}
           {/* Ingredientes para productos finales */}
-          {isFinalCategory && ingredientOptions.length > 0 && (
+          {newProduct.categoria > 0 && isFinalCategory && ingredientOptions.length > 0 && (
           <div className="space-y-2">
             <Label>Ingredientes</Label>
             <div className="flex gap-2">
