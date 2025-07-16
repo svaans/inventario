@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import AddProductDialog from "../components/inventory/AddProductDialog";
 import { InventoryStats } from "../components/inventory/InventoryStats";
@@ -136,9 +136,15 @@ export default function Inventory() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent
+          className="sm:max-w-[400px]"
+          aria-describedby="update-product-description"
+        >
           <DialogHeader>
             <DialogTitle>Actualizar Producto</DialogTitle>
+            <DialogDescription id="update-product-description">
+              Modifica los datos y guarda los cambios
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">

@@ -4,7 +4,7 @@ import { apiFetch } from "../utils/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { toast } from "../hooks/use-toast";
 import { getCSRFToken } from "../utils/csrf";
@@ -75,12 +75,18 @@ export default function Employees() {
           <p className="text-muted-foreground">Gestiona los usuarios del sistema</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
+        <DialogTrigger asChild>
             <Button>Nuevo Empleado</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent
+            className="sm:max-w-[425px]"
+            aria-describedby="new-employee-description"
+          >
             <DialogHeader>
               <DialogTitle>Registrar Empleado</DialogTitle>
+              <DialogDescription id="new-employee-description">
+                Ingresa los datos del nuevo usuario
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
