@@ -287,7 +287,6 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       </DialogTrigger>
       <ErrorBoundary fallback={<p className="p-4 text-red-600">Error al cargar formulario</p>}>
         <DialogContent
-          key={isIngredientCategory ? "ingrediente" : "producto"}
           aria-describedby="add-product-description"
           className="sm:max-w-[425px]"
         >
