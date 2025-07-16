@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../hooks/use-toast";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { ErrorBoundary } from "react-error-boundary";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
@@ -68,7 +69,10 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   });
 
   const selectedCategory = categoriesData.find(c => c.id === newProduct.categoria);
-  const isIngredientCategory = selectedCategory?.nombre_categoria?.toLowerCase().includes("ingred") ?? false;
+  const catName = selectedCategory?.nombre_categoria?.toLowerCase() ?? "";
+  const isIngredientCategory = catName.includes("ingred");
+  const isBeverageCategory = catName.includes("bebida");
+  const isFinalCategory = !isIngredientCategory && !isBeverageCategory;
 
   useEffect(() => {
     if (isIngredientCategory) {
@@ -130,29 +134,74 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       return;
     }
 
-    const selectedCat = categoriesData.find((c) => c.id === categoriaId);
-    const isIngrediente = selectedCat?.nombre_categoria?.toLowerCase().includes("ingred");
+    if (isIngredientCategory) {
+      if (!newProduct.stock || !newProduct.unit || !newProduct.supplier) {
+        toast({
+          title: "Error",
+          description: "Completa unidad, stock y proveedor",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
-    const payload = {
+    if (isFinalCategory) {
+      if (!newProduct.minStock) {
+        toast({
+          title: "Error",
+          description: "Ingresa el stock mínimo",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (isBeverageCategory) {
+      if (!newProduct.stock) {
+        toast({
+          title: "Error",
+          description: "Ingresa el stock actual",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    const payload: Record<string, unknown> = {
       codigo: `AUTO-${Date.now()}`,
       nombre: newProduct.name,
       descripcion: newProduct.description,
-      tipo: isIngrediente ? "ingredientes" : "empanada",
-      es_ingrediente: isIngrediente,
+      tipo: isIngredientCategory ? "ingredientes" : "empanada",
+      es_ingrediente: isIngredientCategory,
       costo: parseFloat(newProduct.cost) || 0,
       precio: parseFloat(newProduct.price) || 0,
-      stock_actual: parseFloat(newProduct.stock) || 0,
-      stock_minimo: parseFloat(newProduct.minStock) || 0,
-      unidad_media: newProduct.unit,
       categoria: categoriaId,
-      proveedor: newProduct.supplier || null,
-      ingredientes: isIngrediente
-        ? []
-        : ingredients.map((ing) => ({
-            ingrediente: ing.ingrediente,
-            cantidad_requerida: parseFloat(ing.cantidad) || 0,
-          })),
     };
+
+    if (isIngredientCategory) {
+      payload.stock_actual = parseFloat(newProduct.stock) || 0;
+      payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
+      payload.unidad_media = newProduct.unit;
+      payload.proveedor = newProduct.supplier;
+      payload.ingredientes = [];
+    } else if (isFinalCategory) {
+      payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
+      payload.stock_actual = 0;
+      payload.unidad_media = "unidades";
+      payload.ingredientes = ingredients.map((ing) => ({
+        ingrediente: ing.ingrediente,
+        cantidad_requerida: parseFloat(ing.cantidad) || 0,
+      }));
+    } else if (isBeverageCategory) {
+      payload.stock_actual = parseFloat(newProduct.stock) || 0;
+      payload.stock_minimo = 0;
+      payload.unidad_media = "unidades";
+    }
+
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === undefined || payload[k] === null) {
+        delete payload[k];
+      }
+    });
 
     try {
       const res = await apiFetch("/api/productos/", {
@@ -229,11 +278,12 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           Nuevo Producto
         </Button>
       </DialogTrigger>
-      <DialogContent
-        key={isIngredientCategory ? "ingrediente" : "producto"}
-        aria-describedby="add-product-description"
-        className="sm:max-w-[425px]"
-      >
+      <ErrorBoundary fallback={<p className="p-4 text-red-600">Error al cargar formulario</p>}>
+        <DialogContent
+          key={isIngredientCategory ? "ingrediente" : "producto"}
+          aria-describedby="add-product-description"
+          className="sm:max-w-[425px]"
+        >
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Producto</DialogTitle>
           <DialogDescription id="add-product-description">
@@ -302,47 +352,73 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          { (isIngredientCategory || isBeverageCategory) && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  required
+                  value={newProduct.stock}
+                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                />
+              </div>
+              {isIngredientCategory && (
+                <div className="grid gap-2">
+                  <Label htmlFor="minStock">Peso Mínimo</Label>
+                  <Input
+                    id="minStock"
+                    type="number"
+                    required
+                    value={newProduct.minStock}
+                    onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          {isFinalCategory && (
             <div className="grid gap-2">
-              <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
+              <Label htmlFor="minStock">Stock Mínimo</Label>
               <Input
-                id="stock"
+                id="minStock"
                 type="number"
                 required
-                value={newProduct.stock}
-                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                value={newProduct.minStock}
+                onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
               />
             </div>
-            <div className="grid gap-2">
-            <Label htmlFor="minStock">{isIngredientCategory ? "Peso Mínimo" : "Stock Mínimo"}</Label>
-            <Input
-              id="minStock"
-              type="number"
-              required
-              value={newProduct.minStock}
-              onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
-            />
-          </div>
-        </div>
-        {isIngredientCategory && (
-          <div className="grid gap-2">
-            <Label htmlFor="unit">Unidad de Peso</Label>
-            <Select
-              value={newProduct.unit}
-              onValueChange={(val) => setNewProduct({ ...newProduct, unit: val })}
-            >
-              <SelectTrigger id="unit">
-                <SelectValue placeholder="Unidad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kg">kg</SelectItem>
-                <SelectItem value="lb">lb</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        {/* Ingredientes para productos finales */}
-        {!isIngredientCategory && ingredientOptions.length > 0 && (
+            )}
+          {isIngredientCategory && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="unit">Unidad de Peso</Label>
+                <Select
+                  value={newProduct.unit}
+                  onValueChange={(val) => setNewProduct({ ...newProduct, unit: val })}
+                >
+                  <SelectTrigger id="unit">
+                    <SelectValue placeholder="Unidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="lb">lb</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="supplier">Proveedor</Label>
+                <Input
+                  id="supplier"
+                  value={newProduct.supplier}
+                  onChange={(e) => setNewProduct({ ...newProduct, supplier: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+          {/* Ingredientes para productos finales */}
+          {isFinalCategory && ingredientOptions.length > 0 && (
           <div className="space-y-2">
             <Label>Ingredientes</Label>
             <div className="flex gap-2">
@@ -411,7 +487,8 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             Agregar Producto
           </Button>
         </div>
-      </DialogContent>
+        </DialogContent>
+      </ErrorBoundary>
     </Dialog>
   );
 }

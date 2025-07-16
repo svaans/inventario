@@ -84,9 +84,10 @@ class ProductoSerializer(serializers.ModelSerializer):
             "nombre": {"required": True},
             "categoria": {"required": True},
             "precio": {"required": True},
-            "stock_actual": {"required": True},
-            "stock_minimo": {"required": True},
-            "unidad_media": {"required": True},
+            "stock_actual": {"required": False},
+            "stock_minimo": {"required": False},
+            "unidad_media": {"required": False},
+            "proveedor": {"required": False},
             "tipo": {"required": True},
             "es_ingrediente": {"required": False},
         }
@@ -101,6 +102,43 @@ class ProductoSerializer(serializers.ModelSerializer):
                 "Un producto con este nombre ya existe."
             )
         return value
+    
+    def validate(self, attrs):
+        """Dynamic validation based on the product category."""
+        categoria = attrs.get("categoria") or getattr(self.instance, "categoria", None)
+        nombre_cat = ""
+        if categoria:
+            nombre_cat = categoria.nombre_categoria.lower()
+
+        is_ing = "ingred" in nombre_cat
+        is_bev = "bebida" in nombre_cat
+
+        def require(field):
+            if attrs.get(field) is None:
+                existing = getattr(self.instance, field, None) if self.instance else None
+                if existing is None:
+                    raise serializers.ValidationError({field: "Este campo es obligatorio para la categoría seleccionada."})
+
+        if is_ing:
+            require("unidad_media")
+            require("stock_actual")
+            require("proveedor")
+        elif is_bev:
+            require("stock_actual")
+            if attrs.get("unidad_media") is None:
+                attrs["unidad_media"] = getattr(self.instance, "unidad_media", "unidad")
+            if attrs.get("stock_minimo") is None:
+                attrs["stock_minimo"] = getattr(self.instance, "stock_minimo", 0)
+            attrs.pop("proveedor", None)
+        else:  # producto final o complemento
+            require("stock_minimo")
+            if attrs.get("stock_actual") is None:
+                attrs["stock_actual"] = getattr(self.instance, "stock_actual", 0)
+            if attrs.get("unidad_media") is None:
+                attrs["unidad_media"] = getattr(self.instance, "unidad_media", "unidades")
+            attrs.pop("proveedor", None)
+
+        return attrs
     
     def create(self, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", [])
