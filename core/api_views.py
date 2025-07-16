@@ -290,12 +290,16 @@ class DashboardStatsView(APIView):
             )["total"]
             or 0
         )
-        ventas_mes = Venta.objects.filter(fecha__range=[month_start, today]).aggregate(total=Sum('total'))['total'] or 0
+        ventas_mes = (
+            Venta.objects.filter(fecha__range=[month_start, today])
+            .aggregate(total=Sum("total"))["total"]
+            or 0
+        )
         break_even = None
         if ventas_mes:
-            cm_ratio = 1 - (variable_costs / ventas_mes)
+            cm_ratio = 1 - (float(variable_costs) / float(ventas_mes))
             if cm_ratio > 0:
-                break_even = float(fixed_costs) / cm_ratio
+                break_even = float(fixed_costs) / float(cm_ratio)
         top_products_qs = (
             DetallesVenta.objects.filter(venta__fecha__range=[month_start, today])
             .values('producto__nombre')

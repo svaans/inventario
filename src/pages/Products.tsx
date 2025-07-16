@@ -11,7 +11,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { getStockStatus } from "../utils/stockStatus";
-import { apiFetch } from "../utils/api";
+import { apiFetch, fetchCategories } from "../utils/api";
 
 
 
@@ -24,20 +24,7 @@ export default function Products() {
     isError: catError,
   } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
-    queryFn: async () => {
-      try {
-        const res = await apiFetch("/api/categorias/", {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          throw new Error(`Failed to fetch categories: ${res.status}`);
-        }
-        return res.json();
-      } catch (err) {
-        console.error(err);
-        throw err;
-      }
-    },
+    queryFn: fetchCategories,
     staleTime: Infinity,
   });
 

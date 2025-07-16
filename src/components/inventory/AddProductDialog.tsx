@@ -10,7 +10,7 @@ import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Plus } from "lucide-react";
 import { getCSRFToken } from "../../utils/csrf";
-import { apiFetch } from "../../utils/api";
+import { apiFetch, fetchCategories } from "../../utils/api";
 import { translateCategory } from "../../utils/categoryTranslations";
 import type { Product } from "../../hooks/useProducts";
 import { useProducts } from "../../hooks/useProducts";
@@ -56,15 +56,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
 
   const { data: categoriesData = [], isError: catError } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
-    queryFn: async () => {
-      const res = await apiFetch("/api/categorias/", {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch categories: ${res.status}`);
-      }
-      return res.json();
-    },
+    queryFn: fetchCategories,
     staleTime: Infinity,
   });
 

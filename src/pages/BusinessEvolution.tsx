@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useBusinessEvolution } from "../hooks/useBusinessEvolution";
-import { apiFetch } from "../utils/api";
+import { fetchCategories } from "../utils/api";
 import { formatCurrency } from "../utils/formatCurrency";
 import { Skeleton } from "../components/ui/skeleton";
 
@@ -32,13 +32,7 @@ export default function BusinessEvolution() {
     isError: catError,
   } = useQuery<{ id: number; nombre_categoria: string }[]>({
     queryKey: ["categories"],
-    queryFn: async () => {
-      const res = await apiFetch("/api/categorias/", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch categories");
-      return res.json();
-    },
+    queryFn: fetchCategories,
     staleTime: Infinity,
   });
 
