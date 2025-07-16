@@ -10,7 +10,6 @@ import {
 } from "../ui/sheet";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Card } from "../ui/card";
 import {
   Table,
   TableBody,
@@ -44,7 +43,7 @@ export default function RegistrarVentaForm({
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const today = new Date().toISOString().slice(0, 10);
 
   const filtered = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -75,7 +74,7 @@ export default function RegistrarVentaForm({
     if (items.length === 0 || hasStockError) return;
     try {
       await createSale.mutateAsync({
-        fecha: date,
+        fecha: today,
         detalles: items.map((i) => ({
           producto: i.id,
           cantidad: i.quantity,
@@ -104,27 +103,18 @@ export default function RegistrarVentaForm({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[500px] p-4 flex flex-col gap-4 text-foreground">
+      <SheetContent side="right" className="w-[500px] p-6 flex flex-col gap-4 text-foreground">
         <SheetHeader>
-          <SheetTitle>Registrar Venta</SheetTitle>
+          <SheetTitle className="text-2xl font-bold">Registrar Venta</SheetTitle>
         </SheetHeader>
-        <div className="grid gap-4 flex-1 overflow-y-auto">
+
+        <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
           <div className="grid gap-2">
-            <label htmlFor="date" className="text-sm">
-              Fecha
-            </label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
+            <label className="text-sm font-medium">Buscar producto</label>
             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
               <PopoverTrigger asChild>
                 <Input
-                  placeholder="Buscar producto"
+                  placeholder="Buscar por nombre"
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
@@ -133,7 +123,7 @@ export default function RegistrarVentaForm({
                   onFocus={() => setSearchOpen(true)}
                 />
               </PopoverTrigger>
-              <PopoverContent className="p-0">
+              <PopoverContent className="bg-white dark:bg-zinc-900 shadow-md border rounded w-72 p-2">
                 {filtered.length === 0 && (
                   <p className="p-2 text-sm text-muted-foreground">
                     Sin resultados
@@ -142,91 +132,95 @@ export default function RegistrarVentaForm({
                 {filtered.map((p) => (
                   <button
                     key={p.id}
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted"
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted rounded"
                     onClick={() => addProduct(p)}
                   >
                     <div className="flex justify-between">
                       <span>{p.name}</span>
                       <span>{formatCurrency(p.price)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Stock: {p.stock}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Stock: {p.stock}</p>
                   </button>
                 ))}
               </PopoverContent>
             </Popover>
           </div>
-          {items.length > 0 && (
-            <div className="grid gap-2">
-              {items.map((item) => (
-                <Card key={item.id} className="p-4 flex justify-between">
-                  <div>
-                    <p className="text-lg font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatCurrency(item.price)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={item.stock}
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateQty(item.id, parseInt(e.target.value) || 1)
-                      }
-                      className="w-20"
-                    />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-          {items.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead className="text-right">Cant.</TableHead>
-                  <TableHead className="text-right">Subtotal</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((i) => (
-                  <TableRow key={i.id}>
-                    <TableCell>{i.name}</TableCell>
-                    <TableCell className="text-right">{i.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(i.price * i.quantity)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell colSpan={2} className="font-semibold text-right">
-                    Total
-                  </TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {formatCurrency(total)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          )}
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Productos seleccionados</h3>
+            {items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Aún no se han agregado productos.
+              </p>
+            ) : (
+              <div className="overflow-y-auto max-h-[240px] rounded border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead className="text-right">Precio</TableHead>
+                      <TableHead className="text-right">Cant.</TableHead>
+                      <TableHead className="text-right">Subtotal</TableHead>
+                      <TableHead className="sr-only">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((i) => (
+                      <TableRow key={i.id}>
+                        <TableCell>{i.name}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(i.price)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={i.stock}
+                            value={i.quantity}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              if (!isNaN(value) && value >= 1) {
+                                updateQty(i.id, value);
+                              }
+                            }}
+                            className="w-20"
+                          />
+                          {i.quantity > i.stock && (
+                            <p className="text-xs text-destructive">Sin stock</p>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(i.price * i.quantity)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeItem(i.id)}
+                          >
+                            Eliminar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
           {hasStockError && (
             <p className="text-sm text-destructive">
-              La cantidad supera el stock disponible.
+              Hay productos con cantidades mayores al stock disponible.
             </p>
           )}
+
+          <div className="text-right text-lg font-bold mt-4">
+            Total: {formatCurrency(total)}
+          </div>
         </div>
-        <SheetFooter className="gap-2">
+
+        <SheetFooter className="gap-2 pt-4">
           <Button variant="outline" onClick={handleCancel} type="button">
             Cancelar
           </Button>
@@ -234,7 +228,7 @@ export default function RegistrarVentaForm({
             onClick={handleSubmit}
             disabled={items.length === 0 || hasStockError || createSale.isPending}
           >
-            Registrar Venta
+            {createSale.isPending ? "Registrando..." : "Registrar Venta"}
           </Button>
         </SheetFooter>
       </SheetContent>
