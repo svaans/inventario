@@ -66,6 +66,21 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   const isBeverageCategory = catName.includes("bebida");
   const isFinalCategory = !isIngredientCategory && !isBeverageCategory;
 
+  // Reset dependent fields when the category changes
+  useEffect(() => {
+    setIngredients([]);
+    setCurrentIng({ ingrediente: 0, cantidad: "" });
+    setPossibleUnits(null);
+    setNewProduct((np) => ({
+      ...np,
+      supplier: isIngredientCategory ? np.supplier : "",
+      stock: isIngredientCategory || isBeverageCategory ? np.stock : "",
+      minStock: isFinalCategory ? np.minStock : "",
+      unit: isIngredientCategory ? (np.unit === "kg" || np.unit === "lb" ? np.unit : "kg") : "unidades",
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newProduct.categoria]);
+
   useEffect(() => {
     if (isIngredientCategory) {
       if (newProduct.unit !== "kg" && newProduct.unit !== "lb") {
