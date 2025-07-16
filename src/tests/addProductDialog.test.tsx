@@ -14,7 +14,8 @@ vi.mock("@/hooks/useProducts", () => ({
 vi.mock("@/utils/api", () => ({
   fetchCategories: () => Promise.resolve([
     { id: 1, nombre_categoria: "Ingredientes" },
-    { id: 2, nombre_categoria: "Bebidas" }
+    { id: 2, nombre_categoria: "Bebidas" },
+    { id: 3, nombre_categoria: "Insumos" }
   ]),
   apiFetch: vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 123 }) }))
 }));
@@ -33,6 +34,20 @@ describe("AddProductDialog", () => {
     await waitFor(() => screen.getByRole("dialog"));
     fireEvent.click(screen.getByRole("combobox"));
     fireEvent.click(screen.getByRole("option", { name: /bebidas/i }));
+    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+  });
+
+  it("handles ingredient category synonyms", async () => {
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AddProductDialog />
+      </QueryClientProvider>
+    );
+    fireEvent.click(screen.getByRole("button", { name: /nuevo producto/i }));
+    await waitFor(() => screen.getByRole("dialog"));
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: /insumos/i }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
   });
 });

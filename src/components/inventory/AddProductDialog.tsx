@@ -62,8 +62,8 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
 
   const selectedCategory = categoriesData.find(c => c.id === newProduct.categoria);
   const catName = selectedCategory?.nombre_categoria?.toLowerCase() ?? "";
-  const isIngredientCategory = catName.includes("ingred");
-  const isBeverageCategory = catName.includes("bebida");
+  const isIngredientCategory = /ingred|insum/.test(catName);
+  const isBeverageCategory = /bebida/.test(catName);
   const isFinalCategory = !isIngredientCategory && !isBeverageCategory;
 
   // Reset dependent fields when the category changes
