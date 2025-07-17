@@ -159,10 +159,10 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     }
 
     if (isIngredientCategory) {
-      if (!newProduct.stock || !newProduct.unit || !newProduct.supplier) {
+      if (!newProduct.stock || !newProduct.unit) {
         toast({
           title: "Error",
-          description: "Completa unidad, stock y proveedor",
+          description: "Completa unidad y stock",
           variant: "destructive",
         });
         return;
@@ -205,7 +205,9 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       payload.stock_actual = parseFloat(newProduct.stock) || 0;
       payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
       payload.unidad_media = newProduct.unit;
-      payload.proveedor = newProduct.supplier;
+      if (newProduct.supplier) {
+        payload.proveedor = newProduct.supplier;
+      }
       payload.ingredientes = [];
     } else if (isFinalCategory) {
       payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
@@ -442,7 +444,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="supplier">Proveedor</Label>
+                <Label htmlFor="supplier">Proveedor (opcional)</Label>
                 <Input
                   id="supplier"
                   value={newProduct.supplier}

@@ -36,6 +36,24 @@ class ProductoSerializerTest(TestCase):
         serializer = ProductoSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_ingrediente_sin_proveedor_opcional(self):
+        cat_ing = Categoria.objects.create(nombre_categoria="Ingredientes")
+        data = {
+            "codigo": "ING1",
+            "nombre": "Pimienta",
+            "descripcion": "",
+            "tipo": "ingredientes",
+            "precio": "1.00",
+            "costo": "0.50",
+            "stock_actual": "10",
+            "stock_minimo": "1",
+            "unidad_media": "g",
+            "categoria": cat_ing.id,
+            # proveedor omitido
+        }
+        serializer = ProductoSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_decimal_rounding(self):
         producto = Producto.objects.create(
             codigo="R1",

@@ -128,7 +128,6 @@ class ProductoSerializer(serializers.ModelSerializer):
         if is_ing:
             require("unidad_media")
             require("stock_actual")
-            require("proveedor")
         elif is_bev:
             require("stock_actual")
             if attrs.get("unidad_media") is None:

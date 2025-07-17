@@ -144,3 +144,14 @@ All colors MUST be HSL.
   white-space: nowrap;
   animation: marquee 20s linear infinite;
 }
+
+/* Hide the small spinner arrows on number inputs so values can be typed
+   directly without interference */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

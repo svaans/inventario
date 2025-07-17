@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useProducts } from "../../hooks/useProducts";
 import { useCreateSale } from "../../hooks/useCreateSale";
+import { useClients } from "../../hooks/useClients";
+import { useCreateClient } from "../../hooks/useCreateClient";
 import {
   Sheet,
   SheetContent,
@@ -19,6 +21,7 @@ import {
   TableRow,
 } from "../ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Label } from "../ui/label";
 import { toast } from "../../hooks/use-toast";
 import { formatCurrency } from "../../utils/formatCurrency";
 import type { Product } from "../../hooks/useProducts";
@@ -40,6 +43,17 @@ export default function RegistrarVentaForm({
 }: RegistrarVentaFormProps) {
   const { data: products = [] } = useProducts();
   const createSale = useCreateSale();
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientId, setClientId] = useState<number | null>(null);
+  const { data: clients = [] } = useClients(clientSearch);
+  const createClient = useCreateClient();
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [newClient, setNewClient] = useState({
+    nombre: "",
+    contacto: "",
+    email: "",
+    direccion: "",
+  });
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
@@ -73,11 +87,24 @@ export default function RegistrarVentaForm({
   const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const hasStockError = items.some((i) => i.quantity > i.stock);
 
+  const handleCreateClient = async () => {
+    try {
+      const created = await createClient.mutateAsync(newClient);
+      setClientId(created.id);
+      setClientSearch(created.nombre);
+      setShowNewClient(false);
+      toast({ title: "Cliente registrado" });
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    }
+  };
+
   const handleSubmit = async () => {
     if (items.length === 0 || hasStockError) return;
     try {
       await createSale.mutateAsync({
         fecha: today,
+        cliente: clientId ?? undefined,
         detalles: items.map((i) => ({
           producto: i.id,
           cantidad: i.quantity,
@@ -101,6 +128,9 @@ export default function RegistrarVentaForm({
   const handleCancel = () => {
     setItems([]);
     setSearch("");
+    setClientId(null);
+    setClientSearch("");
+    setShowNewClient(false);
     onOpenChange(false);
   };
 
@@ -114,6 +144,76 @@ export default function RegistrarVentaForm({
           <SheetHeader>
             <SheetTitle className="text-2xl font-bold">Registrar Venta</SheetTitle>
           </SheetHeader>
+
+          <div className="grid gap-2">
+            <Label htmlFor="client">Cliente</Label>
+            <Input
+              id="client"
+              placeholder="Buscar cliente"
+              value={clientSearch}
+              onChange={(e) => {
+                setClientSearch(e.target.value);
+                setClientId(null);
+              }}
+            />
+            {clientSearch && !showNewClient && (
+              <div className="border rounded max-h-32 overflow-auto">
+                {clients.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-2 hover:bg-muted cursor-pointer"
+                    onClick={() => {
+                      setClientId(c.id);
+                      setClientSearch(c.nombre);
+                    }}
+                  >
+                    {c.nombre}
+                  </div>
+                ))}
+                {clients.length === 0 && (
+                  <div className="p-2 text-sm">No se encontró ningún cliente</div>
+                )}
+              </div>
+            )}
+            {clientSearch && clients.length === 0 && !showNewClient && (
+              <Button variant="outline" size="sm" onClick={() => setShowNewClient(true)}>
+                Registrar nuevo cliente
+              </Button>
+            )}
+            {showNewClient && (
+              <div className="space-y-2 border p-2 rounded">
+                <Input
+                  placeholder="Nombre"
+                  value={newClient.nombre}
+                  onChange={(e) => setNewClient({ ...newClient, nombre: e.target.value })}
+                />
+                <Input
+                  placeholder="Teléfono"
+                  value={newClient.contacto}
+                  onChange={(e) => setNewClient({ ...newClient, contacto: e.target.value })}
+                />
+                <Input
+                  placeholder="Email (opcional)"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                />
+                <Input
+                  placeholder="Dirección (opcional)"
+                  value={newClient.direccion}
+                  onChange={(e) => setNewClient({ ...newClient, direccion: e.target.value })}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button size="sm" onClick={handleCreateClient}>Guardar</Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowNewClient(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+            {clientId && !showNewClient && (
+              <p className="text-sm text-muted-foreground">Cliente seleccionado: {clientSearch}</p>
+            )}
+          </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Buscar producto</label>
