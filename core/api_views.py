@@ -121,7 +121,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
         return [IsAdminUser()]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().select_related("categoria", "proveedor").prefetch_related(
+            "ingredientes__ingrediente"
+        )
         search = self.request.query_params.get("search")
         codigo = self.request.query_params.get("codigo")
         if codigo:
@@ -242,7 +244,11 @@ class VentaListCreateView(ListCreateAPIView):
         return VentaSerializer
     
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = (
+            super()
+            .get_queryset()
+            .select_related("cliente", "usuario")
+        )
         fecha = self.request.query_params.get("fecha")
         usuario = self.request.query_params.get("usuario")
         if fecha:
@@ -440,7 +446,7 @@ class TransaccionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsFinanzasUser]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().select_related("responsable")
         categoria = self.request.query_params.get("categoria")
         responsable = self.request.query_params.get("responsable")
         start = self.request.query_params.get("start")
@@ -621,6 +627,9 @@ class DevolucionViewSet(viewsets.ModelViewSet):
 
     queryset = DevolucionProducto.objects.all().order_by("-fecha")
     serializer_class = DevolucionSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("producto", "responsable")
 
     def get_permissions(self):
         if self.request.method in ["GET", "OPTIONS", "HEAD"]:
@@ -960,6 +969,9 @@ class RegistroTurnoViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroTurnoSerializer
 
     permission_classes = [IsProduccionUser]
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("empleados")
 
 
 class TraceabilityView(APIView):

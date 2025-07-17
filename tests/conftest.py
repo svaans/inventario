@@ -30,6 +30,7 @@ import pytest
 
 
 @pytest.fixture(scope="session", autouse=True)
-def run_migrations():
+def run_migrations(django_db_setup, django_db_blocker):
     """Ensure the test database schema is up to date."""
-    call_command("migrate", verbosity=0, interactive=False)
+    with django_db_blocker.unblock():
+        call_command("migrate", verbosity=0, interactive=False)
