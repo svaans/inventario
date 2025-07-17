@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F, Sum, Count, Case, When, Avg
+from django.db.models import F, Sum, Count, Case, When, Avg, Q
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
 from datetime import timedelta, datetime, date
@@ -7,6 +7,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from rest_framework.generics import ListAPIView, ListCreateAPIView
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
@@ -188,18 +189,23 @@ class CategoriaListView(ListAPIView):
     serializer_class = CategoriaSerializer
     permission_classes = [IsAuthenticated]
 
-class ClienteListView(ListAPIView):
-    """API para autocompletar clientes."""
+class ClienteListView(ListCreateAPIView):
+    """API para listar y crear clientes."""
 
     queryset = Cliente.objects.all().order_by("nombre")
     serializer_class = ClienteSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return ClienteCreateSerializer
+        return ClienteSerializer
+
     def get_queryset(self):
         qs = super().get_queryset()
         q = self.request.query_params.get("search")
         if q:
-            qs = qs.filter(nombre__icontains=q)
+            qs = qs.filter(Q(nombre__icontains=q) | Q(contacto__icontains=q))
         return qs
 
 class VentaPagination(PageNumberPagination):
@@ -713,6 +719,39 @@ class PriceHistoryView(APIView):
             }
             for h in qs
         ]
+        return Response(data)
+    
+
+class ClienteHistoryView(APIView):
+    """Devuelve historial y resumen de un cliente."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        cliente = get_object_or_404(Cliente, pk=pk)
+        ventas = (
+            Venta.objects.filter(cliente=cliente)
+            .order_by("-fecha")
+            .values("id", "fecha", "total")
+        )
+        total = sum(float(v["total"]) for v in ventas)
+        productos_qs = (
+            DetallesVenta.objects.filter(venta__cliente=cliente)
+            .values("producto__nombre")
+            .annotate(total=Sum("cantidad"))
+            .order_by("-total")[:5]
+        )
+        productos = [
+            {"producto": p["producto__nombre"], "cantidad": p["total"]}
+            for p in productos_qs
+        ]
+        ultima_compra = ventas[0]["fecha"].isoformat() if ventas else None
+        data = {
+            "ventas": list(ventas),
+            "total_gastado": total,
+            "productos_frecuentes": productos,
+            "ultima_compra": ultima_compra,
+        }
         return Response(data)
 
 

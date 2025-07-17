@@ -36,6 +36,12 @@ class ClienteSerializer(serializers.ModelSerializer):
         model = Cliente
         fields = ["id", "nombre"]
 
+
+class ClienteCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cliente
+        fields = ["id", "nombre", "contacto", "email", "direccion"]
+
 class CriticalProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Producto

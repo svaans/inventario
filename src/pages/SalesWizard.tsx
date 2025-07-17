@@ -18,6 +18,7 @@ import {
 import { useClients } from "../hooks/useClients";
 import { useProducts } from "../hooks/useProducts";
 import { useCreateSale } from "../hooks/useCreateSale";
+import { useCreateClient } from "../hooks/useCreateClient";
 import { toast } from "../hooks/use-toast";
 import { formatCurrency } from "../utils/formatCurrency";
 import { apiFetch } from "../utils/api";
@@ -35,6 +36,14 @@ export default function SalesWizard() {
   const [clientSearch, setClientSearch] = useState("");
   const [clientId, setClientId] = useState<number | null>(null);
   const { data: clients = [] } = useClients(clientSearch);
+  const createClient = useCreateClient();
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [newClient, setNewClient] = useState({
+    nombre: "",
+    contacto: "",
+    email: "",
+    direccion: "",
+  });
 
   const [prodSearch, setProdSearch] = useState("");
   const [barcode, setBarcode] = useState("");
@@ -63,6 +72,19 @@ export default function SalesWizard() {
   };
 
   const removeItem = (id: number) => setItems(items.filter((i) => i.id !== id));
+
+  const handleCreateClient = async () => {
+    try {
+      const created = await createClient.mutateAsync(newClient);
+      setClientId(created.id);
+      setClientSearch(created.nombre);
+      setShowNewClient(false);
+      toast({ title: "Cliente registrado" });
+      setStep(2);
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    }
+  };
 
   const handleConfirm = async () => {
     try {
@@ -104,14 +126,55 @@ export default function SalesWizard() {
                 onClick={() => {
                   setClientId(c.id);
                   setClientSearch(c.nombre);
+                  setShowNewClient(false);
                 }}
               >
                 {c.nombre}
               </div>
             ))}
+            {clients.length === 0 && clientSearch && (
+              <div className="p-2 text-sm">No se encontró ningún cliente</div>
+            )}
           </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setStep(2)} disabled={!clientSearch}>
+          {clients.length === 0 && clientSearch && !showNewClient && (
+            <div className="flex gap-2">
+              <Button onClick={() => setShowNewClient(true)}>Registrar nuevo cliente</Button>
+              <Button variant="outline" onClick={() => { setClientId(null); setClientSearch(""); setStep(2); }}>Continuar sin cliente</Button>
+            </div>
+          )}
+          {showNewClient && (
+            <div className="space-y-2 border p-2 rounded">
+              <Input
+                placeholder="Nombre"
+                value={newClient.nombre}
+                onChange={(e) => setNewClient({ ...newClient, nombre: e.target.value })}
+              />
+              <Input
+                placeholder="Teléfono"
+                value={newClient.contacto}
+                onChange={(e) => setNewClient({ ...newClient, contacto: e.target.value })}
+              />
+              <Input
+                placeholder="Email (opcional)"
+                value={newClient.email}
+                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+              />
+              <Input
+                placeholder="Dirección (opcional)"
+                value={newClient.direccion}
+                onChange={(e) => setNewClient({ ...newClient, direccion: e.target.value })}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button onClick={handleCreateClient}>Guardar</Button>
+                <Button variant="outline" onClick={() => setShowNewClient(false)}>Cancelar</Button>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setClientId(null); setClientSearch(""); setStep(2); }}>
+              Continuar sin cliente
+            </Button>
+            <Button onClick={() => setStep(2)} disabled={clientId === null}>
               Siguiente
             </Button>
           </div>
