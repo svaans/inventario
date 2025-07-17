@@ -3,6 +3,7 @@ from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
 from inventario.models import Categoria, Producto, MovimientoInventario, Venta, DetallesVenta, DevolucionProducto, HistorialPrecio
 from datetime import datetime
+from django.utils import timezone as tz
 
 class MonthlyTrendsAPITest(TestCase):
     def setUp(self):
@@ -38,10 +39,10 @@ class MonthlyTrendsAPITest(TestCase):
         )
 
         m1 = MovimientoInventario.objects.create(producto=self.prod, tipo="entrada", cantidad=5, motivo="prod")
-        m1.fecha = datetime(2024, 1, 5)
+        m1.fecha = tz.make_aware(datetime(2024, 1, 5))
         m1.save(update_fields=["fecha"])
         m2 = MovimientoInventario.objects.create(producto=self.ing, tipo="entrada", cantidad=3, motivo="compra")
-        m2.fecha = datetime(2024, 1, 10)
+        m2.fecha = tz.make_aware(datetime(2024, 1, 10))
         m2.save(update_fields=["fecha"])
 
         venta = Venta.objects.create(fecha="2024-01-15", total=4, usuario=self.user)

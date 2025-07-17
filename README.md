@@ -4,6 +4,9 @@
 
 **URL**: https://lovable.dev/projects/8bd90db1-7e19-4dcd-bc9f-2ac09a5f591e
 
+All Django models in this project use field names in **Spanish**. This
+convention ensures consistency across the backend and the React frontend.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

@@ -3,7 +3,10 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
-#categorias de productos
+
+# Todos los modelos utilizan nombres de campos en español para una
+# mayor coherencia con el frontend y la documentación.
+# categorias de productos
 
 class Categoria(models.Model):
     nombre_categoria = models.CharField(max_length=100)
@@ -430,16 +433,16 @@ class UsoLoteMateriaPrima(models.Model):
 class MonthlyReport(models.Model):
     """Notas y reporte mensual generado."""
 
-    month = models.IntegerField()
-    year = models.IntegerField()
-    notes = models.TextField(blank=True)
-    created = models.DateTimeField(auto_now_add=True)
+    mes = models.IntegerField()
+    anio = models.IntegerField()
+    notas = models.TextField(blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("month", "year")
+        unique_together = ("mes", "anio")
 
     def __str__(self) -> str:
-        return f"{self.month:02d}/{self.year}"
+        return f"{self.mes:02d}/{self.anio}"
 
 
 class EventoEspecial(models.Model):

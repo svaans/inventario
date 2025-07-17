@@ -238,8 +238,8 @@ def generate_monthly_report_pdf(data: Dict[str, Any], notes: str = "") -> bytes:
 def send_monthly_report(year: int, month: int) -> None:
     """Compila, genera y envía el reporte mensual por correo."""
     metrics = compile_monthly_metrics(year, month)
-    report, _ = MonthlyReport.objects.get_or_create(month=month, year=year)
-    pdf = generate_monthly_report_pdf(metrics, report.notes or "")
+    report, _ = MonthlyReport.objects.get_or_create(mes=month, anio=year)
+    pdf = generate_monthly_report_pdf(metrics, report.notas or "")
     subject = f"Reporte mensual {month:02d}/{year}"
     message = "Adjunto encontrarás el resumen mensual del sistema de inventario."
     recipients = list(

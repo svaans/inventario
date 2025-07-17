@@ -151,7 +151,7 @@ class UsoLoteMateriaPrimaAdmin(admin.ModelAdmin):
 
 @admin.register(MonthlyReport)
 class MonthlyReportAdmin(admin.ModelAdmin):
-    list_display = ('month', 'year', 'created')
+    list_display = ('mes', 'anio', 'creado')
 
 
 
