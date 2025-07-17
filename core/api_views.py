@@ -208,6 +208,22 @@ class ClienteListView(ListCreateAPIView):
             qs = qs.filter(Q(nombre__icontains=q) | Q(contacto__icontains=q))
         return qs
 
+    def create(self, request, *args, **kwargs):
+        """Handle client creation with explicit validation and error handling."""
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            self.perform_create(serializer)
+        except Exception:  # pragma: no cover - unexpected database error
+            logging.exception("Client creation failed")
+            return Response(
+                {"detail": "Error al registrar el cliente."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
 class VentaPagination(PageNumberPagination):
     page_size = 20
 
