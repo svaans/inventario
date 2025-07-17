@@ -14,6 +14,7 @@ import { apiFetch, fetchCategories } from "../../utils/api";
 import { translateCategory } from "../../utils/categoryTranslations";
 import type { Product } from "../../hooks/useProducts";
 import { useProducts } from "../../hooks/useProducts";
+import useFormFields from "../../hooks/useFormFields";
 
 interface NewProduct {
   name: string;
@@ -36,7 +37,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const closeDialog = () => setIsDialogOpen(false);
-  const [newProduct, setNewProduct] = useState<NewProduct>({
+  const initialProduct: NewProduct = {
     name: "",
     description: "",
     categoria: 0,
@@ -46,6 +47,16 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     minStock: "",
     unit: "unidades",
     supplier: "",
+  };
+
+  const {
+    values: newProduct,
+    setValues: setNewProduct,
+    handleChange,
+    validateAll,
+  } = useFormFields(initialProduct, {
+    name: (v) => (v ? null : "Requerido"),
+    categoria: (v) => (v > 0 ? null : "Requerido"),
   });
 
   const [ingredients, setIngredients] = useState<{ ingrediente: number; cantidad: string }[]>([]);
@@ -139,7 +150,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   }, [ingredients, ingredientOptions]);
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.categoria) {
+    if (!validateAll()) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos requeridos",
@@ -274,17 +285,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
         description: `${newProduct.name} ha sido agregado exitosamente`,
       });
 
-      setNewProduct({
-        name: "",
-        description: "",
-        categoria: 0,
-        price: "",
-        cost: "",
-        stock: "",
-        minStock: "",
-        unit: "unidades",
-        supplier: "",
-      });
+      setNewProduct(initialProduct);
       setIngredients([]);
     } catch (error) {
       console.error(error);
@@ -328,7 +329,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               id="name"
               required
               value={newProduct.name}
-              onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+              onChange={(e) => handleChange("name", e.target.value)}
               placeholder="Ej: Empanadas de Carne"
             />
           </div>
@@ -337,7 +338,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             <Textarea
               id="description"
               value={newProduct.description}
-              onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+              onChange={(e) => handleChange("description", e.target.value)}
               placeholder="Descripción detallada del producto"
             />
           </div>
@@ -346,9 +347,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             <Select
             disabled={catLoading}
               value={newProduct.categoria ? String(newProduct.categoria) : ""}
-              onValueChange={(value) =>
-                setNewProduct({ ...newProduct, categoria: Number(value) })
-              }
+              onValueChange={(value) => handleChange("categoria", Number(value))}
             >
               <SelectTrigger id="categoria">
                 <SelectValue
@@ -373,7 +372,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 step="0.01"
                 required
                 value={newProduct.price}
-                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                onChange={(e) => handleChange("price", e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -384,7 +383,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 step="0.01"
                 required
                 value={newProduct.cost}
-                onChange={(e) => setNewProduct({ ...newProduct, cost: e.target.value })}
+                onChange={(e) => handleChange("cost", e.target.value)}
               />
             </div>
           </div>
@@ -397,7 +396,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                   type="number"
                   required
                   value={newProduct.stock}
-                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                  onChange={(e) => handleChange("stock", e.target.value)}
                 />
               </div>
               {isIngredientCategory && (
@@ -408,7 +407,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                     type="number"
                     required
                     value={newProduct.minStock}
-                    onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
+                    onChange={(e) => handleChange("minStock", e.target.value)}
                   />
                 </div>
               )}
@@ -422,7 +421,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 type="number"
                 required
                 value={newProduct.minStock}
-                onChange={(e) => setNewProduct({ ...newProduct, minStock: e.target.value })}
+                onChange={(e) => handleChange("minStock", e.target.value)}
               />
             </div>
             )}
@@ -432,7 +431,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 <Label htmlFor="unit">Unidad de Peso</Label>
                 <Select
                   value={newProduct.unit}
-                  onValueChange={(val) => setNewProduct({ ...newProduct, unit: val })}
+                  onValueChange={(val) => handleChange("unit", val)}
                 >
                   <SelectTrigger id="unit">
                     <SelectValue placeholder="Unidad" />
@@ -448,7 +447,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 <Input
                   id="supplier"
                   value={newProduct.supplier}
-                  onChange={(e) => setNewProduct({ ...newProduct, supplier: e.target.value })}
+                  onChange={(e) => handleChange("supplier", e.target.value)}
                 />
               </div>
             </React.Fragment>

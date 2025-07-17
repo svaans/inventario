@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { toast } from "../hooks/use-toast";
+import useFormFields from "../hooks/useFormFields";
 import { getCSRFToken } from "../utils/csrf";
 
 interface Employee {
@@ -53,7 +54,11 @@ export default function Employees() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ username: "", password: "", first_name: "", email: "" });
+  const {
+    values: form,
+    handleChange,
+    setValues: setForm,
+  } = useFormFields({ username: "", password: "", first_name: "", email: "" });
 
   const handleSubmit = async () => {
     try {
@@ -91,19 +96,19 @@ export default function Employees() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="username">Usuario</Label>
-                <Input id="username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+                <Input id="username" value={form.username} onChange={(e) => handleChange("username", e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Contraseña</Label>
-                <Input id="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                <Input id="password" type="password" value={form.password} onChange={(e) => handleChange("password", e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="first_name">Nombre</Label>
-                <Input id="first_name" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+                <Input id="first_name" value={form.first_name} onChange={(e) => handleChange("first_name", e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input id="email" type="email" value={form.email} onChange={(e) => handleChange("email", e.target.value)} />
               </div>
               <Button onClick={handleSubmit} disabled={createEmployee.isPending}>Guardar</Button>
             </div>

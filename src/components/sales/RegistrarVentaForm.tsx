@@ -3,6 +3,7 @@ import { useProducts } from "../../hooks/useProducts";
 import { useCreateSale } from "../../hooks/useCreateSale";
 import { useClients } from "../../hooks/useClients";
 import { useCreateClient } from "../../hooks/useCreateClient";
+import useFormFields from "../../hooks/useFormFields";
 import {
   Sheet,
   SheetContent,
@@ -48,7 +49,11 @@ export default function RegistrarVentaForm({
   const { data: clients = [] } = useClients(clientSearch);
   const createClient = useCreateClient();
   const [showNewClient, setShowNewClient] = useState(false);
-  const [newClient, setNewClient] = useState({
+  const {
+    values: newClient,
+    handleChange: handleClientChange,
+    setValues: setNewClient,
+  } = useFormFields({
     nombre: "",
     contacto: "",
     email: "",
@@ -185,22 +190,22 @@ export default function RegistrarVentaForm({
                 <Input
                   placeholder="Nombre"
                   value={newClient.nombre}
-                  onChange={(e) => setNewClient({ ...newClient, nombre: e.target.value })}
+                  onChange={(e) => handleClientChange("nombre", e.target.value)}
                 />
                 <Input
                   placeholder="Teléfono"
                   value={newClient.contacto}
-                  onChange={(e) => setNewClient({ ...newClient, contacto: e.target.value })}
+                  onChange={(e) => handleClientChange("contacto", e.target.value)}
                 />
                 <Input
                   placeholder="Email (opcional)"
                   value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  onChange={(e) => handleClientChange("email", e.target.value)}
                 />
                 <Input
                   placeholder="Dirección (opcional)"
                   value={newClient.direccion}
-                  onChange={(e) => setNewClient({ ...newClient, direccion: e.target.value })}
+                  onChange={(e) => handleClientChange("direccion", e.target.value)}
                 />
                 <div className="flex gap-2 justify-end">
                   <Button size="sm" onClick={handleCreateClient}>Guardar</Button>
