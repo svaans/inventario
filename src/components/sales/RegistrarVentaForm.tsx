@@ -175,7 +175,7 @@ export default function RegistrarVentaForm({
                 )}
               </div>
             )}
-            {clientSearch && clients.length === 0 && !showNewClient && (
+            {!showNewClient && (
               <Button variant="outline" size="sm" onClick={() => setShowNewClient(true)}>
                 Registrar nuevo cliente
               </Button>

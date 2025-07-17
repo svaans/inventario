@@ -136,10 +136,21 @@ export default function SalesWizard() {
               <div className="p-2 text-sm">No se encontró ningún cliente</div>
             )}
           </div>
-          {clients.length === 0 && clientSearch && !showNewClient && (
+          {!showNewClient && (
             <div className="flex gap-2">
               <Button onClick={() => setShowNewClient(true)}>Registrar nuevo cliente</Button>
-              <Button variant="outline" onClick={() => { setClientId(null); setClientSearch(""); setStep(2); }}>Continuar sin cliente</Button>
+              {clients.length === 0 && clientSearch && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setClientId(null);
+                    setClientSearch("");
+                    setStep(2);
+                  }}
+                >
+                  Continuar sin cliente
+                </Button>
+              )}
             </div>
           )}
           {showNewClient && (
