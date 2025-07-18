@@ -195,11 +195,20 @@ class ProductoSerializer(serializers.ModelSerializer):
         return int(min(posibles)) if posibles else 0
 
 
-class DetallesVentaSerializer(serializers.ModelSerializer):
+class DetallesVentaSerializer(serializers.Serializer):
+    """Detalle simple para crear ventas en paralelo sin validar existencia."""
+
+    producto = serializers.IntegerField()
+    cantidad = serializers.DecimalField(max_digits=10, decimal_places=2)
+    precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
     lote = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    class Meta:
-        model = DetallesVenta
-        fields = ["producto", "cantidad", "precio_unitario", "lote"]
+    def to_internal_value(self, data):
+        try:
+            return super().to_internal_value(data)
+        except OperationalError:
+            raise serializers.ValidationError(
+                {"detalles": "Operacion en curso, intente nuevamente"}
+            )
 
 
 class VentaCreateSerializer(serializers.ModelSerializer):
@@ -219,7 +228,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
             total = 0
             locked_items = []
             for det in detalles_data:
-                prod_id = det["producto"].id
+                prod_id = det["producto"]
                 try:
                     producto = Producto.objects.select_for_update(nowait=True).get(id=prod_id)
                 except OperationalError:
@@ -317,19 +326,15 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     )
                 total += cantidad * precio
                 try:
-                    Producto.objects.filter(id=producto.id).update(
-                        stock_actual=F("stock_actual") - cantidad
-                    )
+                    updated = Producto.objects.filter(
+                        id=producto.id,
+                        stock_actual__gte=cantidad,
+                    ).update(stock_actual=F("stock_actual") - cantidad)
                 except OperationalError:
                     raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                if not updated:
+                    raise serializers.ValidationError({"detalles": f"Stock insuficiente para {producto.nombre}"})
                 producto.refresh_from_db()
-                if producto.stock_actual < 0:
-                    Producto.objects.filter(id=producto.id).update(
-                        stock_actual=F("stock_actual") + cantidad
-                    )
-                    raise serializers.ValidationError(
-                        {"detalles": f"Stock insuficiente para {producto.nombre}"}
-                    )
                 if not producto.es_ingrediente:
                     for comp in comps:
                         ing = locked_ingredientes[comp.ingrediente_id]
