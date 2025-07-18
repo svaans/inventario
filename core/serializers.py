@@ -134,14 +134,12 @@ class ProductoSerializer(serializers.ModelSerializer):
                 attrs["unidad_media"] = getattr(self.instance, "unidad_media", "unidad")
             if attrs.get("stock_minimo") is None:
                 attrs["stock_minimo"] = getattr(self.instance, "stock_minimo", 0)
-            attrs.pop("proveedor", None)
         else:  # producto final o complemento
             require("stock_minimo")
             if attrs.get("stock_actual") is None:
                 attrs["stock_actual"] = getattr(self.instance, "stock_actual", 0)
             if attrs.get("unidad_media") is None:
                 attrs["unidad_media"] = getattr(self.instance, "unidad_media", "unidades")
-            attrs.pop("proveedor", None)
 
         return attrs
     
@@ -184,7 +182,9 @@ class ProductoSerializer(serializers.ModelSerializer):
     def get_unidades_posibles(self, obj):
         if obj.es_ingrediente:
             return None
-        comps = obj.ingredientes.all()
+        # Solo consideramos la receta por defecto (sin lote asignado) y activa
+        comps_qs = obj.ingredientes.all()
+        comps = [c for c in comps_qs if c.activo and c.lote is None]
         if not comps:
             return None
         posibles = [

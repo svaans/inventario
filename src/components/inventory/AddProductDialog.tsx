@@ -90,7 +90,6 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       setNewProduct((np) => {
         const updated: Partial<NewProduct> = { ...np };
         if (!isIngredientCategory) {
-          updated.supplier = "";
           updated.unit = "unidades";
         } else {
           updated.unit = np.unit === "kg" || np.unit === "lb" ? np.unit : "kg";
@@ -216,9 +215,6 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       payload.stock_actual = parseFloat(newProduct.stock) || 0;
       payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
       payload.unidad_media = newProduct.unit;
-      if (newProduct.supplier) {
-        payload.proveedor = newProduct.supplier;
-      }
       payload.ingredientes = [];
     } else if (isFinalCategory) {
       payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
@@ -232,6 +228,10 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       payload.stock_actual = parseFloat(newProduct.stock) || 0;
       payload.stock_minimo = 0;
       payload.unidad_media = "unidades";
+    }
+
+    if (newProduct.supplier) {
+      payload.proveedor = newProduct.supplier;
     }
 
     Object.keys(payload).forEach((k) => {
@@ -426,32 +426,30 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             </div>
             )}
           {newProduct.categoria > 0 && isIngredientCategory && (
-            <React.Fragment key="ingredient-extra">
-              <div className="grid gap-2">
-                <Label htmlFor="unit">Unidad de Peso</Label>
-                <Select
-                  value={newProduct.unit}
-                  onValueChange={(val) => handleChange("unit", val)}
-                >
-                  <SelectTrigger id="unit">
-                    <SelectValue placeholder="Unidad" />
-                  </SelectTrigger>
-                  <SelectContent forceMount>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="lb">lb</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="supplier">Proveedor (opcional)</Label>
-                <Input
-                  id="supplier"
-                  value={newProduct.supplier}
-                  onChange={(e) => handleChange("supplier", e.target.value)}
-                />
-              </div>
-            </React.Fragment>
+            <div key="ingredient-unit" className="grid gap-2">
+              <Label htmlFor="unit">Unidad de Peso</Label>
+              <Select
+                value={newProduct.unit}
+                onValueChange={(val) => handleChange("unit", val)}
+              >
+                <SelectTrigger id="unit">
+                  <SelectValue placeholder="Unidad" />
+                </SelectTrigger>
+                <SelectContent forceMount>
+                  <SelectItem value="kg">kg</SelectItem>
+                  <SelectItem value="lb">lb</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
+          <div className="grid gap-2">
+            <Label htmlFor="supplier">Proveedor (opcional)</Label>
+            <Input
+              id="supplier"
+              value={newProduct.supplier}
+              onChange={(e) => handleChange("supplier", e.target.value)}
+            />
+          </div>
           {/* Ingredientes para productos finales */}
           {newProduct.categoria > 0 && isFinalCategory && ingredientOptions.length > 0 && (
           <div key="final-ingredients" className="space-y-2">
