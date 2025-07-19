@@ -18,8 +18,11 @@ class Categoria(models.Model):
 # productos finales e ingredientes
 class Producto(models.Model):
     TIPO_CHOICES = [
-        ('empanada', 'Empanada'),
-        ('ingredientes', 'Ingredientes'),
+        ("empanada", "Empanada"),
+        ("ingredientes", "Ingredientes"),
+        ("producto_final", "Producto final"),
+        ("ingrediente", "Ingrediente"),
+        ("bebida", "Bebida"),
 
     ]
 
@@ -27,7 +30,6 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, default="")
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    es_ingrediente = models.BooleanField(default=False)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stock_actual = models.DecimalField(max_digits=10, decimal_places=2)
@@ -343,7 +345,7 @@ class LoteMateriaPrima(models.Model):
     producto = models.ForeignKey(
         Producto,
         on_delete=models.CASCADE,
-        limit_choices_to={"es_ingrediente": True},
+        limit_choices_to={"tipo__startswith": "ingred"},
     )
     fecha_recepcion = models.DateField()
     fecha_vencimiento = models.DateField(default=date.today)
@@ -397,7 +399,7 @@ class LoteProductoFinal(models.Model):
     producto = models.ForeignKey(
         Producto,
         on_delete=models.CASCADE,
-        limit_choices_to={"es_ingrediente": False},
+        limit_choices_to={"tipo__in": ["empanada", "producto_final", "bebida"]},
     )
     fecha_produccion = models.DateField()
     cantidad_producida = models.DecimalField(max_digits=10, decimal_places=2)

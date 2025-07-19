@@ -112,7 +112,7 @@ def purchase_recommendations(
         avg = averages.get(prod.id, 0)
         expected = avg * horizon_days
         if prod.stock_actual < expected:
-            accion = "comprar" if prod.es_ingrediente else "producir"
+            accion = "comprar" if prod.tipo.startswith("ingred") else "producir"
             cantidad = float(expected - float(prod.stock_actual))
             recs.append({
                 "producto": prod.id,

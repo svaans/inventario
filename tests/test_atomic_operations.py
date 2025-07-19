@@ -13,7 +13,6 @@ class ProductoAtomicityTest(TestCase):
             codigo="T_I1",
             nombre="Ing1",
             tipo="ingredientes",
-            es_ingrediente=True,
             precio=0,
             stock_actual=100,
             stock_minimo=0,

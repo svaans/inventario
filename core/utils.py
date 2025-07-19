@@ -288,7 +288,7 @@ def detectar_faltantes(horizon_days: int = 7) -> List[Dict[str, Any]]:
     proyeccion = purchase_recommendations(horizon_days=horizon_days)
     rec_map = {p["producto"]: p["cantidad"] for p in proyeccion}
     sugerencias: List[Dict[str, Any]] = []
-    for prod in Producto.objects.filter(es_ingrediente=True):
+    for prod in Producto.objects.filter(tipo__startswith="ingred"):
         demanda = rec_map.get(prod.id, 0.0)
         if (
             float(prod.stock_actual) < float(prod.stock_minimo)

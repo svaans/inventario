@@ -249,7 +249,7 @@ export default function Inventory() {
                       {formatCurrency(product.stock * product.price)}
                     </span>
                   </div>
-                  {!product.es_ingrediente && (
+                  {!product.tipo.startsWith("ingred") && (
                     <div className="flex justify-between border-t pt-2">
                       <span className="text-muted-foreground">🔢 Unidades posibles:</span>
                       <span className={product.unidades_posibles && product.unidades_posibles < 1 ? "text-destructive font-semibold" : "font-semibold"}>
@@ -257,7 +257,7 @@ export default function Inventory() {
                       </span>
                     </div>
                   )}
-                  {!product.es_ingrediente && product.ingredientes && product.ingredientes.length > 0 && (
+                  {!product.tipo.startsWith("ingred") && product.ingredientes && product.ingredientes.length > 0 && (
                     <div className="pt-2">
                       <table className="w-full text-sm border">
                         <thead>

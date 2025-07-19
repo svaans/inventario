@@ -63,7 +63,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   const [currentIng, setCurrentIng] = useState<{ ingrediente: number; cantidad: string }>({ ingrediente: 0, cantidad: "" });
   const [possibleUnits, setPossibleUnits] = useState<number | null>(null);
   const { data: allProducts = [] } = useProducts();
-  const ingredientOptions = allProducts.filter(p => p.es_ingrediente);
+  const ingredientOptions = allProducts.filter(p => p.tipo?.startsWith("ingred"));
 
   const {
     data: categoriesData = [],
@@ -205,7 +205,6 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       nombre: newProduct.name,
       descripcion: newProduct.description,
       tipo: isIngredientCategory ? "ingredientes" : "empanada",
-      es_ingrediente: isIngredientCategory,
       costo: parseFloat(newProduct.cost) || 0,
       precio: parseFloat(newProduct.price) || 0,
       categoria: categoriaId,

@@ -8,9 +8,9 @@ class IngredientSaleTest(TestCase):
     def setUp(self):
         cat_f = Categoria.objects.create(nombre_categoria="Empanadas")
         cat_i = Categoria.objects.create(nombre_categoria="Ingredientes")
-        self.har = Producto.objects.create(codigo="H1", nombre="Harina", tipo="ingredientes", es_ingrediente=True, precio=0, stock_actual=1000, stock_minimo=0, unidad_media="g", categoria=cat_i)
-        self.carne = Producto.objects.create(codigo="C1", nombre="Carne", tipo="ingredientes", es_ingrediente=True, precio=0, stock_actual=500, stock_minimo=0, unidad_media="g", categoria=cat_i)
-        self.final = Producto.objects.create(codigo="E1", nombre="Empanada", tipo="empanada", es_ingrediente=False, precio=1, stock_actual=10, stock_minimo=0, unidad_media="u", categoria=cat_f)
+        self.har = Producto.objects.create(codigo="H1", nombre="Harina", tipo="ingredientes", precio=0, stock_actual=1000, stock_minimo=0, unidad_media="g", categoria=cat_i)
+        self.carne = Producto.objects.create(codigo="C1", nombre="Carne", tipo="ingredientes", precio=0, stock_actual=500, stock_minimo=0, unidad_media="g", categoria=cat_i)
+        self.final = Producto.objects.create(codigo="E1", nombre="Empanada", tipo="empanada", precio=1, stock_actual=10, stock_minimo=0, unidad_media="u", categoria=cat_f)
         ComposicionProducto.objects.create(producto_final=self.final, ingrediente=self.har, cantidad_requerida=100)
         ComposicionProducto.objects.create(producto_final=self.final, ingrediente=self.carne, cantidad_requerida=50)
         self.user = User.objects.create_user(username="u", password="p")

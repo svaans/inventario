@@ -14,7 +14,6 @@ class PurchaseOrderServiceTest(TestCase):
             codigo="I1",
             nombre="Ing",
             tipo="ingredientes",
-            es_ingrediente=True,
             precio=1,
             costo=1,
             stock_actual=0,

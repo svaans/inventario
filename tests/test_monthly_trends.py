@@ -29,7 +29,6 @@ class MonthlyTrendsAPITest(TestCase):
             codigo="I1",
             nombre="Carne",
             tipo="ingredientes",
-            es_ingrediente=True,
             precio=0,
             costo=1,
             stock_actual=5,

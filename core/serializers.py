@@ -72,7 +72,6 @@ class ProductoSerializer(serializers.ModelSerializer):
             "nombre",
             "descripcion",
             "tipo",
-            "es_ingrediente",
             "precio",
             "costo",
             "stock_actual",
@@ -95,7 +94,6 @@ class ProductoSerializer(serializers.ModelSerializer):
             "unidad_media": {"required": False},
             "proveedor": {"required": False},
             "tipo": {"required": True},
-            "es_ingrediente": {"required": False},
         }
 
     def validate_nombre(self, value: str) -> str:
@@ -180,7 +178,7 @@ class ProductoSerializer(serializers.ModelSerializer):
         return instance
 
     def get_unidades_posibles(self, obj):
-        if obj.es_ingrediente:
+        if obj.tipo.startswith("ingred"):
             return None
         # Solo consideramos la receta por defecto (sin lote asignado) y activa
         comps_qs = obj.ingredientes.all()
@@ -243,7 +241,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 
                 locked_ingredientes = {}
                 comps = []
-                if not producto.es_ingrediente:
+                if not producto.tipo.startswith("ingred"):
                     comps = producto.ingredientes.select_related("ingrediente")
                     if lote is None:
                         comps = comps.filter(lote__isnull=True, activo=True)
@@ -301,7 +299,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 locked_ingredientes = item["ings"]
 
                 consumos = []
-                if not producto.es_ingrediente:
+                if not producto.tipo.startswith("ingred"):
                     try:
                         consumos = vender_producto_final_fifo(producto, cantidad)
                     except ValueError:
@@ -335,7 +333,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 if not updated:
                     raise serializers.ValidationError({"detalles": f"Stock insuficiente para {producto.nombre}"})
                 producto.refresh_from_db()
-                if not producto.es_ingrediente:
+                if not producto.tipo.startswith("ingred"):
                     for comp in comps:
                         ing = locked_ingredientes[comp.ingrediente_id]
                         requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))

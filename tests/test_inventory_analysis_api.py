@@ -26,7 +26,6 @@ class InventoryAnalysisAPITest(TestCase):
             codigo="S1",
             nombre="Salsa roja",
             tipo="ingredientes",
-            es_ingrediente=True,
             precio=0,
             costo=0,
             stock_actual=2,

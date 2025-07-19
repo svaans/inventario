@@ -36,7 +36,6 @@ class PlanificadorTest(TestCase):
             codigo="I1",
             nombre="Harina",
             tipo="ingredientes",
-            es_ingrediente=True,
             precio=0,
             costo=0,
             stock_actual=20,

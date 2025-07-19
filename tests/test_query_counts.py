@@ -17,7 +17,6 @@ def test_producto_list_queries(django_assert_num_queries):
         codigo="ING",
         nombre="Ing",
         tipo="ingredientes",
-        es_ingrediente=True,
         precio=1,
         costo=1,
         stock_actual=1,

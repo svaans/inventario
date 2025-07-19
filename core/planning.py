@@ -43,7 +43,7 @@ def generar_plan(fecha: date) -> Dict[str, object]:
     total_units = 0.0
     alerts: List[Dict[str, object]] = []
 
-    productos = Producto.objects.filter(tipo="empanada", es_ingrediente=False)
+    productos = Producto.objects.filter(tipo__in=["empanada", "producto_final"])
     for prod in productos:
         demanda = avg_sales.get(prod.id, 0.0) * factor
         # límite por inventario

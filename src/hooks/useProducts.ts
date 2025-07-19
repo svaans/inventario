@@ -7,7 +7,7 @@ export interface Product {
   description: string;
   categoria: number;
   categoria_nombre: string;
-  es_ingrediente: boolean;
+  tipo: string;
   price: number;
   cost: number;
   stock: number;
@@ -31,7 +31,7 @@ interface ProductoAPI {
   unidad_media: string;
   proveedor: string | number;
   proveedor_nombre?: string;
-  es_ingrediente?: boolean;
+  tipo: string;
   unidades_posibles?: number | null;
   ingredientes?: {
     ingrediente: number;
@@ -70,7 +70,7 @@ export function useProducts(search = "", codigo?: string) {
         description: p.descripcion ?? "",
         categoria: parseInt(String(p.categoria)),
         categoria_nombre: translateCategory(p.categoria_nombre ?? "Sin categoría"),
-        es_ingrediente: Boolean(p.es_ingrediente),
+        tipo: p.tipo,
         price: parseFloat(String(p.precio)),
         cost: parseFloat(String(p.costo ?? 0)),
         stock: parseFloat(String(p.stock_actual)),

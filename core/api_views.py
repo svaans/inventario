@@ -859,7 +859,7 @@ class MonthlyTrendsView(APIView):
         movs = (
             MovimientoInventario.objects.filter(fecha__date__gte=start, fecha__date__lt=end)
             .annotate(m=TruncMonth("fecha"))
-            .values("m", "producto__nombre", "producto__es_ingrediente")
+            .values("m", "producto__nombre", "producto__tipo")
             .annotate(
                 entradas=Sum(
                     Case(
@@ -882,7 +882,7 @@ class MonthlyTrendsView(APIView):
             {
                 "period": m["m"].isoformat(),
                 "producto": m["producto__nombre"],
-                "ingrediente": m["producto__es_ingrediente"],
+                "ingrediente": m["producto__tipo"].startswith("ingred"),
                 "neto": float(m["entradas"] or 0) - float(m["salidas"] or 0),
             }
             for m in movs
@@ -921,7 +921,7 @@ class MonthlyTrendsView(APIView):
             HistorialPrecio.objects.filter(
                 fecha__date__gte=start,
                 fecha__date__lt=end,
-                producto__es_ingrediente=True,
+                producto__tipo__startswith="ingred",
             )
             .annotate(m=TruncMonth("fecha"))
             .values("m")
