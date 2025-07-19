@@ -35,3 +35,19 @@ class NegativeStockTest(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         with self.assertRaises(serializers.ValidationError):
             serializer.save()
+
+    def test_venta_bajo_stock_minimo(self):
+        factory = APIRequestFactory()
+        request = factory.post("/ventas/")
+        request.user = self.user
+        data = {
+            "fecha": "2024-01-02",
+            "cliente": None,
+            "detalles": [
+                {"producto": self.producto.id, "cantidad": 5, "precio_unitario": 1}
+            ],
+        }
+        serializer = VentaCreateSerializer(data=data, context={"request": request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        with self.assertRaises(serializers.ValidationError):
+            serializer.save()

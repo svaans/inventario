@@ -238,7 +238,12 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(
                         {"detalles": "Stock insuficiente para %s" % producto.nombre}
                     )
-                
+                if producto.stock_actual - cantidad < producto.stock_minimo:
+                    raise serializers.ValidationError(
+                        {
+                            "detalles": f"Stock mínimo alcanzado para {producto.nombre}"
+                        }
+                    )
                 locked_ingredientes = {}
                 comps = []
                 if not producto.tipo.startswith("ingred"):
