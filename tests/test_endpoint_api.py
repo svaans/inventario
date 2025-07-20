@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User, Group
-from inventario.models import Producto, Categoria, Proveedor, MovimientoInventario
+from inventario.models import Producto, Categoria, Proveedor, MovimientoInventario, UnidadMedida
 class ProductoAPITest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -22,9 +22,9 @@ class ProductoAPITest(TestCase):
             "costo": 0.5,
             "stock_actual": 100,
             "stock_minimo": 10,
-            "unidad_media": "botella",
+            "unidad_media": UnidadMedida.objects.get(abreviatura="botella").id,
             "categoria": self.categoria.id,
-            "proveedor": self.proveedor.id
+            "proveedor": self.proveedor.id,
         }
         response = self.client.post("/api/productos/", data, format="json")
         self.assertEqual(response.status_code, 201)
@@ -42,7 +42,7 @@ class ProductoAPITest(TestCase):
             "costo": 0.4,
             "stock_actual": 50,
             "stock_minimo": 5,
-            "unidad_media": "botella",
+            "unidad_media": UnidadMedida.objects.get(abreviatura="botella").id,
             "categoria": self.categoria.id,
             "proveedor": self.proveedor.id,
         }

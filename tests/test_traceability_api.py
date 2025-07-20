@@ -8,6 +8,7 @@ from inventario.models import (
     LoteMateriaPrima,
     LoteProductoFinal,
     UsoLoteMateriaPrima,
+    UnidadMedida,
 )
 from inventario.serializers import VentaCreateSerializer
 
@@ -22,6 +23,8 @@ class TraceabilityAPITest(TestCase):
         self.factory = APIRequestFactory()
 
         cat = Categoria.objects.create(nombre_categoria="Insumos")
+        unidad_kg = UnidadMedida.objects.get(abreviatura="kg")
+        unidad_u = UnidadMedida.objects.get(abreviatura="u")
         self.ing = Producto.objects.create(
             codigo="ING1",
             nombre="Harina",
@@ -30,7 +33,7 @@ class TraceabilityAPITest(TestCase):
             costo=0,
             stock_actual=100,
             stock_minimo=10,
-            unidad_media="kg",
+            unidad_media=unidad_kg,
             categoria=cat,
         )
         self.final = Producto.objects.create(
@@ -41,7 +44,7 @@ class TraceabilityAPITest(TestCase):
             costo=1,
             stock_actual=15,
             stock_minimo=2,
-            unidad_media="u",
+            unidad_media=unidad_u,
             categoria=cat,
         )
         self.lote_ing = LoteMateriaPrima.objects.create(
@@ -97,7 +100,7 @@ class TraceabilityAPITest(TestCase):
         from inventario.models import DevolucionProducto
         DevolucionProducto.objects.create(
             fecha="2024-01-05",
-            lote="FP2",
+            lote_final=self.lote_final2,
             producto=self.final,
             motivo="Defecto",
             cantidad=1,

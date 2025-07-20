@@ -8,6 +8,7 @@ class RoleAccessTests(TestCase):
         self.client = Client()
         self.api_client = APIClient()
         cat = Categoria.objects.create(nombre_categoria="General")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.product = Producto.objects.create(
             codigo="P1",
             nombre="Prod",
@@ -16,7 +17,7 @@ class RoleAccessTests(TestCase):
             costo=0.5,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
         )
 

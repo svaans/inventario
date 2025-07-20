@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Proveedor
+from inventario.models import Categoria, Proveedor, UnidadMedida
 
 class SuperuserAdminTest(TestCase):
     def setUp(self):
@@ -29,7 +29,7 @@ class SuperuserAdminTest(TestCase):
             "costo": 0.5,
             "stock_actual": 10,
             "stock_minimo": 1,
-            "unidad_media": "unidad",
+            "unidad_media": UnidadMedida.objects.get(abreviatura="u").id,
             "categoria": self.categoria.id,
             "proveedor": self.proveedor.id,
         }

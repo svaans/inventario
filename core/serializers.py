@@ -8,6 +8,7 @@ from django.db.models import F
 from .utils import consumir_ingrediente_fifo, vender_producto_final_fifo
 from .models import (
     Producto,
+    UnidadMedida,
     Venta,
     DetallesVenta,
     MovimientoInventario,
@@ -26,6 +27,13 @@ class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categoria
         fields = ["id", "nombre_categoria"]
+
+class UnidadMedidaSerializer(serializers.ModelSerializer):
+    """Serializer para unidades de medida."""
+
+    class Meta:
+        model = UnidadMedida
+        fields = ["id", "nombre", "abreviatura"]
 
         
 
@@ -49,7 +57,9 @@ class CriticalProductSerializer(serializers.ModelSerializer):
 
 class ComposicionProductoSerializer(serializers.ModelSerializer):
     ingrediente_nombre = serializers.CharField(source="ingrediente.nombre", read_only=True)
-    unidad = serializers.CharField(source="ingrediente.unidad_media", read_only=True)
+    unidad = serializers.CharField(
+        source="ingrediente.unidad_media.abreviatura", read_only=True
+    )
     lote = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     activo = serializers.BooleanField(required=False)
 
@@ -61,6 +71,9 @@ class ProductoSerializer(serializers.ModelSerializer):
     # Validamos la categoría por su clave primaria para evitar errores
     categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
     categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
+    unidad_media = serializers.PrimaryKeyRelatedField(queryset=UnidadMedida.objects.all(), required=False)
+    unidad_media_nombre = serializers.CharField(source="unidad_media.nombre", read_only=True)
+    unidad_media_abreviatura = serializers.CharField(source="unidad_media.abreviatura", read_only=True)
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
     ingredientes = ComposicionProductoSerializer(many=True, required=False)
     unidades_posibles = serializers.SerializerMethodField()
@@ -77,6 +90,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             "stock_actual",
             "stock_minimo",
             "unidad_media",
+            "unidad_media_nombre",
+            "unidad_media_abreviatura",
             "categoria",
             "categoria_nombre",
             "proveedor",
@@ -129,7 +144,10 @@ class ProductoSerializer(serializers.ModelSerializer):
         elif is_bev:
             require("stock_actual")
             if attrs.get("unidad_media") is None:
-                attrs["unidad_media"] = getattr(self.instance, "unidad_media", "unidad")
+                attrs["unidad_media"] = (
+                    getattr(self.instance, "unidad_media", None)
+                    or UnidadMedida.objects.filter(abreviatura="u").first()
+                )
             if attrs.get("stock_minimo") is None:
                 attrs["stock_minimo"] = getattr(self.instance, "stock_minimo", 0)
         else:  # producto final o complemento
@@ -137,7 +155,10 @@ class ProductoSerializer(serializers.ModelSerializer):
             if attrs.get("stock_actual") is None:
                 attrs["stock_actual"] = getattr(self.instance, "stock_actual", 0)
             if attrs.get("unidad_media") is None:
-                attrs["unidad_media"] = getattr(self.instance, "unidad_media", "unidades")
+                attrs["unidad_media"] = (
+                    getattr(self.instance, "unidad_media", None)
+                    or UnidadMedida.objects.filter(abreviatura="u").first()
+                )
 
         return attrs
     
@@ -442,13 +463,15 @@ class TransaccionSerializer(serializers.ModelSerializer):
 class DevolucionSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source="producto.nombre", read_only=True)
     responsable_nombre = serializers.CharField(source="responsable.username", read_only=True)
+    lote_final_codigo = serializers.CharField(source="lote_final.codigo", read_only=True)
 
     class Meta:
         model = DevolucionProducto
         fields = [
             "id",
             "fecha",
-            "lote",
+            "lote_final",
+            "lote_final_codigo",
             "producto",
             "producto_nombre",
             "motivo",

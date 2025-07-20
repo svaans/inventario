@@ -61,6 +61,7 @@ from .models import (
     RegistroTurno,
     LoteMateriaPrima,
     LoteProductoFinal,
+    UnidadMedida,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -73,6 +74,7 @@ from .serializers import (
     TransaccionSerializer,
     DevolucionSerializer,
     RegistroTurnoSerializer,
+    UnidadMedidaSerializer,
 )
 from .utils import (
     calcular_perdidas_devolucion,
@@ -189,6 +191,13 @@ class CategoriaListView(ListAPIView):
 
     queryset = Categoria.objects.all().order_by("nombre_categoria")
     serializer_class = CategoriaSerializer
+    permission_classes = [IsAuthenticated]
+
+class UnidadMedidaListView(ListAPIView):
+    """Lista de unidades de medida disponibles."""
+
+    queryset = UnidadMedida.objects.all().order_by("nombre")
+    serializer_class = UnidadMedidaSerializer
     permission_classes = [IsAuthenticated]
 
 class ClienteListView(ListCreateAPIView):
@@ -655,14 +664,18 @@ class DevolucionRatesView(APIView):
         }
 
         result_prod = []
-        for item in devs.values("producto", "producto__nombre", "lote").annotate(total=Sum("cantidad")):
+        for item in devs.values(
+            "producto",
+            "producto__nombre",
+            "lote_final__codigo",
+        ).annotate(total=Sum("cantidad")):
             sold = sales_by_product.get(item["producto"], 0)
             rate = float(item["total"]) / float(sold) * 100 if sold else 0.0
             result_prod.append(
                 {
                     "producto": item["producto"],
                     "nombre": item["producto__nombre"],
-                    "lote": item["lote"],
+                    "lote_final": item["lote_final__codigo"],
                     "tasa": rate,
                     "alerta": rate > 5,
                 }
@@ -992,9 +1005,7 @@ class TraceabilityView(APIView):
                 lpf.detallesventa_set.aggregate(total=Sum("cantidad"))["total"] or 0
             )
             devueltos = (
-                DevolucionProducto.objects.filter(lote=lpf.codigo).aggregate(total=Sum("cantidad"))[
-                    "total"
-                ]
+                DevolucionProducto.objects.filter(lote_final=lpf).aggregate(total=Sum("cantidad"))["total"]
                 or 0
             )
             en_stock = lpf.cantidad_producida - vendidos - devueltos

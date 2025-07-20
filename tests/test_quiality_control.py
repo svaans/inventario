@@ -1,7 +1,14 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, Venta, DetallesVenta, DevolucionProducto
+from inventario.models import (
+    Categoria,
+    Producto,
+    Venta,
+    DetallesVenta,
+    DevolucionProducto,
+    LoteProductoFinal,
+)
 class DevolucionAPITest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -10,6 +17,7 @@ class DevolucionAPITest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         self.cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.prod = Producto.objects.create(
             codigo="E1",
             nombre="Empanada Pollo",
@@ -17,14 +25,20 @@ class DevolucionAPITest(TestCase):
             precio=1,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=self.cat,
+        )
+        self.lote_final = LoteProductoFinal.objects.create(
+            codigo="L1",
+            producto=self.prod,
+            fecha_produccion="2024-01-04",
+            cantidad_producida=10,
         )
 
     def test_crear_devolucion(self):
         data = {
             "fecha": "2024-01-05",
-            "lote": "L1",
+            "lote_final": self.lote_final.id,
             "producto": self.prod.id,
             "motivo": "Quemada",
             "cantidad": 2,
@@ -44,6 +58,7 @@ class DevolucionRateAPITest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         self.cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.prod = Producto.objects.create(
             codigo="E2",
             nombre="Empanada Carne",
@@ -51,14 +66,20 @@ class DevolucionRateAPITest(TestCase):
             precio=1,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=self.cat,
+        )
+        self.lote_final = LoteProductoFinal.objects.create(
+            codigo="L1",
+            producto=self.prod,
+            fecha_produccion="2024-01-01",
+            cantidad_producida=10,
         )
         venta = Venta.objects.create(fecha="2024-01-01", total=10, usuario=self.user)
         DetallesVenta.objects.create(venta=venta, producto=self.prod, cantidad=10, precio_unitario=1)
         DevolucionProducto.objects.create(
             fecha="2024-01-02",
-            lote="L1",
+            lote_final=self.lote_final,
             producto=self.prod,
             motivo="Mala",
             cantidad=1,

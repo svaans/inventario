@@ -40,6 +40,13 @@ global.fetch = vi.fn((url: string) => {
         ]),
     });
   }
+  if (url === "/api/unidades/") {
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve([{ id: 1, nombre: "Unidad", abreviatura: "u" }]),
+    });
+  }
   return Promise.reject(new Error("URL no reconocida"));
 }) as unknown as typeof fetch;
 

@@ -34,3 +34,19 @@ def run_migrations(django_db_setup, django_db_blocker):
     """Ensure the test database schema is up to date."""
     with django_db_blocker.unblock():
         call_command("migrate", verbosity=0, interactive=False)
+
+
+@pytest.fixture(autouse=True)
+def default_units(db):
+    """Create common measurement units for tests."""
+    from inventario.models import UnidadMedida
+
+    units = [
+        ("Unidad", "u"),
+        ("Kilogramo", "kg"),
+        ("Gramo", "g"),
+        ("Libra", "lb"),
+        ("Botella", "botella"),
+    ]
+    for nombre, ab in units:
+        UnidadMedida.objects.get_or_create(abreviatura=ab, defaults={"nombre": nombre})

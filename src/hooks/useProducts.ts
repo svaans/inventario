@@ -13,6 +13,7 @@ export interface Product {
   stock: number;
   minStock: number;
   unit: string;
+  unitId: number;
   supplier: string;
   unidades_posibles?: number | null;
   ingredientes?: { ingrediente: number; ingrediente_nombre: string; cantidad_requerida: number; unidad: string }[];
@@ -28,7 +29,8 @@ interface ProductoAPI {
   costo: string | number;
   stock_actual: string | number;
   stock_minimo: string | number;
-  unidad_media: string;
+  unidad_media: number;
+  unidad_media_abreviatura: string;
   proveedor: string | number;
   proveedor_nombre?: string;
   tipo: string;
@@ -75,7 +77,8 @@ export function useProducts(search = "", codigo?: string) {
         cost: parseFloat(String(p.costo ?? 0)),
         stock: parseFloat(String(p.stock_actual)),
         minStock: parseFloat(String(p.stock_minimo)),
-        unit: p.unidad_media,
+        unit: p.unidad_media_abreviatura,
+        unitId: Number(p.unidad_media),
         supplier: p.proveedor_nombre ?? String(p.proveedor),
         unidades_posibles: p.unidades_posibles ?? null,
         ingredientes: p.ingredientes ?? [],

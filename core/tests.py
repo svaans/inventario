@@ -22,6 +22,7 @@ class ProductoTests(TestCase):
         self.proveedor = Proveedor.objects.create(
             nombre="Prov", contacto="c", direccion="d"
         )
+        self.unidad = UnidadMedida.objects.get(abreviatura="u")
         self.cliente = Cliente.objects.create(nombre="Cli", contacto="c")
         self.user = User.objects.create_user(
             username="user", email="user@test.com", password="pass"
@@ -37,7 +38,7 @@ class ProductoTests(TestCase):
             precio=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="unidad",
+            unidad_media=self.unidad,
             categoria=self.categoria,
         )
         with self.assertRaises(Exception):
@@ -48,7 +49,7 @@ class ProductoTests(TestCase):
                 precio=1,
                 stock_actual=5,
                 stock_minimo=1,
-                unidad_media="unidad",
+                unidad_media=self.unidad,
                 categoria=self.categoria,
             )
 
@@ -60,7 +61,7 @@ class ProductoTests(TestCase):
             precio=1,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="unidad",
+            unidad_media=self.unidad,
             categoria=self.categoria,
         )
 
@@ -100,7 +101,7 @@ class ProductoTests(TestCase):
             precio=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="unidad",
+            unidad_media=self.unidad,
             categoria=self.categoria,
         )
 
@@ -124,7 +125,7 @@ class ProductoTests(TestCase):
             "precio": 2,
             "stock_actual": 5,
             "stock_minimo": 1,
-            "unidad_media": "unidad",
+            "unidad_media": self.unidad.id,
             "categoria": self.categoria.id,
         }
         self.client.force_login(self.user)
@@ -142,7 +143,7 @@ class ProductoTests(TestCase):
             "precio": 1,
             "stock_actual": 10,
             "stock_minimo": 2,
-            "unidad_media": "unidad",
+            "unidad_media": self.unidad.id,
             "categoria": self.categoria.id,
         }
         self.client.force_login(self.user)

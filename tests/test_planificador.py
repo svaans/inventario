@@ -9,6 +9,7 @@ from inventario.models import (
     Venta,
     DetallesVenta,
     ComposicionProducto,
+    UnidadMedida,
 )
 from produccion.models import EventoEspecial, CapacidadTurno, PlanProduccion
 from produccion.planificador import (
@@ -22,6 +23,8 @@ class PlanificadorTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="u", password="p")
         cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        unidad_u = UnidadMedida.objects.get(abreviatura="u")
+        unidad_kg = UnidadMedida.objects.get(abreviatura="kg")
         self.emp = Producto.objects.create(
             codigo="E1",
             nombre="Empanada",
@@ -29,7 +32,7 @@ class PlanificadorTest(TestCase):
             precio=2,
             stock_actual=0,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad_u,
             categoria=cat,
         )
         ing = Producto.objects.create(
@@ -40,7 +43,7 @@ class PlanificadorTest(TestCase):
             costo=0,
             stock_actual=20,
             stock_minimo=1,
-            unidad_media="kg",
+            unidad_media=unidad_kg,
             categoria=cat,
         )
         ComposicionProducto.objects.create(

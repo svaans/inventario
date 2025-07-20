@@ -1,7 +1,16 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, MovimientoInventario, Venta, DetallesVenta, DevolucionProducto, HistorialPrecio
+from inventario.models import (
+    Categoria,
+    Producto,
+    MovimientoInventario,
+    Venta,
+    DetallesVenta,
+    DevolucionProducto,
+    HistorialPrecio,
+    LoteProductoFinal,
+)
 from datetime import datetime
 from django.utils import timezone as tz
 
@@ -14,6 +23,8 @@ class MonthlyTrendsAPITest(TestCase):
         self.client.force_authenticate(user=self.user)
 
         cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        unidad_u = UnidadMedida.objects.get(abreviatura="u")
+        unidad_kg = UnidadMedida.objects.get(abreviatura="kg")
         self.prod = Producto.objects.create(
             codigo="E1",
             nombre="Empanada",
@@ -22,7 +33,7 @@ class MonthlyTrendsAPITest(TestCase):
             costo=1,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad_u,
             categoria=cat,
         )
         self.ing = Producto.objects.create(
@@ -33,8 +44,14 @@ class MonthlyTrendsAPITest(TestCase):
             costo=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="kg",
+            unidad_media=unidad_kg,
             categoria=cat,
+        )
+        self.lote_final = LoteProductoFinal.objects.create(
+            codigo="L1",
+            producto=self.prod,
+            fecha_produccion="2024-01-05",
+            cantidad_producida=5,
         )
 
         m1 = MovimientoInventario.objects.create(producto=self.prod, tipo="entrada", cantidad=5, motivo="prod")
@@ -49,7 +66,7 @@ class MonthlyTrendsAPITest(TestCase):
 
         DevolucionProducto.objects.create(
             fecha="2024-01-20",
-            lote="L1",
+            lote_final=self.lote_final,
             producto=self.prod,
             motivo="malo",
             cantidad=1,

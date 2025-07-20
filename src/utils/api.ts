@@ -17,4 +17,13 @@ export async function fetchCategories() {
   }
   const data = await res.json();
   return Array.isArray(data) ? data : data.results ?? [];
+  }
+
+export async function fetchUnits() {
+  const res = await apiFetch("/api/unidades/", { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch units: ${res.status}`);
+  }
+  const data = await res.json();
+  return Array.isArray(data) ? data : data.results ?? [];
 }

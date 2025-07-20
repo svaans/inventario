@@ -17,8 +17,13 @@ vi.mock("@/utils/api", () => ({
     { id: 2, nombre_categoria: "Bebidas" },
     { id: 3, nombre_categoria: "Insumos" }
   ]),
+  fetchUnits: () => Promise.resolve([
+    { id: 1, nombre: "Unidad", abreviatura: "u" },
+    { id: 2, nombre: "Kilogramo", abreviatura: "kg" },
+  ]),
   apiFetch: vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 123 }) }))
 }));
+
 
 import AddProductDialog from "@/components/inventory/AddProductDialog";
 

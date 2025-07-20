@@ -1,5 +1,6 @@
 from core.models import (
     Categoria,
+    UnidadMedida,
     Producto,
     HistorialPrecio,
     Proveedor,
@@ -18,6 +19,7 @@ from core.models import (
 
 __all__ = [
     "Categoria",
+    "UnidadMedida",
     "Producto",
     "HistorialPrecio",
     "Proveedor",

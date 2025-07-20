@@ -11,6 +11,7 @@ from inventario.models import (
     DetallesVenta,
     Cliente,
     ComposicionProducto,
+    UnidadMedida,
 )
 from inventario.serializers import ProductoSerializer
 
@@ -29,7 +30,7 @@ class ProductoSerializerTest(TestCase):
             "costo": "5.00",
             "stock_actual": "20.00",
             "stock_minimo": "5.00",
-            "unidad_media": "unidad",
+            "unidad_media": UnidadMedida.objects.get(abreviatura="u").id,
             "categoria": self.categoria.id,
             "proveedor": self.proveedor.id
         }
@@ -47,7 +48,7 @@ class ProductoSerializerTest(TestCase):
             "costo": "0.50",
             "stock_actual": "10",
             "stock_minimo": "1",
-            "unidad_media": "g",
+            "unidad_media": UnidadMedida.objects.get(abreviatura="g").id,
             "categoria": cat_ing.id,
             # proveedor omitido
         }
@@ -63,7 +64,7 @@ class ProductoSerializerTest(TestCase):
             costo=Decimal("5.678"),
             stock_actual=Decimal("10.555"),
             stock_minimo=Decimal("1.234"),
-            unidad_media="u",
+            unidad_media=UnidadMedida.objects.get(abreviatura="u"),
             categoria=self.categoria,
             proveedor=self.proveedor,
         )
@@ -123,7 +124,7 @@ class ComposicionTest(TestCase):
             precio=0,
             stock_actual=1000,
             stock_minimo=0,
-            unidad_media="g",
+            unidad_media=UnidadMedida.objects.get(abreviatura="g"),
             categoria=cat_ing,
         )
         self.carne = Producto.objects.create(
@@ -133,7 +134,7 @@ class ComposicionTest(TestCase):
             precio=0,
             stock_actual=500,
             stock_minimo=0,
-            unidad_media="g",
+            unidad_media=UnidadMedida.objects.get(abreviatura="g"),
             categoria=cat_ing,
         )
         self.final = Producto.objects.create(
@@ -143,7 +144,7 @@ class ComposicionTest(TestCase):
             precio=1,
             stock_actual=10,
             stock_minimo=0,
-            unidad_media="unidad",
+            unidad_media=UnidadMedida.objects.get(abreviatura="u"),
             categoria=cat_final,
         )
         ComposicionProducto.objects.create(

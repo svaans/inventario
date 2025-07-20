@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, MovimientoInventario
+from inventario.models import Categoria, Producto, MovimientoInventario, UnidadMedida
 
 
 class InventoryActivityAPITest(TestCase):
@@ -12,6 +12,7 @@ class InventoryActivityAPITest(TestCase):
         user.groups.add(empleado_group)
         self.client.force_authenticate(user=user)
         cat = Categoria.objects.create(nombre_categoria="General")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         prod = Producto.objects.create(
             codigo="P1",
             nombre="Producto",
@@ -20,7 +21,7 @@ class InventoryActivityAPITest(TestCase):
             costo=0.5,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
         )
         MovimientoInventario.objects.create(

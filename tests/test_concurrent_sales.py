@@ -4,12 +4,13 @@ from rest_framework.test import APIRequestFactory
 from django.db import close_old_connections
 from rest_framework import serializers
 import threading
-from inventario.models import Categoria, Producto
+from inventario.models import Categoria, Producto, UnidadMedida
 from inventario.serializers import VentaCreateSerializer
 
 class ConcurrentSaleTest(TransactionTestCase):
     def setUp(self):
         cat = Categoria.objects.create(nombre_categoria="Cat")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.producto = Producto.objects.create(
             codigo="CS1",
             nombre="Prod",
@@ -17,7 +18,7 @@ class ConcurrentSaleTest(TransactionTestCase):
             precio=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
         )
         self.user = User.objects.create_user(username="u", password="p")

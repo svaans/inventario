@@ -10,7 +10,7 @@ import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Plus } from "lucide-react";
 import { getCSRFToken } from "../../utils/csrf";
-import { apiFetch, fetchCategories } from "../../utils/api";
+import { apiFetch, fetchCategories, fetchUnits } from "../../utils/api";
 import { translateCategory } from "../../utils/categoryTranslations";
 import type { Product } from "../../hooks/useProducts";
 import { useProducts } from "../../hooks/useProducts";
@@ -24,7 +24,7 @@ interface NewProduct {
   cost: string;
   stock: string;
   minStock: string;
-  unit: string;
+  unit: number | null;
   supplier: string;
 }
 
@@ -45,7 +45,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     cost: "",
     stock: "",
     minStock: "",
-    unit: "unidades",
+    unit: null,
     supplier: "",
   };
 
@@ -75,6 +75,14 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     staleTime: Infinity,
   });
 
+  const { data: unitsData = [] } = useQuery<{ id: number; nombre: string; abreviatura: string }[]>({
+    queryKey: ["units"],
+    queryFn: fetchUnits,
+    staleTime: Infinity,
+  });
+
+  const getId = (abbr: string) => unitsData.find(u => u.abreviatura === abbr)?.id ?? null;
+
   const selectedCategory = categoriesData.find(c => c.id === newProduct.categoria);
   const catName = selectedCategory?.nombre_categoria?.toLowerCase() ?? "";
   const isIngredientCategory = /ingred|insum/.test(catName);
@@ -90,9 +98,10 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       setNewProduct((np) => {
         const updated: Partial<NewProduct> = { ...np };
         if (!isIngredientCategory) {
-          updated.unit = "unidades";
+          updated.unit = getId("u");
         } else {
-          updated.unit = np.unit === "kg" || np.unit === "lb" ? np.unit : "kg";
+          const abbr = unitsData.find(u => u.id === np.unit)?.abreviatura;
+          updated.unit = getId(abbr === "lb" ? "lb" : "kg");
         }
         if (!isIngredientCategory && !isBeverageCategory) {
           updated.stock = "";
@@ -110,11 +119,14 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
 
   useEffect(() => {
     if (isIngredientCategory) {
-      if (newProduct.unit !== "kg" && newProduct.unit !== "lb") {
-        setNewProduct((np) => ({ ...np, unit: "kg" }));
+      const abbr = unitsData.find(u => u.id === newProduct.unit)?.abreviatura;
+      if (abbr !== "kg" && abbr !== "lb") {
+        setNewProduct((np) => ({ ...np, unit: getId("kg") }));
       }
-    } else if (newProduct.unit !== "unidades") {
-      setNewProduct((np) => ({ ...np, unit: "unidades" }));
+    } else {
+      if (unitsData.find(u => u.id === newProduct.unit)?.abreviatura !== "u") {
+        setNewProduct((np) => ({ ...np, unit: getId("u") }));
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isIngredientCategory]);
@@ -218,7 +230,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     } else if (isFinalCategory) {
       payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
       payload.stock_actual = 0;
-      payload.unidad_media = "unidades";
+      payload.unidad_media = getId("u");
       payload.ingredientes = ingredients.map((ing) => ({
         ingrediente: ing.ingrediente,
         cantidad_requerida: parseFloat(ing.cantidad) || 0,
@@ -226,7 +238,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     } else if (isBeverageCategory) {
       payload.stock_actual = parseFloat(newProduct.stock) || 0;
       payload.stock_minimo = 0;
-      payload.unidad_media = "unidades";
+      payload.unidad_media = getId("u");
     }
 
     if (newProduct.supplier) {
@@ -269,7 +281,8 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           cost: parseFloat(String(created.costo ?? 0)),
           stock: parseFloat(String(created.stock_actual)),
           minStock: parseFloat(String(created.stock_minimo)),
-          unit: created.unidad_media,
+          unit: created.unidad_media_abreviatura,
+          unitId: created.unidad_media,
           supplier: created.proveedor_nombre ?? String(created.proveedor),
         } as Product,
       ]);
@@ -428,15 +441,16 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             <div key="ingredient-unit" className="grid gap-2">
               <Label htmlFor="unit">Unidad de Peso</Label>
               <Select
-                value={newProduct.unit}
-                onValueChange={(val) => handleChange("unit", val)}
+                value={newProduct.unit ? String(newProduct.unit) : ""}
+                onValueChange={(val) => handleChange("unit", Number(val))}
               >
                 <SelectTrigger id="unit">
                   <SelectValue placeholder="Unidad" />
                 </SelectTrigger>
                 <SelectContent forceMount>
-                  <SelectItem value="kg">kg</SelectItem>
-                  <SelectItem value="lb">lb</SelectItem>
+                  {unitsData.map(u => (
+                    <SelectItem key={u.id} value={String(u.id)}>{u.abreviatura}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

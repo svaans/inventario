@@ -14,6 +14,18 @@ class Categoria(models.Model):
     def __str__(self):
         return self.nombre_categoria
     
+class UnidadMedida(models.Model):
+    """Unidades estándar para los productos."""
+
+    nombre = models.CharField(max_length=50)
+    abreviatura = models.CharField(max_length=10)
+
+    class Meta:
+        verbose_name_plural = "Unidades de medida"
+
+    def __str__(self) -> str:
+        return self.abreviatura
+    
 
 # productos finales e ingredientes
 class Producto(models.Model):
@@ -34,7 +46,9 @@ class Producto(models.Model):
     costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stock_actual = models.DecimalField(max_digits=10, decimal_places=2)
     stock_minimo = models.DecimalField(max_digits=10, decimal_places=2)
-    unidad_media = models.CharField(max_length=50)
+    unidad_media = models.ForeignKey(
+        UnidadMedida, on_delete=models.PROTECT, null=True
+    )
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     proveedor = models.ForeignKey('Proveedor', on_delete=models.CASCADE, null=True, blank=True)
 
@@ -320,7 +334,9 @@ class DevolucionProducto(models.Model):
     """Registro de productos devueltos o defectuosos."""
 
     fecha = models.DateField()
-    lote = models.CharField(max_length=50)
+    lote_final = models.ForeignKey(
+        'LoteProductoFinal', on_delete=models.CASCADE, null=True, blank=True
+    )
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     motivo = models.CharField(max_length=200)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2)

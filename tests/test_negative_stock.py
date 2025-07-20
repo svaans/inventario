@@ -2,12 +2,13 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
-from inventario.models import Categoria, Producto
+from inventario.models import Categoria, Producto, UnidadMedida
 from inventario.serializers import VentaCreateSerializer
 
 class NegativeStockTest(TestCase):
     def setUp(self):
         self.categoria = Categoria.objects.create(nombre_categoria="Negativa")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.producto = Producto.objects.create(
             codigo="N1",
             nombre="Negativo",
@@ -15,7 +16,7 @@ class NegativeStockTest(TestCase):
             precio=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="unidad",
+            unidad_media=unidad,
             categoria=self.categoria,
         )
         self.user = User.objects.create_user(username="u", password="p")

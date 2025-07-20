@@ -3,12 +3,19 @@ from django.contrib.auth.models import User
 from unittest.mock import patch
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
-from inventario.models import Categoria, Producto, ComposicionProducto, MovimientoInventario
+from inventario.models import (
+    Categoria,
+    Producto,
+    ComposicionProducto,
+    MovimientoInventario,
+    UnidadMedida,
+)
 from inventario.serializers import ProductoSerializer, VentaCreateSerializer
 
 class ProductoAtomicityTest(TestCase):
     def setUp(self):
         self.cat = Categoria.objects.create(nombre_categoria="Cat")
+        unidad_g = UnidadMedida.objects.get(abreviatura="g")
         self.ing = Producto.objects.create(
             codigo="T_I1",
             nombre="Ing1",
@@ -16,7 +23,7 @@ class ProductoAtomicityTest(TestCase):
             precio=0,
             stock_actual=100,
             stock_minimo=0,
-            unidad_media="g",
+            unidad_media=unidad_g,
             categoria=self.cat,
         )
 
@@ -30,7 +37,7 @@ class ProductoAtomicityTest(TestCase):
             "costo": 0,
             "stock_actual": 10,
             "stock_minimo": 1,
-            "unidad_media": "u",
+            "unidad_media": UnidadMedida.objects.get(abreviatura="u").id,
             "categoria": self.cat.id,
             "proveedor": None,
             "ingredientes": [
@@ -56,7 +63,7 @@ class VentaAtomicityTest(TestCase):
             precio=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=UnidadMedida.objects.get(abreviatura="u"),
             categoria=cat,
         )
         self.user = User.objects.create_user(username="u", password="p")

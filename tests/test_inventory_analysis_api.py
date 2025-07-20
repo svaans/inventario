@@ -1,8 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, Venta, DetallesVenta
-
+from inventario.models import Categoria, Producto, Venta, DetallesVenta, UnidadMedida
 class InventoryAnalysisAPITest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -11,6 +10,7 @@ class InventoryAnalysisAPITest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.p1 = Producto.objects.create(
             codigo="E1",
             nombre="Empanada carne",
@@ -19,7 +19,7 @@ class InventoryAnalysisAPITest(TestCase):
             costo=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
         )
         self.p2 = Producto.objects.create(
@@ -30,7 +30,7 @@ class InventoryAnalysisAPITest(TestCase):
             costo=0,
             stock_actual=2,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
         )
         venta = Venta.objects.create(fecha="2024-01-01", total=4, usuario=self.user)

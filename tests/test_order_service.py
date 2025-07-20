@@ -1,7 +1,7 @@
 import os
 from django.test import TestCase
 from unittest.mock import patch
-from inventario.models import Categoria, Producto, Proveedor
+from inventario.models import Categoria, Producto, Proveedor, UnidadMedida
 from core.models import Compra, DetalleCompra
 from finanzas.services import enviar_orden_compra
 
@@ -10,6 +10,7 @@ class PurchaseOrderServiceTest(TestCase):
     def setUp(self):
         cat = Categoria.objects.create(nombre_categoria="Insumos")
         self.prov = Proveedor.objects.create(nombre="Prov", contacto="c", direccion="d")
+        unidad = UnidadMedida.objects.get(abreviatura="kg")
         self.prod = Producto.objects.create(
             codigo="I1",
             nombre="Ing",
@@ -18,7 +19,7 @@ class PurchaseOrderServiceTest(TestCase):
             costo=1,
             stock_actual=0,
             stock_minimo=0,
-            unidad_media="kg",
+            unidad_media=unidad,
             categoria=cat,
             proveedor=self.prov,
         )

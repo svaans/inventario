@@ -96,7 +96,7 @@ class TransaccionAdmin(admin.ModelAdmin):
 class DevolucionProductoAdmin(admin.ModelAdmin):
     list_display = (
         'fecha',
-        'lote',
+        'lote_final',
         'producto',
         'cantidad',
         'responsable',

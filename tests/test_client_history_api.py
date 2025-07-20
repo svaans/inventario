@@ -11,6 +11,7 @@ class ClienteHistoryAPITest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         cat = Categoria.objects.create(nombre_categoria="General")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         prod = Producto.objects.create(
             codigo="P1",
             nombre="Prod",
@@ -19,7 +20,7 @@ class ClienteHistoryAPITest(TestCase):
             costo=1,
             stock_actual=10,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
         )
         self.cliente = Cliente.objects.create(nombre="Juan", contacto="123")

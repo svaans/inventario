@@ -1,6 +1,14 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
-from inventario.models import Categoria, Producto, Venta, DetallesVenta, DevolucionProducto
+from inventario.models import (
+    Categoria,
+    Producto,
+    Venta,
+    DetallesVenta,
+    DevolucionProducto,
+    LoteProductoFinal,
+    UnidadMedida,
+)
 from finanzas.models import Transaccion
 from finanzas.utils import compile_monthly_metrics
 
@@ -10,6 +18,7 @@ class MonthlyMetricsTest(TestCase):
         self.user = User.objects.create_user(username="admin", password="pass")
         self.user.groups.add(admin_group)
         cat = Categoria.objects.create(nombre_categoria="General")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
         self.prod = Producto.objects.create(
             codigo="P1",
             nombre="Prod",
@@ -18,8 +27,14 @@ class MonthlyMetricsTest(TestCase):
             costo=1,
             stock_actual=5,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
+        )
+        self.lote_final = LoteProductoFinal.objects.create(
+            codigo="A1",
+            producto=self.prod,
+            fecha_produccion="2024-02-01",
+            cantidad_producida=10,
         )
         venta = Venta.objects.create(fecha="2024-02-01", total=20, usuario=self.user)
         DetallesVenta.objects.create(venta=venta, producto=self.prod, cantidad=10, precio_unitario=2)
@@ -33,7 +48,7 @@ class MonthlyMetricsTest(TestCase):
         )
         DevolucionProducto.objects.create(
             fecha="2024-02-10",
-            lote="A1",
+            lote_final=self.lote_final,
             producto=self.prod,
             motivo="Defecto",
             cantidad=1,

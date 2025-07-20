@@ -1,8 +1,16 @@
 import pytest
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, Proveedor, Cliente, Venta, DetallesVenta, ComposicionProducto
-
+from inventario.models import (
+    Categoria,
+    Producto,
+    Proveedor,
+    Cliente,
+    Venta,
+    DetallesVenta,
+    ComposicionProducto,
+    UnidadMedida,
+)
 @pytest.mark.django_db
 def test_producto_list_queries(django_assert_num_queries):
     admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -13,6 +21,7 @@ def test_producto_list_queries(django_assert_num_queries):
 
     cat = Categoria.objects.create(nombre_categoria="Cat")
     prov = Proveedor.objects.create(nombre="Prov", contacto="1", direccion="d")
+    unidad = UnidadMedida.objects.get(abreviatura="u")
     ing = Producto.objects.create(
         codigo="ING",
         nombre="Ing",
@@ -21,7 +30,7 @@ def test_producto_list_queries(django_assert_num_queries):
         costo=1,
         stock_actual=1,
         stock_minimo=1,
-        unidad_media="u",
+        unidad_media=unidad,
         categoria=cat,
         proveedor=prov,
     )
@@ -34,7 +43,7 @@ def test_producto_list_queries(django_assert_num_queries):
             costo=1,
             stock_actual=1,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad,
             categoria=cat,
             proveedor=prov,
         )
@@ -66,7 +75,7 @@ def test_venta_list_queries(django_assert_num_queries):
         costo=1,
         stock_actual=1,
         stock_minimo=1,
-        unidad_media="u",
+        unidad_media=unidad,
         categoria=cat,
         proveedor=prov,
     )

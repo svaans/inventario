@@ -1,7 +1,11 @@
 from django import forms
-from .models import Compra, DetalleCompra, Venta, Producto, DetallesVenta, MovimientoInventario
-
+from .models import Compra, DetalleCompra, Venta, Producto, DetallesVenta, MovimientoInventario, UnidadMedida
 class ProductoForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["unidad_media"].queryset = UnidadMedida.objects.all()
+
     class Meta:
         model = Producto
         fields = '__all__'
@@ -14,7 +18,7 @@ class ProductoForm(forms.ModelForm):
             'costo': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock_minimo': forms.NumberInput(attrs={'class': 'form-control'}),
-            'unidad_media': forms.TextInput(attrs={'class': 'form-control'}),
+            'unidad_media': forms.Select(attrs={'class': 'form-select'}, choices=[]),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
             'proveedor': forms.Select(attrs={'class': 'form-select'}),
         }

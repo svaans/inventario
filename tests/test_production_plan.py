@@ -8,6 +8,7 @@ from inventario.models import (
     Venta,
     DetallesVenta,
     ComposicionProducto,
+    UnidadMedida,
 )
 from produccion.models import EventoEspecial, CapacidadTurno
 
@@ -20,6 +21,8 @@ class ProductionPlanAPITest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        unidad_u = UnidadMedida.objects.get(abreviatura="u")
+        unidad_kg = UnidadMedida.objects.get(abreviatura="kg")
         self.emp = Producto.objects.create(
             codigo="E1",
             nombre="Empanada",
@@ -27,7 +30,7 @@ class ProductionPlanAPITest(TestCase):
             precio=2,
             stock_actual=0,
             stock_minimo=1,
-            unidad_media="u",
+            unidad_media=unidad_u,
             categoria=cat,
         )
         self.ing = Producto.objects.create(
@@ -38,7 +41,7 @@ class ProductionPlanAPITest(TestCase):
             costo=0,
             stock_actual=20,
             stock_minimo=1,
-            unidad_media="kg",
+            unidad_media=unidad_kg,
             categoria=cat,
         )
         ComposicionProducto.objects.create(
