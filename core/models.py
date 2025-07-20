@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
 
@@ -42,10 +43,18 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, default="")
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
-    costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    stock_actual = models.DecimalField(max_digits=10, decimal_places=2)
-    stock_minimo = models.DecimalField(max_digits=10, decimal_places=2)
+    precio = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    costo = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
+    stock_actual = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    stock_minimo = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     unidad_media = models.ForeignKey(
         UnidadMedida, on_delete=models.PROTECT, null=True
     )
@@ -91,8 +100,12 @@ class HistorialPrecio(models.Model):
     producto = models.ForeignKey(
         Producto, related_name="historial", on_delete=models.CASCADE
     )
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
-    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    precio = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    costo = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     fecha = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -117,7 +130,9 @@ class Proveedor(models.Model):
 class Compra(models.Model):
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha = models.DateField()
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
 
     def __str__(self):
         return f"Compra {self.id} - {self.fecha}"
@@ -133,8 +148,12 @@ class Compra(models.Model):
 class DetalleCompra(models.Model):
     compra = models.ForeignKey(Compra, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
 
     def save(self, *args, **kwargs):
         quant = Decimal("0.01")
@@ -159,7 +178,9 @@ class Cliente(models.Model):
 # ventas
 class Venta(models.Model):
     fecha = models.DateField()
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -177,8 +198,12 @@ class Venta(models.Model):
 class DetallesVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     lote = models.CharField(max_length=50, null=True, blank=True)
     lote_final = models.ForeignKey(
         'LoteProductoFinal', null=True, blank=True, on_delete=models.SET_NULL
@@ -199,7 +224,8 @@ class ComposicionProducto(models.Model):
     )
     ingrediente = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad_requerida = models.FloatField(
-        help_text="Cantidad requerida del ingrediente (en gramos, litros, etc.)"
+        help_text="Cantidad requerida del ingrediente (en gramos, litros, etc.)",
+        validators=[MinValueValidator(0)],
     )
     lote = models.CharField(max_length=50, null=True, blank=True)
     activo = models.BooleanField(default=True)
@@ -212,9 +238,15 @@ class ComposicionProducto(models.Model):
 class Balance(models.Model):
     mes = models.IntegerField()
     anio = models.IntegerField()
-    total_ingresos = models.DecimalField(max_digits=12, decimal_places=2)
-    total_egresos = models.DecimalField(max_digits=12, decimal_places=2)
-    utilidad = models.DecimalField(max_digits=12, decimal_places=2)
+    total_ingresos = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    total_egresos = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    utilidad = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
 
     def __str__(self):
         return f"Balance {self.mes}/{self.anio}"
@@ -227,7 +259,9 @@ class MovimientoInventario(models.Model):
 
     producto = models.ForeignKey('Producto', null=True, on_delete=models.SET_NULL)
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     fecha = models.DateTimeField(auto_now_add=True)
     motivo = models.CharField(max_length=100)
 
@@ -274,7 +308,9 @@ class Transaccion(models.Model):
     TIPO_COSTO_CHOICES = [("fijo", "Fijo"), ("variable", "Variable")]
 
     fecha = models.DateField()
-    monto = models.DecimalField(max_digits=12, decimal_places=2)
+    monto = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     categoria = models.CharField(max_length=50)
     operativo = models.BooleanField(default=True)
@@ -339,7 +375,9 @@ class DevolucionProducto(models.Model):
     )
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     motivo = models.CharField(max_length=200)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    cantidad = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     reembolso = models.BooleanField(default=False)
     sustitucion = models.BooleanField(default=False)
@@ -365,8 +403,12 @@ class LoteMateriaPrima(models.Model):
     )
     fecha_recepcion = models.DateField()
     fecha_vencimiento = models.DateField(default=date.today)
-    cantidad_inicial = models.DecimalField(max_digits=10, decimal_places=2)
-    cantidad_usada = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cantidad_inicial = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    cantidad_usada = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
     fecha_agotado = models.DateField(null=True, blank=True)
 
     def __str__(self):
@@ -418,10 +460,15 @@ class LoteProductoFinal(models.Model):
         limit_choices_to={"tipo__in": ["empanada", "producto_final", "bebida"]},
     )
     fecha_produccion = models.DateField()
-    cantidad_producida = models.DecimalField(max_digits=10, decimal_places=2)
-    cantidad_vendida = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    cantidad_devuelta = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    cantidad_producida = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    cantidad_vendida = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
+    cantidad_devuelta = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
     ingredientes = models.ManyToManyField(
         LoteMateriaPrima,
         through="UsoLoteMateriaPrima",
@@ -442,8 +489,9 @@ class UsoLoteMateriaPrima(models.Model):
         LoteProductoFinal, related_name="usos", on_delete=models.CASCADE
     )
     fecha = models.DateField()
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
-
+    cantidad = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     def __str__(self):
         return f"{self.lote_materia_prima.codigo} -> {self.lote_producto_final.codigo}"
 
@@ -468,8 +516,7 @@ class EventoEspecial(models.Model):
 
     fecha = models.DateField(unique=True)
     nombre = models.CharField(max_length=100)
-    factor_demanda = models.FloatField(default=1.0)
-
+    factor_demanda = models.FloatField(default=1.0, validators=[MinValueValidator(0)])
     def __str__(self) -> str:
         return f"{self.nombre} ({self.fecha})"
 
@@ -501,8 +548,12 @@ class RegistroTurno(models.Model):
     turno = models.CharField(max_length=10, choices=CapacidadTurno.TURNO_CHOICES)
     empleados = models.ManyToManyField(settings.AUTH_USER_MODEL)
     produccion = models.PositiveIntegerField(default=0)
-    ventas = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    horas_trabajadas = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    ventas = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
+    horas_trabajadas = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    )
     productos_defectuosos = models.PositiveIntegerField(default=0)
     devoluciones = models.PositiveIntegerField(default=0)
     observaciones = models.TextField(blank=True)
