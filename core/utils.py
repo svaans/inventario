@@ -25,8 +25,10 @@ from .models import (
 from .analytics import purchase_recommendations
 
 
-def consumir_ingrediente_fifo(producto: Producto, cantidad: Decimal) -> None:
-    """Consume materia prima aplicando rotación FIFO."""
+def consumir_ingrediente_fifo(
+    producto: Producto, cantidad: Decimal
+) -> List[tuple[Optional["LoteMateriaPrima"], Decimal, Decimal]]:
+    """Consume materia prima aplicando rotación FIFO y retorna costos."""
     restante = cantidad
     lotes = (
         LoteMateriaPrima.objects.filter(
@@ -35,6 +37,7 @@ def consumir_ingrediente_fifo(producto: Producto, cantidad: Decimal) -> None:
         .order_by("fecha_recepcion")
         .select_for_update()
     )
+    consumos: List[tuple[Optional[LoteMateriaPrima], Decimal, Decimal]] = []
     if not lotes.exists():
         # Fallback al stock del producto si no hay lotes registrados
         disponible = producto.stock_actual
@@ -42,23 +45,28 @@ def consumir_ingrediente_fifo(producto: Producto, cantidad: Decimal) -> None:
             raise ValueError("No hay suficiente materia prima disponible")
         producto.stock_actual -= cantidad
         producto.save()
-        return
+        costo = (producto.costo or Decimal("0")) * cantidad
+        consumos.append((None, cantidad, costo))
+        return consumos
     for lote in lotes:
         disponible = lote.cantidad_disponible
         if disponible <= 0:
             continue
         usar = min(disponible, restante)
-        lote.consumir(usar)
-        restante -= usar
+        if usar > 0:
+            lote.consumir(usar)
+            costo = lote.costo_unitario_restante * usar
+            consumos.append((lote, usar, costo))
+            restante -= usar
         if restante <= 0:
             break
     if restante > 0:
         raise ValueError("No hay suficiente materia prima disponible")
-    
+    return consumos
 
 def vender_producto_final_fifo(
     producto: Producto, cantidad: Decimal
-) -> List[tuple["LoteProductoFinal", Decimal]]:
+) -> List[tuple["LoteProductoFinal", Decimal, Decimal]]:
     """Consume stock de productos finales aplicando FIFO por lote.
 
     Devuelve una lista con los lotes utilizados y la cantidad tomada de cada uno.
@@ -73,7 +81,7 @@ def vender_producto_final_fifo(
         .select_for_update()
     )
 
-    consumos: List[tuple[LoteProductoFinal, Decimal]] = []
+    consumos: List[tuple[LoteProductoFinal, Decimal, Decimal]] = []
     if not lotes.exists():
         return consumos
 
@@ -87,7 +95,8 @@ def vender_producto_final_fifo(
         if usar > 0:
             lote.cantidad_vendida += usar
             lote.save()
-            consumos.append((lote, usar))
+            costo = lote.costo_unitario_restante * usar
+            consumos.append((lote, usar, costo))
             restante -= usar
         if restante <= 0:
             break

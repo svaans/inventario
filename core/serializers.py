@@ -331,7 +331,7 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     except ValueError:
                         raise serializers.ValidationError({"detalles": f"Stock de lotes insuficiente para {producto.nombre}"})
                 if consumos:
-                    for lpf, cant_lote in consumos:
+                    for lpf, cant_lote, _ in consumos:
                         DetallesVenta.objects.create(
                             venta=venta,
                             producto=producto,

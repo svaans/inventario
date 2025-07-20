@@ -505,7 +505,17 @@ def exportar_inventario_excel(request):
     ws.title = 'Inventario'
     ws.append(['Codigo', 'Nombre', 'Tipo', 'Stock', 'Stock minimo', 'Unidad', 'Categoria'])
     for p in Producto.objects.all():
-        ws.append([p.codigo, p.nombre, p.get_tipo_display(), p.stock_actual, p.stock_minimo, p.unidad_media, str(p.categoria)])
+        ws.append(
+            [
+                p.codigo,
+                p.nombre,
+                p.get_tipo_display(),
+                p.stock_actual,
+                p.stock_minimo,
+                str(p.unidad_media),
+                str(p.categoria),
+            ]
+        )
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=inventario.xlsx'
     wb.save(response)

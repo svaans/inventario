@@ -9,8 +9,11 @@ from inventario.models import (
     LoteProductoFinal,
     UnidadMedida,
 )
+from decimal import Decimal
+
 from finanzas.models import Transaccion
 from finanzas.profitability import monthly_profitability_ranking
+from inventario.utils import vender_producto_final_fifo
 class ProfitabilityRankingTest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -70,3 +73,62 @@ class ProfitabilityRankingTest(TestCase):
         data = monthly_profitability_ranking(2024, 1)
         self.assertEqual(data["most_profitable"][0]["nombre"], self.p1.nombre)
         self.assertEqual(data["least_profitable"][0]["nombre"], self.p2.nombre)
+
+
+class FifoCostingTest(TestCase):
+    """Verify cost calculations across multiple lots with different costs."""
+
+    def setUp(self):
+        admin_group, _ = Group.objects.get_or_create(name="admin")
+        self.user = User.objects.create_user(username="boss", password="x")
+        self.user.groups.add(admin_group)
+        cat = Categoria.objects.create(nombre_categoria="General")
+        unidad = UnidadMedida.objects.get(abreviatura="u")
+        self.prod = Producto.objects.create(
+            codigo="PF1",
+            nombre="Empanada",
+            tipo="empanada",
+            precio=3,
+            costo=1,
+            stock_actual=15,
+            stock_minimo=1,
+            unidad_media=unidad,
+            categoria=cat,
+        )
+
+        # Primer lote con costo unitario 1
+        self.lote1 = LoteProductoFinal.objects.create(
+            codigo="L1",
+            producto=self.prod,
+            fecha_produccion="2025-07-21",
+            cantidad_producida=5,
+        )
+
+        # Actualizar costo y crear segundo lote con costo unitario 2
+        self.prod.costo = 2
+        self.prod.save()
+        self.lote2 = LoteProductoFinal.objects.create(
+            codigo="L2",
+            producto=self.prod,
+            fecha_produccion="2025-07-22",
+            cantidad_producida=10,
+        )
+
+    def test_profit_uses_lot_costs(self):
+        consumos = vender_producto_final_fifo(self.prod, Decimal("7"))
+        venta = Venta.objects.create(fecha="2025-07-23", total=21, usuario=self.user)
+        for lote, qty, _costo in consumos:
+            DetallesVenta.objects.create(
+                venta=venta,
+                producto=self.prod,
+                cantidad=qty,
+                precio_unitario=3,
+                lote=lote.codigo,
+                lote_final=lote,
+            )
+        self.prod.stock_actual -= Decimal("7")
+        self.prod.save()
+
+        data = monthly_profitability_ranking(2025, 7)
+        unit_profit = data["most_profitable"][0]["unit_profit"]
+        self.assertAlmostEqual(unit_profit, 1.0, places=2)

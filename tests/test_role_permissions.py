@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto
+from inventario.models import Categoria, Producto, UnidadMedida
 
 class RoleAccessTests(TestCase):
     def setUp(self):

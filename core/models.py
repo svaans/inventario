@@ -448,6 +448,20 @@ class LoteMateriaPrima(models.Model):
         if dias <= 7:
             return 0.1
         return 0.0
+    
+    @property
+    def costo_unitario_restante(self):
+        """Costo por unidad para este lote basado en el historial del producto."""
+        hist = (
+            self.producto.historial.filter(fecha__lte=self.fecha_recepcion)
+            .order_by("-fecha")
+            .first()
+        )
+        if not hist:
+            hist = self.producto.historial.order_by("fecha").first()
+        if hist and hist.costo is not None:
+            return hist.costo
+        return self.producto.costo or Decimal("0")
 
 
 class LoteProductoFinal(models.Model):
@@ -477,6 +491,20 @@ class LoteProductoFinal(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.producto.nombre}"
+    
+    @property
+    def costo_unitario_restante(self):
+        """Costo por unidad del lote de producto final."""
+        hist = (
+            self.producto.historial.filter(fecha__lte=self.fecha_produccion)
+            .order_by("-fecha")
+            .first()
+        )
+        if not hist:
+            hist = self.producto.historial.order_by("fecha").first()
+        if hist and hist.costo is not None:
+            return hist.costo
+        return self.producto.costo or Decimal("0")
 
 
 class UsoLoteMateriaPrima(models.Model):

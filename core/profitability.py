@@ -9,19 +9,44 @@ from .models import Producto, DetallesVenta, Transaccion, DevolucionProducto
 
 
 def monthly_profitability_ranking(year: int, month: int) -> Dict[str, List[Dict[str, float]]]:
-    """Return most and least profitable products for the given month."""
+    """Return most and least profitable products for the given month using real costs."""
     start = date(year, month, 1)
     if month == 12:
         end = date(year + 1, 1, 1)
     else:
         end = date(year, month + 1, 1)
 
-    sales_qs = (
+    detalles = (
         DetallesVenta.objects.filter(venta__fecha__gte=start, venta__fecha__lt=end)
-        .values("producto", "producto__nombre")
-        .annotate(total_qty=Sum("cantidad"), avg_price=Avg("precio_unitario"))
+        .select_related("producto", "lote_final", "venta")
     )
-    total_units = sum(d["total_qty"] or 0 for d in sales_qs)
+    by_prod: Dict[int, Dict[str, Decimal | str | Producto]] = {}
+    for det in detalles:
+        prod = det.producto
+        data = by_prod.setdefault(
+            prod.id,
+            {
+                "producto": prod,
+                "nombre": prod.nombre,
+                "qty": Decimal("0"),
+                "revenue": Decimal("0"),
+                "cost": Decimal("0"),
+            },
+        )
+        data["qty"] += det.cantidad
+        data["revenue"] += det.precio_unitario * det.cantidad
+        if det.lote_final:
+            unit_cost = det.lote_final.costo_unitario_restante
+        else:
+            hist = (
+                prod.historial.filter(fecha__lte=det.venta.fecha)
+                .order_by("-fecha")
+                .first()
+            )
+            unit_cost = hist.costo if hist and hist.costo is not None else prod.costo or Decimal("0")
+        data["cost"] += unit_cost * det.cantidad
+
+    total_units = sum(d["qty"] for d in by_prod.values())
     if total_units == 0:
         return {"most_profitable": [], "least_profitable": []}
 
@@ -36,25 +61,38 @@ def monthly_profitability_ranking(year: int, month: int) -> Dict[str, List[Dict[
     fixed_per_unit = fixed_costs / Decimal(total_units)
 
     ranking: List[Dict[str, float]] = []
-    for d in sales_qs:
-        prod = Producto.objects.get(id=d["producto"])
-        qty = Decimal(d["total_qty"] or 0)
+    for prod_id, data in by_prod.items():
+        qty = data["qty"]
         if qty == 0:
             continue
-        avg_price = Decimal(d["avg_price"] or prod.precio)
-        variable_cost = Decimal(prod.costo or 0)
-        returns = (
-            DevolucionProducto.objects.filter(
-                producto=prod, fecha__gte=start, fecha__lt=end
-            ).aggregate(total=Sum("cantidad"))["total"] or Decimal("0")
-        )
-        loss_per_unit = (returns * variable_cost) / qty if qty else Decimal("0")
+        prod: Producto = data["producto"]  # type: ignore[assignment]
+        avg_price = data["revenue"] / qty
+        variable_cost = data["cost"] / qty
+
+        returns_qs = DevolucionProducto.objects.filter(
+            producto=prod, fecha__gte=start, fecha__lt=end
+        ).select_related("lote_final")
+        loss_cost = Decimal("0")
+        for dev in returns_qs:
+            if dev.lote_final:
+                u_cost = dev.lote_final.costo_unitario_restante
+            else:
+                hist = (
+                    prod.historial.filter(fecha__lte=dev.fecha)
+                    .order_by("-fecha")
+                    .first()
+                )
+                u_cost = hist.costo if hist and hist.costo is not None else prod.costo or Decimal("0")
+            loss_cost += u_cost * dev.cantidad
+        loss_per_unit = loss_cost / qty if qty else Decimal("0")
         profit = avg_price - variable_cost - fixed_per_unit - loss_per_unit
-        ranking.append({
-            "id": prod.id,
-            "nombre": prod.nombre,
-            "unit_profit": float(profit),
-        })
+        ranking.append(
+            {
+                "id": prod.id,
+                "nombre": data["nombre"],
+                "unit_profit": float(profit),
+            }
+        )
 
     ranking.sort(key=lambda x: x["unit_profit"], reverse=True)
     most = ranking[:5]

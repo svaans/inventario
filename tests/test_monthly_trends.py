@@ -10,6 +10,7 @@ from inventario.models import (
     DevolucionProducto,
     HistorialPrecio,
     LoteProductoFinal,
+    UnidadMedida,
 )
 from datetime import datetime
 from django.utils import timezone as tz

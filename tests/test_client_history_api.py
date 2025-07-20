@@ -1,8 +1,14 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, Cliente, Venta, DetallesVenta
-
+from inventario.models import (
+    Categoria,
+    Producto,
+    Cliente,
+    Venta,
+    DetallesVenta,
+    UnidadMedida,
+)
 class ClienteHistoryAPITest(TestCase):
     def setUp(self):
         ventas_group, _ = Group.objects.get_or_create(name="ventas")
