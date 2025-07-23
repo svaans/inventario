@@ -30,13 +30,15 @@ import { Skeleton } from "../components/ui/skeleton";
 
 export default function BusinessEvolution() {
   const [period, setPeriod] = useState("month");
-  const [category, setCategory] = useState<string | undefined>();
+  const [category, setCategory] = useState("all");
 
   const {
     data = [],
     isLoading,
     isError,
-  } = useBusinessEvolution(period, { category });
+  } = useBusinessEvolution(period, {
+    category: category === "all" ? undefined : category,
+  });
 
   const {
     data: categories = [],
@@ -90,12 +92,12 @@ export default function BusinessEvolution() {
           </SelectContent>
         </Select>
 
-        <Select value={category ?? ""} onValueChange={(v) => setCategory(v || undefined)}>
+        <Select value={category} onValueChange={setCategory}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
+            <SelectItem value="all">Todas</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={String(c.id)}>
                 {c.nombre_categoria}
