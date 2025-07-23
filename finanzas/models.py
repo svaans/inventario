@@ -1,3 +1,3 @@
-from core.models import Balance, Transaccion
+from core.models.finanzas import Balance, Transaccion
 
 __all__ = ["Balance", "Transaccion"]

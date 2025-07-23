@@ -1,4 +1,4 @@
-from core.models.inventario import (
+from .inventario import (
     Categoria,
     UnidadMedida,
     Producto,
@@ -12,12 +12,20 @@ from core.models.inventario import (
     LoteProductoFinal,
     UsoLoteMateriaPrima,
 )
-from core.models.ventas import (
+from .ventas import (
     Cliente,
     Venta,
     DetallesVenta,
     DevolucionProducto,
 )
+from .produccion import (
+    MonthlyReport,
+    EventoEspecial,
+    CapacidadTurno,
+    RegistroTurno,
+    PlanProduccion,
+)
+from .finanzas import Balance, Transaccion
 
 __all__ = [
     "Categoria",
@@ -31,9 +39,16 @@ __all__ = [
     "Venta",
     "DetallesVenta",
     "ComposicionProducto",
+    "Balance",
     "MovimientoInventario",
+    "Transaccion",
     "DevolucionProducto",
     "LoteMateriaPrima",
     "LoteProductoFinal",
     "UsoLoteMateriaPrima",
+    "MonthlyReport",
+    "EventoEspecial",
+    "CapacidadTurno",
+    "RegistroTurno",
+    "PlanProduccion",
 ]

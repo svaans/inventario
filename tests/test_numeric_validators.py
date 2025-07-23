@@ -9,7 +9,7 @@ from inventario.models import (
     DetalleCompra,
     MovimientoInventario,
 )
-from core.models import RegistroTurno
+from core.models.produccion import RegistroTurno
 
 
 class NumericValidatorsTest(TestCase):

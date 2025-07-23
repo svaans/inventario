@@ -13,6 +13,7 @@ from .models import (
     Venta,
     DetallesVenta,
     MovimientoInventario,
+    UnidadMedida,
 )
 
 

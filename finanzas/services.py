@@ -2,7 +2,7 @@ import os
 from typing import Dict, Any
 import requests
 from django.core.mail import EmailMessage
-from core.models import Compra, DetalleCompra
+from core.models.inventario import Compra, DetalleCompra
 
 
 def enviar_orden_compra(compra: Compra) -> Dict[str, Any]:

@@ -8,6 +8,7 @@ from inventario.models import (
     DetallesVenta,
     DevolucionProducto,
     LoteProductoFinal,
+    UnidadMedida,
 )
 class DevolucionAPITest(TestCase):
     def setUp(self):

@@ -2,7 +2,7 @@ import os
 from django.test import TestCase
 from unittest.mock import patch
 from inventario.models import Categoria, Producto, Proveedor, UnidadMedida
-from core.models import Compra, DetalleCompra
+from core.models.inventario import Compra, DetalleCompra
 from finanzas.services import enviar_orden_compra
 
 

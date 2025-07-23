@@ -1,4 +1,4 @@
-from core.models import (
+from core.models.produccion import (
     MonthlyReport,
     EventoEspecial,
     CapacidadTurno,
