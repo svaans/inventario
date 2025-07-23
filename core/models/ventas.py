@@ -5,6 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 
 class Cliente(models.Model):
+    """Comprador habitual o eventual."""
     nombre = models.CharField(max_length=100)
     contacto = models.CharField(max_length=100)
     email = models.EmailField(null=True, blank=True)
@@ -15,6 +16,7 @@ class Cliente(models.Model):
 
 
 class Venta(models.Model):
+    """Factura generada por la venta de productos."""
     fecha = models.DateField()
     total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -31,6 +33,7 @@ class Venta(models.Model):
 
 
 class DetallesVenta(models.Model):
+    """Detalle individual dentro de una ``Venta``."""
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
     producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])

@@ -6,6 +6,15 @@ from decimal import Decimal, ROUND_HALF_UP
 
 
 class Balance(models.Model):
+    """Resumen mensual de las finanzas de la empresa.
+
+    Attributes:
+        mes: Mes al que pertenece el balance.
+        anio: Año correspondiente.
+        total_ingresos: Suma de todas las entradas de dinero.
+        total_egresos: Suma de todos los gastos registrados.
+        utilidad: Diferencia entre ingresos y egresos del periodo.
+    """
     mes = models.IntegerField()
     anio = models.IntegerField()
     total_ingresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
@@ -17,7 +26,11 @@ class Balance(models.Model):
 
 
 class Transaccion(models.Model):
-    """Registro de ingresos y egresos del flujo de caja."""
+    """Registro detallado de un ingreso o egreso de caja.
+
+    Guarda la fecha, monto y categoría junto con el responsable que la
+    realizó. Se usa para calcular balances y costos operativos.
+    """
 
     TIPO_CHOICES = [
         ("ingreso", "Ingreso"),

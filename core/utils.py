@@ -28,7 +28,23 @@ from .analytics import purchase_recommendations
 def consumir_ingrediente_fifo(
     producto: Producto, cantidad: Decimal
 ) -> List[tuple[Optional["LoteMateriaPrima"], Decimal, Decimal]]:
-    """Consume materia prima aplicando rotación FIFO y retorna costos."""
+    """Consume materia prima aplicando rotación FIFO.
+
+    Se busca el stock disponible en los ``LoteMateriaPrima`` según la fecha de
+    recepción y se descuenta hasta cubrir ``cantidad``.
+
+    Args:
+        producto: Ingrediente a consumir.
+        cantidad: Cantidad que se desea descontar.
+
+    Returns:
+        Lista de tuplas ``(lote, usado, costo)`` con el origen del consumo y el
+        costo asociado. Si no existen lotes el consumo se realiza desde el stock
+        del producto y el lote será ``None``.
+
+    Raises:
+        ValueError: Si no hay suficiente materia prima disponible.
+    """
     restante = cantidad
     lotes = (
         LoteMateriaPrima.objects.filter(

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from collections import defaultdict
+
 from datetime import date, timedelta
 from typing import Optional, Dict, List
 
+from django.db import connection
 from django.db.models import Sum
 
 from .models import DetallesVenta, Producto
@@ -57,39 +58,55 @@ def association_rules(
     if start is None:
         start = end - timedelta(days=30)
 
-    qs = (
-        DetallesVenta.objects.filter(venta__fecha__range=[start, end])
-        .values("venta_id", "producto", "producto__nombre")
-    )
-    orders: Dict[int, set[int]] = defaultdict(set)
-    for d in qs:
-        orders[int(d["venta_id"])].add(d["producto"])
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(DISTINCT id) FROM core_venta WHERE fecha BETWEEN %s AND %s",
+            [start, end],
+        )
+        total_orders = cur.fetchone()[0] or 0
+        if total_orders == 0:
+            return []
 
-    counts: Dict[int, int] = defaultdict(int)
-    pair_counts: Dict[tuple[int, int], int] = defaultdict(int)
-    for items in orders.values():
-        for a in items:
-            counts[a] += 1
-        items_list = list(items)
-        for i in range(len(items_list)):
-            for j in range(i + 1, len(items_list)):
-                pair = tuple(sorted((items_list[i], items_list[j])))
-                pair_counts[pair] += 1
-
-    num_orders = max(len(orders), 1)
-    rules = []
-    for (a, b), pc in pair_counts.items():
-        support = pc / num_orders
-        confidence = pc / counts[a] if counts[a] else 0.0
-        if support >= min_support and confidence >= min_confidence:
-            rules.append({
-                "producto_a": a,
-                "producto_b": b,
-                "support": support,
-                "confidence": confidence,
-            })
-    rules.sort(key=lambda r: r["confidence"], reverse=True)
-    return rules
+        query = """
+            WITH product_orders AS (
+                SELECT dv.producto_id, dv.venta_id
+                FROM core_detallesventa dv
+                JOIN core_venta v ON dv.venta_id = v.id
+                WHERE v.fecha BETWEEN %s AND %s
+                GROUP BY dv.producto_id, dv.venta_id
+            ),
+            product_counts AS (
+                SELECT producto_id, COUNT(*) AS order_count
+                FROM product_orders
+                GROUP BY producto_id
+            ),
+            pair_counts AS (
+                SELECT p1.producto_id AS a, p2.producto_id AS b, COUNT(*) AS pair_count
+                FROM product_orders p1
+                JOIN product_orders p2 ON p1.venta_id = p2.venta_id AND p1.producto_id < p2.producto_id
+                GROUP BY a, b
+            )
+            SELECT a, b,
+                   pair_count * 1.0 / %s AS support,
+                   pair_count * 1.0 / pc.order_count AS confidence
+            FROM pair_counts
+            JOIN product_counts pc ON pair_counts.a = pc.producto_id
+            WHERE (pair_count * 1.0 / %s) >= %s
+              AND (pair_count * 1.0 / pc.order_count) >= %s
+            ORDER BY confidence DESC
+        """
+        params = [start, end, total_orders, total_orders, min_support, min_confidence]
+        cur.execute(query, params)
+        rows = cur.fetchall()
+    return [
+        {
+            "producto_a": r[0],
+            "producto_b": r[1],
+            "support": float(r[2]),
+            "confidence": float(r[3]),
+        }
+        for r in rows
+    ]
 
 
 def purchase_recommendations(

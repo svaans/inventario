@@ -7,6 +7,7 @@ from datetime import date
 
 
 class Categoria(models.Model):
+    """Clasificación para agrupar productos similares."""
     nombre_categoria = models.CharField(max_length=100)
 
     def __str__(self):
@@ -27,6 +28,11 @@ class UnidadMedida(models.Model):
 
 
 class Producto(models.Model):
+    """Artículo o insumo gestionado en el inventario.
+
+    Destaca campos como ``codigo`` y ``tipo`` para identificarlo, además
+    del precio, costo y existencias.
+    """
     TIPO_CHOICES = [
         ("empanada", "Empanada"),
         ("ingredientes", "Ingredientes"),
@@ -95,6 +101,7 @@ class HistorialPrecio(models.Model):
 
 
 class Proveedor(models.Model):
+    """Entidad que abastece productos o insumos."""
     nombre = models.CharField(max_length=100)
     contacto = models.CharField(max_length=100)
     direccion = models.CharField(max_length=200)
@@ -104,6 +111,7 @@ class Proveedor(models.Model):
 
 
 class Compra(models.Model):
+    """Orden de compra generada a un proveedor."""
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha = models.DateField()
     total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -119,6 +127,7 @@ class Compra(models.Model):
 
 
 class DetalleCompra(models.Model):
+    """Linea individual de una ``Compra``."""
     compra = models.ForeignKey(Compra, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -134,6 +143,7 @@ class DetalleCompra(models.Model):
 
 
 class ComposicionProducto(models.Model):
+    """Relación de ingredientes para elaborar un producto final."""
     producto_final = models.ForeignKey(Producto, related_name="ingredientes", on_delete=models.CASCADE)
     ingrediente = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad_requerida = models.FloatField(
@@ -148,6 +158,7 @@ class ComposicionProducto(models.Model):
 
 
 class MovimientoInventario(models.Model):
+    """Registro de entradas y salidas de un ``Producto``."""
     TIPO_CHOICES = [
         ("entrada", "Entrada"),
         ("salida", "Salida"),
