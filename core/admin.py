@@ -17,6 +17,7 @@ from .models import (
     Transaccion,
     DevolucionProducto,
     MonthlyReport,
+    AuditLog,
 )
 
 class StockBajoFilter(admin.SimpleListFilter):
@@ -154,4 +155,9 @@ class MonthlyReportAdmin(admin.ModelAdmin):
     list_display = ('mes', 'anio', 'creado')
 
 
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ("fecha", "usuario", "accion", "objeto")
+    list_filter = ("accion", "tipo_contenido")
+    search_fields = ("usuario__username",)
 

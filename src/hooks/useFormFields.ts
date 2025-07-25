@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 
 export type ValidatorFn<T> = (value: T) => string | null;
-export type Validators<T extends Record<string, any>> = {
+export type Validators<T extends Record<string, unknown>> = {
   [K in keyof T]?: ValidatorFn<T[K]>;
 };
 
-export default function useFormFields<T extends Record<string, any>>(
+export default function useFormFields<T extends Record<string, unknown>>(
   initialValues: T,
   validators: Validators<T> = {}
 ) {

@@ -313,7 +313,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button className="bg-primary hover:bg-primary/90 shadow-golden">
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus aria-hidden="true" className="w-4 h-4 mr-2" />
           Nuevo Producto
         </Button>
       </DialogTrigger>

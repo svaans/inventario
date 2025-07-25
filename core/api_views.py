@@ -3,6 +3,7 @@ from django.db.models import F, Sum, Count, Case, When, Avg, Q
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
 from datetime import timedelta, datetime, date
+from django.contrib.contenttypes.models import ContentType
 import logging
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -62,6 +63,7 @@ from .models import (
     LoteMateriaPrima,
     LoteProductoFinal,
     UnidadMedida,
+    AuditLog,
 )
 from .serializers import (
     CriticalProductSerializer,
@@ -75,6 +77,7 @@ from .serializers import (
     DevolucionSerializer,
     RegistroTurnoSerializer,
     UnidadMedidaSerializer,
+    AuditLogSerializer,
 )
 from .utils import (
     calcular_perdidas_devolucion,
@@ -1045,3 +1048,23 @@ class ReorderSuggestionView(APIView):
         horizon = int(request.data.get("horizon", 7))
         ids = auto_reordenar(confirmar=True, horizon_days=horizon)
         return Response({"compras": ids})
+
+
+class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """API de solo lectura para revisar entradas de auditoría."""
+
+    queryset = AuditLog.objects.all().order_by("-fecha")
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related("usuario", "tipo_contenido")
+        modelo = self.request.query_params.get("modelo")
+        if modelo:
+            try:
+                app_label, model_name = modelo.split(".")
+                ct = ContentType.objects.get(app_label=app_label, model=model_name)
+                qs = qs.filter(tipo_contenido=ct)
+            except (ValueError, ContentType.DoesNotExist):
+                pass
+        return qs

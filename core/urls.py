@@ -29,6 +29,7 @@ from .api_views import (
     RegistroTurnoViewSet,
     TraceabilityView,
     ReorderSuggestionView,
+    AuditLogViewSet,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -45,6 +46,7 @@ router.register(r"api/productos", ProductoViewSet, basename="productos")
 router.register(r"api/transacciones", TransaccionViewSet, basename="transacciones")
 router.register(r"api/devoluciones", DevolucionViewSet, basename="devoluciones")
 router.register(r"api/shift-logs", RegistroTurnoViewSet, basename="shiftlogs")
+router.register(r"api/audit-logs", AuditLogViewSet, basename="auditlogs")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),

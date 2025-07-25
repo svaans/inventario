@@ -13,7 +13,7 @@ export default function CriticalProductsTicker({ products }: CriticalProductsTic
       <div className="flex items-center whitespace-nowrap animate-marquee group-hover:[animation-play-state:paused] py-2">
         {products.map((product) => (
           <span key={product.id} className="mx-4 flex items-center text-sm">
-            <AlertTriangle className="w-4 h-4 mr-1 text-destructive" />
+            <AlertTriangle aria-hidden="true" className="w-4 h-4 mr-1 text-destructive" />
             {product.nombre}: {product.stock_actual}
           </span>
         ))}

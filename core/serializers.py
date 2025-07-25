@@ -19,6 +19,7 @@ from .models import (
     DevolucionProducto,
     RegistroTurno,
     LoteMateriaPrima,
+    AuditLog,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -507,3 +508,24 @@ class RegistroTurnoSerializer(serializers.ModelSerializer):
 
     def get_eficiencia(self, obj) -> float:
         return obj.eficiencia
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    usuario_nombre = serializers.CharField(source="usuario.username", read_only=True)
+    objeto_repr = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            "id",
+            "usuario",
+            "usuario_nombre",
+            "accion",
+            "fecha",
+            "tipo_contenido",
+            "objeto_id",
+            "objeto_repr",
+        ]
+
+    def get_objeto_repr(self, obj):
+        return str(obj.objeto)

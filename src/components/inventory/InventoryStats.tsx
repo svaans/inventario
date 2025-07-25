@@ -45,7 +45,7 @@ export function InventoryStats({ totalProducts, lowStock, totalValue, lastUpdate
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.title}
             </CardTitle>
-            <stat.icon className={`h-4 w-4 ${stat.color}`} />
+            <stat.icon aria-hidden="true" className={`h-4 w-4 ${stat.color}`} />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">{stat.value}</div>

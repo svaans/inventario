@@ -86,7 +86,11 @@ export function Navigation() {
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? (
+                <X aria-hidden="true" className="h-6 w-6" />
+              ) : (
+                <Menu aria-hidden="true" className="h-6 w-6" />
+              )}
             </Button>
           </div>
         </div>

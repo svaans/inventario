@@ -26,6 +26,7 @@ from .produccion import (
     PlanProduccion,
 )
 from .finanzas import Balance, Transaccion
+from .audit import AuditLog
 
 __all__ = [
     "Categoria",
@@ -51,4 +52,5 @@ __all__ = [
     "CapacidadTurno",
     "RegistroTurno",
     "PlanProduccion",
+    "AuditLog",
 ]
