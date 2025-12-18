@@ -4,12 +4,13 @@ from rest_framework.test import APIRequestFactory
 from django.db import close_old_connections
 from rest_framework import serializers
 import threading
-from inventario.models import Categoria, Producto, UnidadMedida
+from inventario.models import Categoria, Producto, UnidadMedida, FamiliaProducto
 from inventario.serializers import VentaCreateSerializer
 
 class ConcurrentSaleTest(TransactionTestCase):
     def setUp(self):
-        cat = Categoria.objects.create(nombre_categoria="Cat")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="Cat", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         self.producto = Producto.objects.create(
             codigo="CS1",

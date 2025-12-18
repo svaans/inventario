@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Proveedor, UnidadMedida
+from inventario.models import Categoria, Proveedor, UnidadMedida, FamiliaProducto
 
 class SuperuserAdminTest(TestCase):
     def setUp(self):
@@ -11,7 +11,8 @@ class SuperuserAdminTest(TestCase):
         self.client = Client()
         self.api_client = APIClient()
         self.api_client.force_authenticate(user=self.superuser)
-        self.categoria = Categoria.objects.create(nombre_categoria="Prueba")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        self.categoria = Categoria.objects.create(nombre_categoria="Prueba", familia=fam_emp)
         self.proveedor = Proveedor.objects.create(nombre="Prov", contacto="1", direccion="d")
 
     def test_superuser_login_redirects_to_dashboard(self):

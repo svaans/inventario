@@ -14,12 +14,14 @@ from .models import (
     DetallesVenta,
     MovimientoInventario,
     UnidadMedida,
+    FamiliaProducto,
 )
 
 
 class ProductoTests(TestCase):
     def setUp(self):
-        self.categoria = Categoria.objects.create(nombre_categoria="General")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        self.categoria = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         self.proveedor = Proveedor.objects.create(
             nombre="Prov", contacto="c", direccion="d"
         )

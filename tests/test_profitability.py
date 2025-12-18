@@ -8,6 +8,7 @@ from inventario.models import (
     DevolucionProducto,
     LoteProductoFinal,
     UnidadMedida,
+    FamiliaProducto,
 )
 from decimal import Decimal
 
@@ -19,7 +20,8 @@ class ProfitabilityRankingTest(TestCase):
         admin_group, _ = Group.objects.get_or_create(name="admin")
         self.user = User.objects.create_user(username="admin", password="pass")
         self.user.groups.add(admin_group)
-        cat = Categoria.objects.create(nombre_categoria="General")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         self.p1 = Producto.objects.create(
             codigo="PR1",
@@ -82,7 +84,8 @@ class FifoCostingTest(TestCase):
         admin_group, _ = Group.objects.get_or_create(name="admin")
         self.user = User.objects.create_user(username="boss", password="x")
         self.user.groups.add(admin_group)
-        cat = Categoria.objects.create(nombre_categoria="General")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         self.prod = Producto.objects.create(
             codigo="PF1",

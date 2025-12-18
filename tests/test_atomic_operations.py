@@ -9,22 +9,26 @@ from inventario.models import (
     ComposicionProducto,
     MovimientoInventario,
     UnidadMedida,
+    FamiliaProducto,
 )
 from inventario.serializers import ProductoSerializer, VentaCreateSerializer
 
 class ProductoAtomicityTest(TestCase):
     def setUp(self):
-        self.cat = Categoria.objects.create(nombre_categoria="Cat")
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        self.cat_ing = Categoria.objects.create(nombre_categoria="Cat", familia=fam_ing)
+        self.cat_emp = Categoria.objects.create(nombre_categoria="Cat empanada", familia=fam_emp)
         unidad_g = UnidadMedida.objects.get(abreviatura="g")
         self.ing = Producto.objects.create(
             codigo="T_I1",
             nombre="Ing1",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             stock_actual=100,
             stock_minimo=0,
             unidad_media=unidad_g,
-            categoria=self.cat,
+            categoria=self.cat_ing,
         )
 
     def test_fail_creating_ingredients_rolls_back(self):
@@ -38,7 +42,7 @@ class ProductoAtomicityTest(TestCase):
             "stock_actual": 10,
             "stock_minimo": 1,
             "unidad_media": UnidadMedida.objects.get(abreviatura="u").id,
-            "categoria": self.cat.id,
+            "categoria": self.cat_emp.id,
             "proveedor": None,
             "ingredientes": [
                 {"ingrediente": self.ing.id, "cantidad_requerida": 5}
@@ -55,7 +59,8 @@ class ProductoAtomicityTest(TestCase):
 
 class VentaAtomicityTest(TestCase):
     def setUp(self):
-        cat = Categoria.objects.create(nombre_categoria="Cat")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="Cat", familia=fam_emp)
         self.producto = Producto.objects.create(
             codigo="T_V1",
             nombre="Prod",

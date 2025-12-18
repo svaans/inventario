@@ -8,6 +8,7 @@ from inventario.models import (
     DevolucionProducto,
     LoteProductoFinal,
     UnidadMedida,
+    FamiliaProducto,
 )
 from finanzas.models import Transaccion
 from finanzas.utils import compile_monthly_metrics
@@ -17,7 +18,9 @@ class MonthlyMetricsTest(TestCase):
         admin_group, _ = Group.objects.get_or_create(name="admin")
         self.user = User.objects.create_user(username="admin", password="pass")
         self.user.groups.add(admin_group)
-        cat = Categoria.objects.create(nombre_categoria="General")
+        fam_otro = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.OTROS)
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         self.prod = Producto.objects.create(
             codigo="P1",

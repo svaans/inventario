@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, Proveedor, Compra, DetalleCompra, UnidadMedida
+from inventario.models import Categoria, Producto, Proveedor, Compra, DetalleCompra, UnidadMedida, FamiliaProducto
 class ReorderAPITest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -9,13 +9,14 @@ class ReorderAPITest(TestCase):
         self.user.groups.add(admin_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        cat = Categoria.objects.create(nombre_categoria="Insumos")
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat = Categoria.objects.create(nombre_categoria="Insumos", familia=fam_ing)
         self.prov = Proveedor.objects.create(nombre="Prov", contacto="c", direccion="d")
         unidad = UnidadMedida.objects.get(abreviatura="kg")
         self.prod = Producto.objects.create(
             codigo="I1",
             nombre="Harina",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             costo=1,
             stock_actual=0,

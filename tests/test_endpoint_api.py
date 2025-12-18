@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User, Group
-from inventario.models import Producto, Categoria, Proveedor, MovimientoInventario, UnidadMedida
+from inventario.models import Producto, Categoria, Proveedor, MovimientoInventario, UnidadMedida, FamiliaProducto
 class ProductoAPITest(TestCase):
     def setUp(self):
         admin_group, _ = Group.objects.get_or_create(name="admin")
@@ -9,7 +9,10 @@ class ProductoAPITest(TestCase):
         self.user.groups.add(admin_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        self.categoria = Categoria.objects.create(nombre_categoria="Bebidas")
+        fam_beb = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.BEBIDAS)
+        self.categoria, _ = Categoria.objects.get_or_create(
+            nombre_categoria="Bebidas", defaults={"familia": fam_beb}
+        )
         self.proveedor = Proveedor.objects.create(nombre="Proveedor 1", contacto="123", direccion="Calle falsa 123")
 
     def test_crear_producto_asignado_a_categoria(self):
@@ -17,7 +20,7 @@ class ProductoAPITest(TestCase):
             "codigo": "P001",
             "nombre": "Coca Cola",
             "descripcion": "Bebida gaseosa",
-            "tipo": "empanada",
+            "tipo": "bebida",
             "precio": 1.5,
             "costo": 0.5,
             "stock_actual": 100,
@@ -37,7 +40,7 @@ class ProductoAPITest(TestCase):
             "codigo": "P002",
             "nombre": "Fanta",
             "descripcion": "Bebida naranja",
-            "tipo": "empanada",
+            "tipo": "bebida",
             "precio": 1.0,
             "costo": 0.4,
             "stock_actual": 50,
@@ -63,7 +66,7 @@ class ProductoAPITest(TestCase):
             "codigo": "P003",
             "nombre": "Sprite",
             "descripcion": "Bebida clara",
-            "tipo": "empanada",
+            "tipo": "bebida",
             "precio": 1.2,
             "costo": 0.4,
             "stock_actual": 30,

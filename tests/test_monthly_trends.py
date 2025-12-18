@@ -11,6 +11,7 @@ from inventario.models import (
     HistorialPrecio,
     LoteProductoFinal,
     UnidadMedida,
+    FamiliaProducto,
 )
 from datetime import datetime
 from django.utils import timezone as tz
@@ -23,7 +24,10 @@ class MonthlyTrendsAPITest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-        cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat, _ = Categoria.objects.get_or_create(nombre_categoria="Empanadas", defaults={"familia": fam_emp})
+        cat_ing, _ = Categoria.objects.get_or_create(nombre_categoria="Ingredientes", defaults={"familia": fam_ing})
         unidad_u = UnidadMedida.objects.get(abreviatura="u")
         unidad_kg = UnidadMedida.objects.get(abreviatura="kg")
         self.prod = Producto.objects.create(
@@ -40,13 +44,13 @@ class MonthlyTrendsAPITest(TestCase):
         self.ing = Producto.objects.create(
             codigo="I1",
             nombre="Carne",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             costo=1,
             stock_actual=5,
             stock_minimo=1,
             unidad_media=unidad_kg,
-            categoria=cat,
+            categoria=cat_ing,
         )
         self.lote_final = LoteProductoFinal.objects.create(
             codigo="L1",

@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F, Sum, Count, Case, When, Avg, Q
+from django.db.models import F, Sum, Count, Case, When, Avg, Q, Prefetch
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
 from datetime import timedelta, datetime, date
@@ -131,6 +131,12 @@ class ProductoViewSet(viewsets.ModelViewSet):
             except (TypeError, ValueError):
                 errors["categoria"] = ["Invalid id"]
 
+        if "familia" in data:
+            try:
+                data["familia"] = int(data["familia"])
+            except (TypeError, ValueError):
+                errors["familia"] = ["Invalid id"]
+
         proveedor_val = data.get("proveedor")
         if "proveedor" in data:
             if proveedor_val in ("", None):
@@ -169,8 +175,12 @@ class ProductoViewSet(viewsets.ModelViewSet):
         return [IsAdminUser()]
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related("categoria", "proveedor").prefetch_related(
-            "ingredientes__ingrediente"
+        ingrediente_prefetch = Prefetch(
+            "ingredientes__ingrediente",
+            queryset=Producto.objects.select_related("unidad_media"),
+        )
+        qs = super().get_queryset().select_related("categoria", "proveedor", "familia", "unidad_media").prefetch_related(
+            ingrediente_prefetch
         )
         search = self.request.query_params.get("search")
         codigo = self.request.query_params.get("codigo")
@@ -211,6 +221,8 @@ class ProductoViewSet(viewsets.ModelViewSet):
                 tipo="salida",
                 cantidad=stock,
                 motivo="Eliminación de producto",
+                usuario=self.request.user if self.request.user.is_authenticated else None,
+                operacion_tipo=MovimientoInventario.OPERACION_ELIMINACION,
             )
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)

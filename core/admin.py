@@ -18,6 +18,7 @@ from .models import (
     DevolucionProducto,
     MonthlyReport,
     AuditLog,
+    FamiliaProducto,
 )
 
 class StockBajoFilter(admin.SimpleListFilter):
@@ -36,13 +37,20 @@ class StockBajoFilter(admin.SimpleListFilter):
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'tipo', 'categoria', 'stock_actual', 'stock_minimo', 'unidad_media')
-    list_filter = ('tipo', 'categoria', StockBajoFilter)
+    list_display = ('nombre', 'tipo', 'familia', 'categoria', 'stock_actual', 'stock_minimo', 'unidad_media')
+    list_filter = ('tipo', 'familia', 'categoria', StockBajoFilter)
     search_fields = ('nombre',)
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
     search_fields = ('nombre_categoria',)
+    list_display = ("nombre_categoria", "familia")
+
+
+@admin.register(FamiliaProducto)
+class FamiliaProductoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "clave")
+    search_fields = ("nombre", "clave")
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):

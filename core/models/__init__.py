@@ -11,6 +11,7 @@ from .inventario import (
     LoteMateriaPrima,
     LoteProductoFinal,
     UsoLoteMateriaPrima,
+    FamiliaProducto,
 )
 from .ventas import (
     Cliente,
@@ -40,6 +41,7 @@ __all__ = [
     "Venta",
     "DetallesVenta",
     "ComposicionProducto",
+    "FamiliaProducto",
     "Balance",
     "MovimientoInventario",
     "Transaccion",

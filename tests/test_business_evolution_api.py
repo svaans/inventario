@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, Cliente, Venta, DetallesVenta, UnidadMedida
+from inventario.models import Categoria, Producto, Cliente, Venta, DetallesVenta, UnidadMedida, FamiliaProducto
 from finanzas.models import Transaccion
 from datetime import date
 
@@ -12,7 +12,8 @@ class BusinessEvolutionAPITest(TestCase):
         self.user.groups.add(admin_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        cat = Categoria.objects.create(nombre_categoria="General")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         prod = Producto.objects.create(
             codigo="P1",

@@ -8,13 +8,15 @@ from inventario.models import (
     Compra,
     DetalleCompra,
     MovimientoInventario,
+    FamiliaProducto,
 )
 from core.models.produccion import RegistroTurno
 
 
 class NumericValidatorsTest(TestCase):
     def setUp(self):
-        self.categoria = Categoria.objects.create(nombre_categoria="Val")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        self.categoria = Categoria.objects.create(nombre_categoria="Val", familia=fam_emp)
         self.unidad = UnidadMedida.objects.get(abreviatura="u")
         self.proveedor = Proveedor.objects.create(
             nombre="Prov", contacto="c", direccion="d"

@@ -9,6 +9,7 @@ from inventario.models import (
     DevolucionProducto,
     LoteProductoFinal,
     UnidadMedida,
+    FamiliaProducto,
 )
 class DevolucionLossesAPITest(TestCase):
     def setUp(self):
@@ -17,7 +18,10 @@ class DevolucionLossesAPITest(TestCase):
         self.user.groups.add(admin_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        self.cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        self.cat, _ = Categoria.objects.get_or_create(
+            nombre_categoria="Empanadas", defaults={"familia": fam_emp}
+        )
         unidad = UnidadMedida.objects.get(abreviatura="u")
         self.prod = Producto.objects.create(
             codigo="L1",

@@ -12,12 +12,14 @@ from inventario.models import (
     Cliente,
     ComposicionProducto,
     UnidadMedida,
+    FamiliaProducto,
 )
 from inventario.serializers import ProductoSerializer
 
 class ProductoSerializerTest(TestCase):
     def setUp(self):
-        self.categoria = Categoria.objects.create(nombre_categoria="Prueba")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        self.categoria = Categoria.objects.create(nombre_categoria="Prueba", familia=fam_emp)
         self.proveedor = Proveedor.objects.create(nombre="Proveedor X", contacto="123", direccion="Dirección")
 
     def test_producto_con_categoria_valida(self):
@@ -38,12 +40,15 @@ class ProductoSerializerTest(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_ingrediente_sin_proveedor_opcional(self):
-        cat_ing = Categoria.objects.create(nombre_categoria="Ingredientes")
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat_ing, _ = Categoria.objects.get_or_create(
+            nombre_categoria="Ingredientes", defaults={"familia": fam_ing}
+        )
         data = {
             "codigo": "ING1",
             "nombre": "Pimienta",
             "descripcion": "",
-            "tipo": "ingredientes",
+            "tipo": "ingrediente",
             "precio": "1.00",
             "costo": "0.50",
             "stock_actual": "10",
@@ -115,12 +120,18 @@ class ProductoSerializerTest(TestCase):
 
 class ComposicionTest(TestCase):
     def setUp(self):
-        cat_final = Categoria.objects.create(nombre_categoria="Empanadas")
-        cat_ing = Categoria.objects.create(nombre_categoria="Ingredientes")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat_final, _ = Categoria.objects.get_or_create(
+            nombre_categoria="Empanadas", defaults={"familia": fam_emp}
+        )
+        cat_ing, _ = Categoria.objects.get_or_create(
+            nombre_categoria="Ingredientes", defaults={"familia": fam_ing}
+        )
         self.har = Producto.objects.create(
             codigo="I1",
             nombre="Harina",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             stock_actual=1000,
             stock_minimo=0,
@@ -130,7 +141,7 @@ class ComposicionTest(TestCase):
         self.carne = Producto.objects.create(
             codigo="I2",
             nombre="Carne",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             stock_actual=500,
             stock_minimo=0,

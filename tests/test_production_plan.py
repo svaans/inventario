@@ -9,6 +9,7 @@ from inventario.models import (
     DetallesVenta,
     ComposicionProducto,
     UnidadMedida,
+    FamiliaProducto,
 )
 from produccion.models import EventoEspecial, CapacidadTurno
 
@@ -20,7 +21,10 @@ class ProductionPlanAPITest(TestCase):
         self.user.groups.add(admin_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        cat = Categoria.objects.create(nombre_categoria="Empanadas")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat, _ = Categoria.objects.get_or_create(nombre_categoria="Empanadas", defaults={"familia": fam_emp})
+        cat_ing, _ = Categoria.objects.get_or_create(nombre_categoria="Ingredientes", defaults={"familia": fam_ing})
         unidad_u = UnidadMedida.objects.get(abreviatura="u")
         unidad_kg = UnidadMedida.objects.get(abreviatura="kg")
         self.emp = Producto.objects.create(
@@ -36,13 +40,13 @@ class ProductionPlanAPITest(TestCase):
         self.ing = Producto.objects.create(
             codigo="I1",
             nombre="Harina",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             costo=0,
             stock_actual=20,
             stock_minimo=1,
             unidad_media=unidad_kg,
-            categoria=cat,
+            categoria=cat_ing,
         )
         ComposicionProducto.objects.create(
             producto_final=self.emp,

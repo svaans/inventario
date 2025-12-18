@@ -11,6 +11,7 @@ from core.models.inventario import (
     LoteMateriaPrima,
     LoteProductoFinal,
     UsoLoteMateriaPrima,
+    FamiliaProducto,
 )
 from core.models.ventas import (
     Cliente,
@@ -31,6 +32,7 @@ __all__ = [
     "Venta",
     "DetallesVenta",
     "ComposicionProducto",
+    "FamiliaProducto",
     "MovimientoInventario",
     "DevolucionProducto",
     "LoteMateriaPrima",

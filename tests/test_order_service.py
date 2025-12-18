@@ -1,20 +1,21 @@
 import os
 from django.test import TestCase
 from unittest.mock import patch
-from inventario.models import Categoria, Producto, Proveedor, UnidadMedida
+from inventario.models import Categoria, Producto, Proveedor, UnidadMedida, FamiliaProducto
 from core.models.inventario import Compra, DetalleCompra
 from finanzas.services import enviar_orden_compra
 
 
 class PurchaseOrderServiceTest(TestCase):
     def setUp(self):
-        cat = Categoria.objects.create(nombre_categoria="Insumos")
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat = Categoria.objects.create(nombre_categoria="Insumos", familia=fam_ing)
         self.prov = Proveedor.objects.create(nombre="Prov", contacto="c", direccion="d")
         unidad = UnidadMedida.objects.get(abreviatura="kg")
         self.prod = Producto.objects.create(
             codigo="I1",
             nombre="Ing",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=1,
             costo=1,
             stock_actual=0,

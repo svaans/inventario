@@ -1,13 +1,14 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
-from inventario.models import Categoria, Producto, UnidadMedida
+from inventario.models import Categoria, Producto, UnidadMedida, FamiliaProducto
 
 class RoleAccessTests(TestCase):
     def setUp(self):
         self.client = Client()
         self.api_client = APIClient()
-        cat = Categoria.objects.create(nombre_categoria="General")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         self.product = Producto.objects.create(
             codigo="P1",

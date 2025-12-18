@@ -16,6 +16,7 @@ from .models import (
     MovimientoInventario,
     Categoria,
     Balance,
+    FamiliaProducto,
 )
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import Group
@@ -70,6 +71,18 @@ def group_decorator(group: str):
         return _wrapped
 
     return method_decorator(decorator, name="dispatch")
+
+def inferir_familia(nombre_categoria: str) -> FamiliaProducto:
+    nombre = (nombre_categoria or "").lower()
+    if "bebida" in nombre:
+        clave = FamiliaProducto.Clave.BEBIDAS
+    elif "empanad" in nombre:
+        clave = FamiliaProducto.Clave.EMPANADAS
+    elif "ingred" in nombre or "insumo" in nombre:
+        clave = FamiliaProducto.Clave.INGREDIENTES
+    else:
+        clave = FamiliaProducto.Clave.OTROS
+    return FamiliaProducto.objects.get(clave=clave)
 
 @ensure_csrf_cookie
 def login_view(request):
@@ -429,7 +442,14 @@ class CargarProductosView(View):
                 if fila['estado'] != 'nuevo':
                     continue
                 try:
-                    categoria, _ = Categoria.objects.get_or_create(nombre_categoria=fila['categoria'])
+                    familia = inferir_familia(fila['categoria'])
+                    categoria, created = Categoria.objects.get_or_create(
+                        nombre_categoria=fila['categoria'],
+                        defaults={"familia": familia},
+                    )
+                    if not created and categoria.familia_id != familia.id:
+                        categoria.familia = familia
+                        categoria.save(update_fields=["familia"])
                     Producto.objects.create(
                         codigo=fila['codigo'],
                         nombre=fila['nombre'],

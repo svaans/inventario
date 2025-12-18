@@ -1,7 +1,7 @@
 import datetime
 from django.test import TestCase
 from django.contrib.auth.models import User, Group
-from inventario.models import Categoria, Producto, LoteMateriaPrima, UnidadMedida
+from inventario.models import Categoria, Producto, LoteMateriaPrima, UnidadMedida, FamiliaProducto
 from inventario.utils import consumir_ingrediente_fifo, lotes_por_vencer
 
 class FIFOExpirationTest(TestCase):
@@ -9,12 +9,13 @@ class FIFOExpirationTest(TestCase):
         admin_group, _ = Group.objects.get_or_create(name="admin")
         self.user = User.objects.create_user(username="admin", password="pass")
         self.user.groups.add(admin_group)
-        cat = Categoria.objects.create(nombre_categoria="Insumos")
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat, _ = Categoria.objects.get_or_create(nombre_categoria="Insumos", defaults={"familia": fam_ing})
         unidad = UnidadMedida.objects.get(abreviatura="kg")
         self.ing = Producto.objects.create(
             codigo="ING1",
             nombre="Harina",
-            tipo="ingredientes",
+            tipo="ingrediente",
             precio=0,
             costo=0,
             stock_actual=0,

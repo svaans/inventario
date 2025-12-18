@@ -3,12 +3,14 @@ from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from django.db import transaction, OperationalError
 from django.db.models import F
 from .utils import consumir_ingrediente_fifo, vender_producto_final_fifo
 from .models import (
     Producto,
     UnidadMedida,
+    FamiliaProducto,
     Venta,
     DetallesVenta,
     MovimientoInventario,
@@ -27,7 +29,7 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Categoria
-        fields = ["id", "nombre_categoria"]
+        fields = ["id", "nombre_categoria", "familia"]
 
 class UnidadMedidaSerializer(serializers.ModelSerializer):
     """Serializer para unidades de medida."""
@@ -72,6 +74,8 @@ class ProductoSerializer(serializers.ModelSerializer):
     # Validamos la categoría por su clave primaria para evitar errores
     categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
     categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
+    familia = serializers.PrimaryKeyRelatedField(queryset=FamiliaProducto.objects.all(), required=False)
+    familia_nombre = serializers.CharField(source="familia.nombre", read_only=True)
     unidad_media = serializers.PrimaryKeyRelatedField(queryset=UnidadMedida.objects.all(), required=False)
     unidad_media_nombre = serializers.CharField(source="unidad_media.nombre", read_only=True)
     unidad_media_abreviatura = serializers.CharField(source="unidad_media.abreviatura", read_only=True)
@@ -96,6 +100,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             "unidad_media_abreviatura",
             "categoria",
             "categoria_nombre",
+            "familia",
+            "familia_nombre",
             "proveedor",
             "proveedor_nombre",
             "ingredientes",
@@ -152,6 +158,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             "fecha_costo": {"required": False},
             "almacen_origen": {"required": False},
             "imagen_url": {"required": False},
+            "familia": {"required": False},
         }
 
     def validate_nombre(self, value: str) -> str:
@@ -165,70 +172,20 @@ class ProductoSerializer(serializers.ModelSerializer):
             )
         return value
     
-    def validate(self, attrs):
-        """Dynamic validation based on the product category."""
-        categoria = attrs.get("categoria") or getattr(self.instance, "categoria", None)
-        nombre_cat = ""
-        if categoria:
-            nombre_cat = categoria.nombre_categoria.lower()
 
-        is_ing = "ingred" in nombre_cat
-        is_bev = "bebida" in nombre_cat
 
-        def require(field):
-            if attrs.get(field) is None:
-                existing = getattr(self.instance, field, None) if self.instance else None
-                if existing is None:
-                    raise serializers.ValidationError({field: "Este campo es obligatorio para la categoría seleccionada."})
+    def _save_with_validation(self, instance: Producto) -> Producto:
+        try:
+            instance.save()
+            return instance
+        except ValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict)
 
-        if is_ing:
-            require("unidad_media")
-            require("stock_actual")
-        elif is_bev:
-            require("stock_actual")
-            if attrs.get("unidad_media") is None:
-                attrs["unidad_media"] = (
-                    getattr(self.instance, "unidad_media", None)
-                    or UnidadMedida.objects.filter(abreviatura="u").first()
-                )
-            if attrs.get("stock_minimo") is None:
-                attrs["stock_minimo"] = getattr(self.instance, "stock_minimo", 0)
-        else:  # producto final o complemento
-            require("stock_minimo")
-            if attrs.get("stock_actual") is None:
-                attrs["stock_actual"] = getattr(self.instance, "stock_actual", 0)
-            if attrs.get("unidad_media") is None:
-                attrs["unidad_media"] = (
-                    getattr(self.instance, "unidad_media", None)
-                    or UnidadMedida.objects.filter(abreviatura="u").first()
-                )
-
-        for field in ["precio", "costo", "stock_actual", "stock_minimo", "stock_seguridad", "nivel_reorden", "costo_estandar", "costo_promedio"]:
-            value = attrs.get(field)
-            if value is not None and value < 0:
-                raise serializers.ValidationError({field: "Debe ser mayor o igual a 0."})
-        for field in ["impuesto", "descuento_base", "merma_porcentaje"]:
-            value = attrs.get(field)
-            if value is not None and value < 0:
-                raise serializers.ValidationError({field: "No se permiten valores negativos."})
-        rendimiento = attrs.get("rendimiento_receta")
-        if rendimiento is not None and rendimiento <= 0:
-            raise serializers.ValidationError({"rendimiento_receta": "Debe ser mayor a 0."})
-        vida_util = attrs.get("vida_util_dias")
-        if vida_util is not None and vida_util < 0:
-            raise serializers.ValidationError({"vida_util_dias": "Debe ser mayor o igual a 0."})
-        lead_time = attrs.get("lead_time_dias")
-        if lead_time is not None and lead_time < 0:
-            raise serializers.ValidationError({"lead_time_dias": "Debe ser mayor o igual a 0."})
-        if attrs.get("unidad_empaque", 1) is not None and attrs.get("unidad_empaque", 1) < 1:
-            raise serializers.ValidationError({"unidad_empaque": "Debe ser al menos 1."})
-
-        return attrs
     
     def create(self, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", [])
         with transaction.atomic():
-            producto = Producto.objects.create(**validated_data)
+            producto = Producto(**validated_data)
             for ing in ingredientes_data:
                 ComposicionProducto.objects.create(
                     producto_final=producto,
@@ -242,7 +199,9 @@ class ProductoSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", None)
         with transaction.atomic():
-            instance = super().update(instance, validated_data)
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance = self._save_with_validation(instance)
             if ingredientes_data is not None:
                 lote = None
                 if ingredientes_data and isinstance(ingredientes_data[0], dict):
@@ -555,6 +514,7 @@ class DevolucionSerializer(serializers.ModelSerializer):
             "responsable_nombre",
             "reembolso",
             "sustitucion",
+            "clasificacion",
         ]
 
 

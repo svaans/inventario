@@ -10,6 +10,7 @@ from inventario.models import (
     DetallesVenta,
     ComposicionProducto,
     UnidadMedida,
+    FamiliaProducto,
 )
 @pytest.mark.django_db
 def test_producto_list_queries(django_assert_num_queries):
@@ -19,19 +20,22 @@ def test_producto_list_queries(django_assert_num_queries):
     client = APIClient()
     client.force_authenticate(user=user)
 
-    cat = Categoria.objects.create(nombre_categoria="Cat")
+    fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+    fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+    cat_emp = Categoria.objects.create(nombre_categoria="Cat", familia=fam_emp)
+    cat_ing = Categoria.objects.create(nombre_categoria="Cat ingredientes", familia=fam_ing)
     prov = Proveedor.objects.create(nombre="Prov", contacto="1", direccion="d")
     unidad = UnidadMedida.objects.get(abreviatura="u")
     ing = Producto.objects.create(
         codigo="ING",
         nombre="Ing",
-        tipo="ingredientes",
+        tipo="ingrediente",
         precio=1,
         costo=1,
         stock_actual=1,
         stock_minimo=1,
         unidad_media=unidad,
-        categoria=cat,
+        categoria=cat_ing,
         proveedor=prov,
     )
     for i in range(3):
@@ -44,7 +48,7 @@ def test_producto_list_queries(django_assert_num_queries):
             stock_actual=1,
             stock_minimo=1,
             unidad_media=unidad,
-            categoria=cat,
+            categoria=cat_emp,
             proveedor=prov,
         )
         ComposicionProducto.objects.create(
@@ -65,8 +69,10 @@ def test_venta_list_queries(django_assert_num_queries):
     client = APIClient()
     client.force_authenticate(user=user)
 
-    cat = Categoria.objects.create(nombre_categoria="Cat")
+    fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+    cat = Categoria.objects.create(nombre_categoria="Cat", familia=fam_emp)
     prov = Proveedor.objects.create(nombre="Prov", contacto="1", direccion="d")
+    unidad = UnidadMedida.objects.get(abreviatura="u")
     prod = Producto.objects.create(
         codigo="P1",
         nombre="Prod1",

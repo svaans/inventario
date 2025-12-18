@@ -2,13 +2,43 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from django.db.models.functions import Lower
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
+
+
+class FamiliaProducto(models.Model):
+    """Agrupación estandarizada de productos."""
+
+    class Clave(models.TextChoices):
+        BEBIDAS = "bebidas", "Bebidas"
+        EMPANADAS = "empanadas", "Empanadas"
+        INGREDIENTES = "ingredientes", "Ingredientes"
+        OTROS = "otros", "Otros"
+
+    clave = models.CharField(max_length=20, choices=Clave.choices, unique=True)
+    nombre = models.CharField(max_length=50, unique=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower("nombre"), name="familia_nombre_ci_unique"),
+        ]
+        verbose_name = "Familia de producto"
+        verbose_name_plural = "Familias de producto"
+
+    def __str__(self) -> str:  # pragma: no cover - representational
+        return self.nombre
 
 
 class Categoria(models.Model):
     """Clasificación para agrupar productos similares."""
     nombre_categoria = models.CharField(max_length=100)
+    familia = models.ForeignKey(FamiliaProducto, on_delete=models.PROTECT, related_name="categorias")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower("nombre_categoria"), name="categoria_nombre_ci_unique"),
+        ]
 
     def __str__(self):
         return self.nombre_categoria
@@ -35,9 +65,8 @@ class Producto(models.Model):
     """
     TIPO_CHOICES = [
         ("empanada", "Empanada"),
-        ("ingredientes", "Ingredientes"),
-        ("producto_final", "Producto final"),
         ("ingrediente", "Ingrediente"),
+        ("producto_final", "Producto final"),
         ("bebida", "Bebida"),
     ]
 
@@ -51,6 +80,7 @@ class Producto(models.Model):
     stock_minimo = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     unidad_media = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT, null=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
+    familia = models.ForeignKey(FamiliaProducto, on_delete=models.PROTECT, related_name="productos")
     proveedor = models.ForeignKey('Proveedor', on_delete=models.CASCADE, null=True, blank=True)
     impuesto = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     descuento_base = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
@@ -73,11 +103,22 @@ class Producto(models.Model):
     almacen_origen = models.CharField(max_length=100, blank=True, default="")
     imagen_url = models.URLField(blank=True, default="")
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower("nombre"), name="producto_nombre_ci_unique"),
+        ]
+
     def __str__(self):
         return self.nombre
 
     def save(self, *args, **kwargs):
         """Guardar el producto y registrar cambios de precio o costo."""
+        if self.tipo == "ingredientes":
+            self.tipo = "ingrediente"
+
+        if self.categoria_id and not self.familia_id:
+            self.familia = self.categoria.familia
+
         quant = Decimal("0.01")
         campos_decimal = [
             "precio",
@@ -98,6 +139,8 @@ class Producto(models.Model):
             if value is not None:
                 setattr(self, field, Decimal(str(value)).quantize(quant, ROUND_HALF_UP))
 
+        self.full_clean()
+
         old_precio = None
         old_costo = None
         if self.pk:
@@ -113,6 +156,68 @@ class Producto(models.Model):
                 precio=self.precio,
                 costo=self.costo,
             )
+
+    def clean(self):
+        errors = {}
+
+        if self.tipo == "ingredientes":
+            self.tipo = "ingrediente"
+
+        if not self.familia_id and self.categoria_id:
+            self.familia = self.categoria.familia
+
+        familia_clave = self.familia.clave if self.familia_id else None
+        if familia_clave:
+            allowed = {
+                FamiliaProducto.Clave.INGREDIENTES: {"ingrediente"},
+                FamiliaProducto.Clave.BEBIDAS: {"bebida"},
+                FamiliaProducto.Clave.EMPANADAS: {"empanada", "producto_final"},
+                FamiliaProducto.Clave.OTROS: {"producto_final"},
+            }
+            permitted = allowed.get(familia_clave, set())
+            if self.tipo and self.tipo not in permitted:
+                errors["tipo"] = [
+                    "El tipo de producto no coincide con la familia seleccionada."
+                ]
+
+        if self.categoria_id and self.familia_id and self.categoria.familia_id != self.familia_id:
+            errors["categoria"] = ["La categoría pertenece a otra familia."]
+
+        required_por_familia = {
+            FamiliaProducto.Clave.INGREDIENTES: ["unidad_media", "stock_actual", "stock_minimo"],
+            FamiliaProducto.Clave.BEBIDAS: ["unidad_media", "stock_actual", "stock_minimo"],
+            FamiliaProducto.Clave.EMPANADAS: ["unidad_media", "stock_actual", "stock_minimo"],
+            FamiliaProducto.Clave.OTROS: ["unidad_media", "stock_actual", "stock_minimo"],
+        }
+        required_fields = required_por_familia.get(familia_clave, [])
+        for field in required_fields:
+            if getattr(self, field) is None:
+                errors[field] = ["Este campo es obligatorio para la familia seleccionada."]
+
+        numeric_fields = [
+            "precio",
+            "costo",
+            "stock_actual",
+            "stock_minimo",
+            "impuesto",
+            "descuento_base",
+            "stock_seguridad",
+            "nivel_reorden",
+            "merma_porcentaje",
+            "rendimiento_receta",
+            "costo_estandar",
+            "costo_promedio",
+        ]
+        for field in numeric_fields:
+            value = getattr(self, field)
+            if value is not None and value < 0:
+                errors[field] = ["No se permiten valores negativos."]
+
+        if self.unidad_empaque is not None and self.unidad_empaque < 1:
+            errors["unidad_empaque"] = ["Debe ser al menos 1."]
+
+        if errors:
+            raise ValidationError(errors)
 
 
 class HistorialPrecio(models.Model):

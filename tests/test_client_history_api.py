@@ -8,6 +8,7 @@ from inventario.models import (
     Venta,
     DetallesVenta,
     UnidadMedida,
+    FamiliaProducto,
 )
 class ClienteHistoryAPITest(TestCase):
     def setUp(self):
@@ -16,7 +17,8 @@ class ClienteHistoryAPITest(TestCase):
         self.user.groups.add(ventas_group)
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        cat = Categoria.objects.create(nombre_categoria="General")
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        cat = Categoria.objects.create(nombre_categoria="General", familia=fam_emp)
         unidad = UnidadMedida.objects.get(abreviatura="u")
         prod = Producto.objects.create(
             codigo="P1",
