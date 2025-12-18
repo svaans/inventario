@@ -57,3 +57,25 @@ class ProductoAPITest(TestCase):
         movimiento = MovimientoInventario.objects.first()
         self.assertEqual(movimiento.tipo, "salida")
         self.assertEqual(float(movimiento.cantidad), 50)
+
+    def test_crear_producto_con_nombre_de_proveedor(self):
+        data = {
+            "codigo": "P003",
+            "nombre": "Sprite",
+            "descripcion": "Bebida clara",
+            "tipo": "empanada",
+            "precio": 1.2,
+            "costo": 0.4,
+            "stock_actual": 30,
+            "stock_minimo": 5,
+            "unidad_media": UnidadMedida.objects.get(abreviatura="botella").id,
+            "categoria": self.categoria.id,
+            "proveedor": "Nuevo proveedor",
+        }
+        response = self.client.post("/api/productos/", data, format="json")
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(Proveedor.objects.filter(nombre__iexact="Nuevo proveedor").count(), 1)
+        producto = Producto.objects.get(codigo="P003")
+        self.assertIsNotNone(producto.proveedor)
+        self.assertEqual(producto.proveedor.nombre, "Nuevo proveedor")
+        self.assertEqual(producto.proveedor.contacto, "Nuevo proveedor")

@@ -56,6 +56,7 @@ from .models import (
     Compra,
     Categoria,
     Cliente,
+    Proveedor,
     Transaccion,
     DevolucionProducto,
     HistorialPrecio,
@@ -120,6 +121,47 @@ class ProductoViewSet(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     pagination_class = ProductoPagination
 
+    @staticmethod
+    def _normalize_relations(data):
+        errors = {}
+
+        if "categoria" in data:
+            try:
+                data["categoria"] = int(data["categoria"])
+            except (TypeError, ValueError):
+                errors["categoria"] = ["Invalid id"]
+
+        proveedor_val = data.get("proveedor")
+        if "proveedor" in data:
+            if proveedor_val in ("", None):
+                data["proveedor"] = None
+            else:
+                try:
+                    data["proveedor"] = int(proveedor_val)
+                except (TypeError, ValueError):
+                    nombre = str(proveedor_val).strip()
+                    if not nombre:
+                        data["proveedor"] = None
+                    else:
+                        proveedor = Proveedor.objects.filter(nombre__iexact=nombre).first()
+                        if proveedor is None:
+                            proveedor = Proveedor.objects.create(
+                                nombre=nombre,
+                                contacto=nombre,
+                                direccion="No especificada",
+                            )
+                        data["proveedor"] = proveedor.id
+
+        if "ingredientes" in data and isinstance(data["ingredientes"], list):
+            for comp in data["ingredientes"]:
+                try:
+                    comp["ingrediente"] = int(comp["ingrediente"])
+                except (TypeError, ValueError, KeyError):
+                    errors["ingredientes"] = ["Invalid ingrediente id"]
+                    break
+
+        return errors
+
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -140,22 +182,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
-        if "categoria" in data:
-            try:
-                data["categoria"] = int(data["categoria"])
-            except (TypeError, ValueError):
-                return Response(
-                    {"categoria": ["Invalid id"]}, status=status.HTTP_400_BAD_REQUEST
-                )
-        if "ingredientes" in data and isinstance(data["ingredientes"], list):
-            for comp in data["ingredientes"]:
-                try:
-                    comp["ingrediente"] = int(comp["ingrediente"])
-                except (TypeError, ValueError, KeyError):
-                    return Response(
-                        {"ingredientes": ["Invalid ingrediente id"]},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+        errors = self._normalize_relations(data)
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
                 
         serializer = self.get_serializer(data=data)
         if not serializer.is_valid():
@@ -167,12 +196,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         data = request.data.copy()
-        if "ingredientes" in data and isinstance(data["ingredientes"], list):
-            for comp in data["ingredientes"]:
-                try:
-                    comp["ingrediente"] = int(comp["ingrediente"])
-                except (TypeError, ValueError, KeyError):
-                    return Response({"ingredientes": ["Invalid ingrediente id"]}, status=status.HTTP_400_BAD_REQUEST)
+        errors = self._normalize_relations(data)
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
         return super().partial_update(request, *args, **kwargs)
     
     def destroy(self, request, *args, **kwargs):
