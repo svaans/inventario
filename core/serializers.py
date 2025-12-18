@@ -78,6 +78,7 @@ class ProductoSerializer(serializers.ModelSerializer):
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
     ingredientes = ComposicionProductoSerializer(many=True, required=False)
     unidades_posibles = serializers.SerializerMethodField()
+    margen_bajo = serializers.SerializerMethodField()
     class Meta:
         model = Producto
         fields = [
@@ -99,6 +100,27 @@ class ProductoSerializer(serializers.ModelSerializer):
             "proveedor_nombre",
             "ingredientes",
             "unidades_posibles",
+            "impuesto",
+            "descuento_base",
+            "unidad_empaque",
+            "fecha_alta",
+            "vida_util_dias",
+            "fecha_caducidad",
+            "activo",
+            "control_por_lote",
+            "control_por_serie",
+            "codigo_barras",
+            "stock_seguridad",
+            "nivel_reorden",
+            "lead_time_dias",
+            "merma_porcentaje",
+            "rendimiento_receta",
+            "costo_estandar",
+            "costo_promedio",
+            "fecha_costo",
+            "almacen_origen",
+            "imagen_url",
+            "margen_bajo",
         ]
         extra_kwargs = {
             "codigo": {"required": True},
@@ -110,6 +132,26 @@ class ProductoSerializer(serializers.ModelSerializer):
             "unidad_media": {"required": False},
             "proveedor": {"required": False},
             "tipo": {"required": True},
+            "impuesto": {"required": False},
+            "descuento_base": {"required": False},
+            "unidad_empaque": {"required": False},
+            "fecha_alta": {"required": False},
+            "vida_util_dias": {"required": False},
+            "fecha_caducidad": {"required": False},
+            "activo": {"required": False},
+            "control_por_lote": {"required": False},
+            "control_por_serie": {"required": False},
+            "codigo_barras": {"required": False},
+            "stock_seguridad": {"required": False},
+            "nivel_reorden": {"required": False},
+            "lead_time_dias": {"required": False},
+            "merma_porcentaje": {"required": False},
+            "rendimiento_receta": {"required": False},
+            "costo_estandar": {"required": False},
+            "costo_promedio": {"required": False},
+            "fecha_costo": {"required": False},
+            "almacen_origen": {"required": False},
+            "imagen_url": {"required": False},
         }
 
     def validate_nombre(self, value: str) -> str:
@@ -161,6 +203,26 @@ class ProductoSerializer(serializers.ModelSerializer):
                     or UnidadMedida.objects.filter(abreviatura="u").first()
                 )
 
+        for field in ["precio", "costo", "stock_actual", "stock_minimo", "stock_seguridad", "nivel_reorden", "costo_estandar", "costo_promedio"]:
+            value = attrs.get(field)
+            if value is not None and value < 0:
+                raise serializers.ValidationError({field: "Debe ser mayor o igual a 0."})
+        for field in ["impuesto", "descuento_base", "merma_porcentaje"]:
+            value = attrs.get(field)
+            if value is not None and value < 0:
+                raise serializers.ValidationError({field: "No se permiten valores negativos."})
+        rendimiento = attrs.get("rendimiento_receta")
+        if rendimiento is not None and rendimiento <= 0:
+            raise serializers.ValidationError({"rendimiento_receta": "Debe ser mayor a 0."})
+        vida_util = attrs.get("vida_util_dias")
+        if vida_util is not None and vida_util < 0:
+            raise serializers.ValidationError({"vida_util_dias": "Debe ser mayor o igual a 0."})
+        lead_time = attrs.get("lead_time_dias")
+        if lead_time is not None and lead_time < 0:
+            raise serializers.ValidationError({"lead_time_dias": "Debe ser mayor o igual a 0."})
+        if attrs.get("unidad_empaque", 1) is not None and attrs.get("unidad_empaque", 1) < 1:
+            raise serializers.ValidationError({"unidad_empaque": "Debe ser al menos 1."})
+
         return attrs
     
     def create(self, validated_data):
@@ -207,12 +269,24 @@ class ProductoSerializer(serializers.ModelSerializer):
         comps = [c for c in comps_qs if c.activo and c.lote is None]
         if not comps:
             return None
+        merma = float(obj.merma_porcentaje or 0) / 100
         posibles = [
-            float(comp.ingrediente.stock_actual) / float(comp.cantidad_requerida)
+            float(comp.ingrediente.stock_actual) / (float(comp.cantidad_requerida) * (1 + merma))
             for comp in comps
             if comp.cantidad_requerida > 0
         ]
-        return int(min(posibles)) if posibles else 0
+        base_unidades = min(posibles) if posibles else 0
+        rendimiento = float(obj.rendimiento_receta or 1)
+        return int(base_unidades * rendimiento) if base_unidades else 0
+
+    def get_margen_bajo(self, obj):
+        if obj.costo is None or obj.precio is None:
+            return False
+        costo = float(obj.costo)
+        if costo <= 0:
+            return False
+        margen = (float(obj.precio) - costo) / costo
+        return margen < 0.15
 
 
 class DetallesVentaSerializer(serializers.Serializer):

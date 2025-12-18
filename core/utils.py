@@ -21,6 +21,7 @@ from .models import (
     MovimientoInventario,
     MonthlyReport,
     LoteMateriaPrima,
+    LoteProductoFinal,
 )
 from .analytics import purchase_recommendations
 

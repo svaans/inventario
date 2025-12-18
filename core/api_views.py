@@ -72,6 +72,7 @@ from .serializers import (
     VentaCreateSerializer,
     CategoriaSerializer,
     ClienteSerializer,
+    ClienteCreateSerializer,
     EmployeeSerializer,
     TransaccionSerializer,
     DevolucionSerializer,

@@ -52,6 +52,26 @@ class Producto(models.Model):
     unidad_media = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT, null=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     proveedor = models.ForeignKey('Proveedor', on_delete=models.CASCADE, null=True, blank=True)
+    impuesto = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    descuento_base = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    unidad_empaque = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    fecha_alta = models.DateField(default=date.today)
+    vida_util_dias = models.PositiveIntegerField(default=0)
+    fecha_caducidad = models.DateField(null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    control_por_lote = models.BooleanField(default=False)
+    control_por_serie = models.BooleanField(default=False)
+    codigo_barras = models.CharField(max_length=64, blank=True, default="")
+    stock_seguridad = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    nivel_reorden = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    lead_time_dias = models.PositiveIntegerField(default=0)
+    merma_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    rendimiento_receta = models.DecimalField(max_digits=10, decimal_places=2, default=1, validators=[MinValueValidator(0.01)])
+    costo_estandar = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    costo_promedio = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    fecha_costo = models.DateField(null=True, blank=True)
+    almacen_origen = models.CharField(max_length=100, blank=True, default="")
+    imagen_url = models.URLField(blank=True, default="")
 
     def __str__(self):
         return self.nombre
@@ -59,14 +79,24 @@ class Producto(models.Model):
     def save(self, *args, **kwargs):
         """Guardar el producto y registrar cambios de precio o costo."""
         quant = Decimal("0.01")
-        if self.precio is not None:
-            self.precio = Decimal(str(self.precio)).quantize(quant, ROUND_HALF_UP)
-        if self.costo is not None:
-            self.costo = Decimal(str(self.costo)).quantize(quant, ROUND_HALF_UP)
-        if self.stock_actual is not None:
-            self.stock_actual = Decimal(str(self.stock_actual)).quantize(quant, ROUND_HALF_UP)
-        if self.stock_minimo is not None:
-            self.stock_minimo = Decimal(str(self.stock_minimo)).quantize(quant, ROUND_HALF_UP)
+        campos_decimal = [
+            "precio",
+            "costo",
+            "stock_actual",
+            "stock_minimo",
+            "impuesto",
+            "descuento_base",
+            "stock_seguridad",
+            "nivel_reorden",
+            "merma_porcentaje",
+            "rendimiento_receta",
+            "costo_estandar",
+            "costo_promedio",
+        ]
+        for field in campos_decimal:
+            value = getattr(self, field, None)
+            if value is not None:
+                setattr(self, field, Decimal(str(value)).quantize(quant, ROUND_HALF_UP))
 
         old_precio = None
         old_costo = None
@@ -256,6 +286,9 @@ class LoteProductoFinal(models.Model):
     cantidad_producida = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     cantidad_vendida = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     cantidad_devuelta = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    costo_unitario = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    )
     ingredientes = models.ManyToManyField(
         LoteMateriaPrima,
         through="UsoLoteMateriaPrima",
@@ -264,10 +297,20 @@ class LoteProductoFinal(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.producto.nombre}"
+    
+    def save(self, *args, **kwargs):
+        quant = Decimal("0.01")
+        base_cost = self.producto.costo if self.producto and self.producto.costo is not None else self.costo_unitario
+        if base_cost is None:
+            base_cost = 0
+        self.costo_unitario = Decimal(str(base_cost)).quantize(quant, ROUND_HALF_UP)
+        super().save(*args, **kwargs)
 
     @property
     def costo_unitario_restante(self):
         """Costo por unidad del lote de producto final."""
+        if self.costo_unitario is not None:
+            return self.costo_unitario
         hist = (
             self.producto.historial.filter(fecha__lte=self.fecha_produccion)
             .order_by("-fecha")

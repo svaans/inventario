@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../hooks/use-toast";
 import { Button } from "../ui/button";
@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Switch } from "../ui/switch";
 import { Plus } from "lucide-react";
 import { getCSRFToken } from "../../utils/csrf";
 import { apiFetch, fetchCategories, fetchUnits } from "../../utils/api";
@@ -17,6 +18,8 @@ import { useProducts } from "../../hooks/useProducts";
 import useFormFields from "../../hooks/useFormFields";
 
 interface NewProduct {
+  codigo: string;
+  [key: string]: unknown;
   name: string;
   description: string;
   categoria: number;
@@ -26,6 +29,26 @@ interface NewProduct {
   minStock: string;
   unit: number | null;
   supplier: string;
+  impuesto: string;
+  descuentoBase: string;
+  unidadEmpaque: string;
+  fechaAlta: string;
+  vidaUtilDias: string;
+  fechaCaducidad: string;
+  activo: boolean;
+  controlPorLote: boolean;
+  controlPorSerie: boolean;
+  codigoBarras: string;
+  stockSeguridad: string;
+  nivelReorden: string;
+  leadTimeDias: string;
+  mermaPorcentaje: string;
+  rendimientoReceta: string;
+  costoEstandar: string;
+  costoPromedio: string;
+  fechaCosto: string;
+  almacenOrigen: string;
+  imagenUrl: string;
 }
 
 interface AddProductDialogProps {
@@ -38,6 +61,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const closeDialog = () => setIsDialogOpen(false);
   const initialProduct: NewProduct = {
+    codigo: "",
     name: "",
     description: "",
     categoria: 0,
@@ -47,6 +71,26 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     minStock: "",
     unit: null,
     supplier: "",
+    impuesto: "0",
+    descuentoBase: "0",
+    unidadEmpaque: "1",
+    fechaAlta: new Date().toISOString().split("T")[0],
+    vidaUtilDias: "",
+    fechaCaducidad: "",
+    activo: true,
+    controlPorLote: false,
+    controlPorSerie: false,
+    codigoBarras: "",
+    stockSeguridad: "0",
+    nivelReorden: "",
+    leadTimeDias: "",
+    mermaPorcentaje: "0",
+    rendimientoReceta: "1",
+    costoEstandar: "",
+    costoPromedio: "",
+    fechaCosto: "",
+    almacenOrigen: "",
+    imagenUrl: "",
   };
 
   const {
@@ -54,9 +98,10 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     setValues: setNewProduct,
     handleChange,
     validateAll,
-  } = useFormFields(initialProduct, {
-    name: (v) => (v ? null : "Requerido"),
-    categoria: (v) => (v > 0 ? null : "Requerido"),
+  } = useFormFields<NewProduct>(initialProduct, {
+    codigo: (v: unknown) => ((v as string) ? null : "Requerido"),
+    name: (v: unknown) => ((v as string) ? null : "Requerido"),
+    categoria: (v: unknown) => ((v as number) > 0 ? null : "Requerido"),
   });
 
   const [ingredients, setIngredients] = useState<{ ingrediente: number; cantidad: string }[]>([]);
@@ -146,9 +191,11 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
       setPossibleUnits(null);
       return;
     }
+    const merma = (parseFloat(newProduct.mermaPorcentaje) || 0) / 100;
+    const rendimiento = parseFloat(newProduct.rendimientoReceta) || 1;
     const values = ingredients.map(ing => {
       const opt = ingredientOptions.find(p => p.id === ing.ingrediente);
-      const req = parseFloat(ing.cantidad) || 0;
+      const req = (parseFloat(ing.cantidad) || 0) * (1 + merma);
       if (!opt || req <= 0) return Infinity;
       return opt.stock / req;
     });
@@ -156,15 +203,44 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
     if (finite.length === 0) {
       setPossibleUnits(null);
     } else {
-      setPossibleUnits(Math.floor(Math.min(...finite)));
+      setPossibleUnits(Math.floor(Math.min(...finite) * rendimiento));
     }
-  }, [ingredients, ingredientOptions]);
+  }, [ingredients, ingredientOptions, newProduct.mermaPorcentaje, newProduct.rendimientoReceta]);
 
   const handleAddProduct = async () => {
     if (!validateAll()) {
       toast({
         title: "Error",
         description: "Por favor completa todos los campos requeridos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const negativeField = [
+      "price",
+      "cost",
+      "stock",
+      "minStock",
+      "stockSeguridad",
+      "nivelReorden",
+      "mermaPorcentaje",
+      "costoEstandar",
+      "costoPromedio",
+    ].find((field) => parseFloat(String(newProduct[field as keyof NewProduct])) < 0);
+    if (negativeField) {
+      toast({
+        title: "Error",
+        description: "No se permiten números negativos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (parseInt(newProduct.unidadEmpaque, 10) < 1) {
+      toast({
+        title: "Error",
+        description: "La unidad de empaque debe ser al menos 1",
         variant: "destructive",
       });
       return;
@@ -212,14 +288,45 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
         return;
       }
     }
+
+    const price = parseFloat(newProduct.price) || 0;
+    const cost = parseFloat(newProduct.cost) || 0;
+    const margin = cost > 0 ? (price - cost) / cost : 1;
+    if (margin < 0.15) {
+      toast({
+        title: "Alerta de margen",
+        description: "El precio genera un margen bajo frente al costo.",
+      });
+    }
+
     const payload: Record<string, unknown> = {
-      codigo: `AUTO-${Date.now()}`,
+      codigo: newProduct.codigo,
       nombre: newProduct.name,
       descripcion: newProduct.description,
       tipo: isIngredientCategory ? "ingredientes" : "empanada",
-      costo: parseFloat(newProduct.cost) || 0,
-      precio: parseFloat(newProduct.price) || 0,
+      costo: cost,
+      precio: price,
       categoria: categoriaId,
+      impuesto: parseFloat(newProduct.impuesto) || 0,
+      descuento_base: parseFloat(newProduct.descuentoBase) || 0,
+      unidad_empaque: parseInt(newProduct.unidadEmpaque, 10) || 1,
+      fecha_alta: newProduct.fechaAlta || undefined,
+      vida_util_dias: parseInt(newProduct.vidaUtilDias, 10) || 0,
+      fecha_caducidad: newProduct.fechaCaducidad || null,
+      activo: newProduct.activo,
+      control_por_lote: newProduct.controlPorLote,
+      control_por_serie: newProduct.controlPorSerie,
+      codigo_barras: newProduct.codigoBarras,
+      stock_seguridad: parseFloat(newProduct.stockSeguridad) || 0,
+      nivel_reorden: parseFloat(newProduct.nivelReorden) || 0,
+      lead_time_dias: parseInt(newProduct.leadTimeDias, 10) || 0,
+      merma_porcentaje: parseFloat(newProduct.mermaPorcentaje) || 0,
+      rendimiento_receta: parseFloat(newProduct.rendimientoReceta) || 1,
+      costo_estandar: parseFloat(newProduct.costoEstandar) || 0,
+      costo_promedio: parseFloat(newProduct.costoPromedio) || 0,
+      fecha_costo: newProduct.fechaCosto || null,
+      almacen_origen: newProduct.almacenOrigen,
+      imagen_url: newProduct.imagenUrl,
     };
 
     if (isIngredientCategory) {
@@ -273,8 +380,10 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
         ...old,
         {
           id: created.id,
+          codigo: created.codigo,
           name: created.nombre,
           description: created.descripcion ?? "",
+          tipo: created.tipo ?? (isIngredientCategory ? "ingredientes" : "empanada"),
           categoria: parseInt(String(created.categoria)),
           categoria_nombre: created.categoria_nombre ?? "Sin categoría",
           price: parseFloat(String(created.precio)),
@@ -284,6 +393,27 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
           unit: created.unidad_media_abreviatura,
           unitId: created.unidad_media,
           supplier: created.proveedor_nombre ?? String(created.proveedor),
+          impuesto: created.impuesto ? Number(created.impuesto) : 0,
+          descuento_base: created.descuento_base ? Number(created.descuento_base) : 0,
+          unidad_empaque: created.unidad_empaque ? Number(created.unidad_empaque) : undefined,
+          fecha_alta: created.fecha_alta,
+          vida_util_dias: created.vida_util_dias ? Number(created.vida_util_dias) : undefined,
+          fecha_caducidad: created.fecha_caducidad ?? null,
+          activo: created.activo,
+          control_por_lote: created.control_por_lote,
+          control_por_serie: created.control_por_serie,
+          codigo_barras: created.codigo_barras,
+          stock_seguridad: created.stock_seguridad ? Number(created.stock_seguridad) : 0,
+          nivel_reorden: created.nivel_reorden ? Number(created.nivel_reorden) : undefined,
+          lead_time_dias: created.lead_time_dias ? Number(created.lead_time_dias) : undefined,
+          merma_porcentaje: created.merma_porcentaje ? Number(created.merma_porcentaje) : 0,
+          rendimiento_receta: created.rendimiento_receta ? Number(created.rendimiento_receta) : undefined,
+          costo_estandar: created.costo_estandar ? Number(created.costo_estandar) : 0,
+          costo_promedio: created.costo_promedio ? Number(created.costo_promedio) : 0,
+          fecha_costo: created.fecha_costo ?? null,
+          almacen_origen: created.almacen_origen,
+          imagen_url: created.imagen_url,
+          margen_bajo: created.margen_bajo,
         } as Product,
       ]);
       closeDialog();
@@ -334,7 +464,17 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
             Completa la información del nuevo producto
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-6 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="codigo">Código / SKU*</Label>
+            <Input
+              id="codigo"
+              required
+              value={newProduct.codigo}
+              onChange={(e) => handleChange("codigo", e.target.value)}
+              placeholder="Ej: SKU-001"
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="name">Nombre del Producto*</Label>
             <Input
@@ -354,34 +494,49 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               placeholder="Descripción detallada del producto"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="categoria">Categoría*</Label>
-            <Select
-            disabled={catLoading}
-              value={newProduct.categoria ? String(newProduct.categoria) : ""}
-              onValueChange={(value) => handleChange("categoria", Number(value))}
-            >
-              <SelectTrigger id="categoria">
-                <SelectValue
-                  placeholder={catLoading ? "Cargando categorías..." : "Selecciona una categoría"}
-                />
-              </SelectTrigger>
-              <SelectContent forceMount>
-                {categoriesData.map((cat) => (
-                  <SelectItem key={cat.id} value={String(cat.id)}>
-                    {translateCategory(cat.nombre_categoria)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="categoria">Categoría*</Label>
+              <Select
+              disabled={catLoading}
+                value={newProduct.categoria ? String(newProduct.categoria) : ""}
+                onValueChange={(value) => handleChange("categoria", Number(value))}
+              >
+                <SelectTrigger id="categoria">
+                    <SelectValue
+                      placeholder={catLoading ? "Cargando categorías..." : "Selecciona una categoría"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoriesData.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {translateCategory(cat.nombre_categoria)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="unidadEmpaque">Unidad de Empaque</Label>
+              <Input
+                id="unidadEmpaque"
+                type="number"
+                min={1}
+                value={newProduct.unidadEmpaque}
+                onChange={(e) => handleChange("unidadEmpaque", e.target.value)}
+                placeholder="Ej: 12 (caja de 12 unidades)"
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="price">Precio de Venta</Label>
               <Input
                 id="price"
                 type="number"
                 step="0.01"
+                min={0}
                 required
                 value={newProduct.price}
                 onChange={(e) => handleChange("price", e.target.value)}
@@ -393,12 +548,158 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 id="cost"
                 type="number"
                 step="0.01"
+                min={0}
                 required
                 value={newProduct.cost}
                 onChange={(e) => handleChange("cost", e.target.value)}
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="impuesto">Impuesto (IVA %)</Label>
+              <Input
+                id="impuesto"
+                type="number"
+                step="0.01"
+                min={0}
+                value={newProduct.impuesto}
+                onChange={(e) => handleChange("impuesto", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="descuentoBase">Descuento base (%)</Label>
+              <Input
+                id="descuentoBase"
+                type="number"
+                step="0.01"
+                min={0}
+                value={newProduct.descuentoBase}
+                onChange={(e) => handleChange("descuentoBase", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="costoEstandar">Costo estándar</Label>
+              <Input
+                id="costoEstandar"
+                type="number"
+                step="0.01"
+                min={0}
+                value={newProduct.costoEstandar}
+                onChange={(e) => handleChange("costoEstandar", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="costoPromedio">Costo promedio</Label>
+              <Input
+                id="costoPromedio"
+                type="number"
+                step="0.01"
+                min={0}
+                value={newProduct.costoPromedio}
+                onChange={(e) => handleChange("costoPromedio", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="fechaCosto">Fecha del costo</Label>
+              <Input
+                id="fechaCosto"
+                type="date"
+                value={newProduct.fechaCosto}
+                onChange={(e) => handleChange("fechaCosto", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="almacenOrigen">Almacén / Bodega de origen</Label>
+            <Input
+              id="almacenOrigen"
+              value={newProduct.almacenOrigen}
+              onChange={(e) => handleChange("almacenOrigen", e.target.value)}
+              placeholder="Ej: Bodega central"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="fechaAlta">Fecha de alta</Label>
+              <Input
+                id="fechaAlta"
+                type="date"
+                value={newProduct.fechaAlta}
+                onChange={(e) => handleChange("fechaAlta", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="vidaUtilDias">Vida útil (días)</Label>
+              <Input
+                id="vidaUtilDias"
+                type="number"
+                min={0}
+                value={newProduct.vidaUtilDias}
+                onChange={(e) => handleChange("vidaUtilDias", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="fechaCaducidad">Fecha de caducidad</Label>
+              <Input
+                id="fechaCaducidad"
+                type="date"
+                value={newProduct.fechaCaducidad}
+                onChange={(e) => handleChange("fechaCaducidad", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="codigoBarras">Código de barras (EAN/UPC)</Label>
+              <Input
+                id="codigoBarras"
+                value={newProduct.codigoBarras}
+                onChange={(e) => handleChange("codigoBarras", e.target.value)}
+                placeholder="Escanea o ingresa el código"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="imagenUrl">Imagen (URL)</Label>
+              <Input
+                id="imagenUrl"
+                value={newProduct.imagenUrl}
+                onChange={(e) => handleChange("imagenUrl", e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="nivelReorden">Nivel de reorden</Label>
+              <Input
+                id="nivelReorden"
+                type="number"
+                min={0}
+                value={newProduct.nivelReorden}
+                onChange={(e) => handleChange("nivelReorden", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="leadTimeDias">Lead time proveedor (días)</Label>
+              <Input
+                id="leadTimeDias"
+                type="number"
+                min={0}
+                value={newProduct.leadTimeDias}
+                onChange={(e) => handleChange("leadTimeDias", e.target.value)}
+              />
+            </div>
+          </div>
+
           { newProduct.categoria > 0 && (isIngredientCategory || isBeverageCategory) && (
             <div key={isIngredientCategory ? "ingredient-stock" : "beverage-stock"} className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -406,6 +707,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 <Input
                   id="stock"
                   type="number"
+                  min={0}
                   required
                   value={newProduct.stock}
                   onChange={(e) => handleChange("stock", e.target.value)}
@@ -417,6 +719,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                   <Input
                     id="minStock"
                     type="number"
+                    min={0}
                     required
                     value={newProduct.minStock}
                     onChange={(e) => handleChange("minStock", e.target.value)}
@@ -431,6 +734,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               <Input
                 id="minStock"
                 type="number"
+                min={0}
                 required
                 value={newProduct.minStock}
                 onChange={(e) => handleChange("minStock", e.target.value)}
@@ -447,7 +751,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 <SelectTrigger id="unit">
                   <SelectValue placeholder="Unidad" />
                 </SelectTrigger>
-                <SelectContent forceMount>
+                <SelectContent>
                   {unitsData.map(u => (
                     <SelectItem key={u.id} value={String(u.id)}>{u.abreviatura}</SelectItem>
                   ))}
@@ -455,14 +759,81 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
               </Select>
             </div>
           )}
-          <div className="grid gap-2">
-            <Label htmlFor="supplier">Proveedor (opcional)</Label>
-            <Input
-              id="supplier"
-              value={newProduct.supplier}
-              onChange={(e) => handleChange("supplier", e.target.value)}
-            />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="stockSeguridad">Stock de seguridad</Label>
+              <Input
+                id="stockSeguridad"
+                type="number"
+                min={0}
+                value={newProduct.stockSeguridad}
+                onChange={(e) => handleChange("stockSeguridad", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="supplier">Proveedor (opcional)</Label>
+              <Input
+                id="supplier"
+                value={newProduct.supplier}
+                onChange={(e) => handleChange("supplier", e.target.value)}
+                placeholder="Selecciona o escribe un proveedor"
+              />
+            </div>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label htmlFor="activo">Activo</Label>
+                <p className="text-sm text-muted-foreground">Disponible para vender y producir.</p>
+              </div>
+              <Switch id="activo" checked={newProduct.activo} onCheckedChange={(checked) => handleChange("activo", checked)} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label htmlFor="controlPorLote">Control por lote</Label>
+                <p className="text-sm text-muted-foreground">Requiere seguimiento de lotes.</p>
+              </div>
+              <Switch id="controlPorLote" checked={newProduct.controlPorLote} onCheckedChange={(checked) => handleChange("controlPorLote", checked)} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label htmlFor="controlPorSerie">Control por serie</Label>
+                <p className="text-sm text-muted-foreground">Para items serializados.</p>
+              </div>
+              <Switch id="controlPorSerie" checked={newProduct.controlPorSerie} onCheckedChange={(checked) => handleChange("controlPorSerie", checked)} />
+            </div>
+          </div>
+
+          {newProduct.categoria > 0 && isFinalCategory && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="mermaPorcentaje">Merma / desperdicio (%)</Label>
+                <Input
+                  id="mermaPorcentaje"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={newProduct.mermaPorcentaje}
+                  onChange={(e) => handleChange("mermaPorcentaje", e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="rendimientoReceta">Rendimiento de receta</Label>
+                <Input
+                  id="rendimientoReceta"
+                  type="number"
+                  step="0.01"
+                  min={0.01}
+                  value={newProduct.rendimientoReceta}
+                  onChange={(e) => handleChange("rendimientoReceta", e.target.value)}
+                  placeholder="Unidades finales que produce la receta base"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Ingredientes para productos finales */}
           {newProduct.categoria > 0 && isFinalCategory && ingredientOptions.length > 0 && (
           <div key="final-ingredients" className="space-y-2">
@@ -475,7 +846,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Ingrediente" />
                 </SelectTrigger>
-                <SelectContent forceMount>
+                <SelectContent>
                   {ingredientOptions.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                   ))}
