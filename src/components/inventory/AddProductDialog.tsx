@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "../../hooks/use-toast";
 import { Button } from "../ui/button";
@@ -54,6 +54,18 @@ interface NewProduct {
 interface AddProductDialogProps {
   /** Callback executed after a product is successfully added */
   onProductAdded?: () => Promise<void> | void;
+}
+
+function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return (
+    <section className="space-y-4 rounded-lg border bg-muted/40 p-4">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+      </div>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
 }
 
 export default function AddProductDialog({ onProductAdded }: AddProductDialogProps) {
@@ -454,456 +466,477 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
         }}
       >
     <DialogContent
-      key="dialog-agregar-producto"
-      aria-describedby="add-product-description"
-      className="sm:max-w-[425px]"
-    >
-        <DialogHeader>
-          <DialogTitle>Agregar Nuevo Producto</DialogTitle>
-          <DialogDescription id="add-product-description">
-            Completa la información del nuevo producto
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-6 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="codigo">Código / SKU*</Label>
-            <Input
-              id="codigo"
-              required
-              value={newProduct.codigo}
-              onChange={(e) => handleChange("codigo", e.target.value)}
-              placeholder="Ej: SKU-001"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nombre del Producto*</Label>
-            <Input
-              id="name"
-              required
-              value={newProduct.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Ej: Empanadas de Carne"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={newProduct.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="Descripción detallada del producto"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="categoria">Categoría*</Label>
-              <Select
-              disabled={catLoading}
-                value={newProduct.categoria ? String(newProduct.categoria) : ""}
-                onValueChange={(value) => handleChange("categoria", Number(value))}
-              >
-                <SelectTrigger id="categoria">
-                    <SelectValue
-                      placeholder={catLoading ? "Cargando categorías..." : "Selecciona una categoría"}
+          key="dialog-agregar-producto"
+          aria-describedby="add-product-description"
+          className="sm:max-w-5xl max-h-[85vh] overflow-hidden p-0"
+        >
+          <div className="flex h-full flex-col">
+            <div className="px-6 pt-6">
+              <DialogHeader>
+                <DialogTitle>Agregar Nuevo Producto</DialogTitle>
+                <DialogDescription id="add-product-description">
+                  Completa la información del nuevo producto
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <div className="space-y-6">
+                <Section title="Información básica" description="Campos esenciales para identificar el producto.">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="codigo">Código / SKU*</Label>
+                      <Input
+                        id="codigo"
+                        required
+                        value={newProduct.codigo}
+                        onChange={(e) => handleChange("codigo", e.target.value)}
+                        placeholder="Ej: SKU-001"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Nombre del Producto*</Label>
+                      <Input
+                        id="name"
+                        required
+                        value={newProduct.name}
+                        onChange={(e) => handleChange("name", e.target.value)}
+                        placeholder="Ej: Empanadas de Carne"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="description">Descripción</Label>
+                      <Textarea
+                        id="description"
+                        value={newProduct.description}
+                        onChange={(e) => handleChange("description", e.target.value)}
+                        placeholder="Descripción detallada del producto"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="categoria">Categoría*</Label>
+                      <Select
+                        disabled={catLoading}
+                        value={newProduct.categoria ? String(newProduct.categoria) : ""}
+                        onValueChange={(value) => handleChange("categoria", Number(value))}
+                      >
+                        <SelectTrigger id="categoria">
+                          <SelectValue
+                            placeholder={catLoading ? "Cargando categorías..." : "Selecciona una categoría"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoriesData.map((cat) => (
+                            <SelectItem key={cat.id} value={String(cat.id)}>{translateCategory(cat.nombre_categoria)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="unidadEmpaque">Unidad de Empaque</Label>
+                      <Input
+                        id="unidadEmpaque"
+                        type="number"
+                        min={1}
+                        value={newProduct.unidadEmpaque}
+                        onChange={(e) => handleChange("unidadEmpaque", e.target.value)}
+                        placeholder="Ej: 12 (caja de 12 unidades)"
+                      />
+                    </div>
+                  </div>
+                </Section>
+
+                <Section title="Precios y costos" description="Configura márgenes, descuentos y costos de referencia.">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="price">Precio de Venta</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        required
+                        value={newProduct.price}
+                        onChange={(e) => handleChange("price", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="cost">Costo</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        required
+                        value={newProduct.cost}
+                        onChange={(e) => handleChange("cost", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="impuesto">Impuesto (IVA %)</Label>
+                      <Input
+                        id="impuesto"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={newProduct.impuesto}
+                        onChange={(e) => handleChange("impuesto", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="descuentoBase">Descuento base (%)</Label>
+                      <Input
+                        id="descuentoBase"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={newProduct.descuentoBase}
+                        onChange={(e) => handleChange("descuentoBase", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="costoEstandar">Costo estándar</Label>
+                      <Input
+                        id="costoEstandar"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={newProduct.costoEstandar}
+                        onChange={(e) => handleChange("costoEstandar", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="costoPromedio">Costo promedio</Label>
+                      <Input
+                        id="costoPromedio"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={newProduct.costoPromedio}
+                        onChange={(e) => handleChange("costoPromedio", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="fechaCosto">Fecha del costo</Label>
+                      <Input
+                        id="fechaCosto"
+                        type="date"
+                        value={newProduct.fechaCosto}
+                        onChange={(e) => handleChange("fechaCosto", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="almacenOrigen">Almacén / Bodega de origen</Label>
+                    <Input
+                      id="almacenOrigen"
+                      value={newProduct.almacenOrigen}
+                      onChange={(e) => handleChange("almacenOrigen", e.target.value)}
+                      placeholder="Ej: Bodega central"
                     />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoriesData.map((cat) => (
-                      <SelectItem key={cat.id} value={String(cat.id)}>
-                        {translateCategory(cat.nombre_categoria)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="unidadEmpaque">Unidad de Empaque</Label>
-              <Input
-                id="unidadEmpaque"
-                type="number"
-                min={1}
-                value={newProduct.unidadEmpaque}
-                onChange={(e) => handleChange("unidadEmpaque", e.target.value)}
-                placeholder="Ej: 12 (caja de 12 unidades)"
-              />
-            </div>
-          </div>
+                  </div>
+                </Section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="price">Precio de Venta</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min={0}
-                required
-                value={newProduct.price}
-                onChange={(e) => handleChange("price", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="cost">Costo</Label>
-              <Input
-                id="cost"
-                type="number"
-                step="0.01"
-                min={0}
-                required
-                value={newProduct.cost}
-                onChange={(e) => handleChange("cost", e.target.value)}
-              />
-            </div>
-          </div>
+                <Section title="Fechas y caducidad">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="fechaAlta">Fecha de alta</Label>
+                      <Input
+                        id="fechaAlta"
+                        type="date"
+                        value={newProduct.fechaAlta}
+                        onChange={(e) => handleChange("fechaAlta", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="vidaUtilDias">Vida útil (días)</Label>
+                      <Input
+                        id="vidaUtilDias"
+                        type="number"
+                        min={0}
+                        value={newProduct.vidaUtilDias}
+                        onChange={(e) => handleChange("vidaUtilDias", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="fechaCaducidad">Fecha de caducidad</Label>
+                      <Input
+                        id="fechaCaducidad"
+                        type="date"
+                        value={newProduct.fechaCaducidad}
+                        onChange={(e) => handleChange("fechaCaducidad", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </Section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="impuesto">Impuesto (IVA %)</Label>
-              <Input
-                id="impuesto"
-                type="number"
-                step="0.01"
-                min={0}
-                value={newProduct.impuesto}
-                onChange={(e) => handleChange("impuesto", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="descuentoBase">Descuento base (%)</Label>
-              <Input
-                id="descuentoBase"
-                type="number"
-                step="0.01"
-                min={0}
-                value={newProduct.descuentoBase}
-                onChange={(e) => handleChange("descuentoBase", e.target.value)}
-              />
-            </div>
-          </div>
+                <Section title="Identificación y visuales">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="codigoBarras">Código de barras (EAN/UPC)</Label>
+                      <Input
+                        id="codigoBarras"
+                        value={newProduct.codigoBarras}
+                        onChange={(e) => handleChange("codigoBarras", e.target.value)}
+                        placeholder="Escanea o ingresa el código"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="imagenUrl">Imagen (URL)</Label>
+                      <Input
+                        id="imagenUrl"
+                        value={newProduct.imagenUrl}
+                        onChange={(e) => handleChange("imagenUrl", e.target.value)}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                </Section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="costoEstandar">Costo estándar</Label>
-              <Input
-                id="costoEstandar"
-                type="number"
-                step="0.01"
-                min={0}
-                value={newProduct.costoEstandar}
-                onChange={(e) => handleChange("costoEstandar", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="costoPromedio">Costo promedio</Label>
-              <Input
-                id="costoPromedio"
-                type="number"
-                step="0.01"
-                min={0}
-                value={newProduct.costoPromedio}
-                onChange={(e) => handleChange("costoPromedio", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="fechaCosto">Fecha del costo</Label>
-              <Input
-                id="fechaCosto"
-                type="date"
-                value={newProduct.fechaCosto}
-                onChange={(e) => handleChange("fechaCosto", e.target.value)}
-              />
-            </div>
-          </div>
+                <Section title="Abastecimiento y stock" description="Organiza mínimos, reordenes y stock inicial.">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="nivelReorden">Nivel de reorden</Label>
+                      <Input
+                        id="nivelReorden"
+                        type="number"
+                        min={0}
+                        value={newProduct.nivelReorden}
+                        onChange={(e) => handleChange("nivelReorden", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="leadTimeDias">Lead time proveedor (días)</Label>
+                      <Input
+                        id="leadTimeDias"
+                        type="number"
+                        min={0}
+                        value={newProduct.leadTimeDias}
+                        onChange={(e) => handleChange("leadTimeDias", e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="almacenOrigen">Almacén / Bodega de origen</Label>
-            <Input
-              id="almacenOrigen"
-              value={newProduct.almacenOrigen}
-              onChange={(e) => handleChange("almacenOrigen", e.target.value)}
-              placeholder="Ej: Bodega central"
-            />
-          </div>
+                  { newProduct.categoria > 0 && (isIngredientCategory || isBeverageCategory) && (
+                    <div key={isIngredientCategory ? "ingredient-stock" : "beverage-stock"} className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
+                        <Input
+                          id="stock"
+                          type="number"
+                          min={0}
+                          required
+                          value={newProduct.stock}
+                          onChange={(e) => handleChange("stock", e.target.value)}
+                        />
+                      </div>
+                      {isIngredientCategory && (
+                        <div className="grid gap-2">
+                          <Label htmlFor="minStock">Peso Mínimo</Label>
+                          <Input
+                            id="minStock"
+                            type="number"
+                            min={0}
+                            required
+                            value={newProduct.minStock}
+                            onChange={(e) => handleChange("minStock", e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {newProduct.categoria > 0 && isFinalCategory && (
+                    <div key="final-minStock" className="grid gap-2 md:max-w-sm">
+                      <Label htmlFor="minStock">Stock Mínimo</Label>
+                      <Input
+                        id="minStock"
+                        type="number"
+                        min={0}
+                        required
+                        value={newProduct.minStock}
+                        onChange={(e) => handleChange("minStock", e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {newProduct.categoria > 0 && isIngredientCategory && (
+                    <div key="ingredient-unit" className="grid gap-2 md:max-w-xs">
+                      <Label htmlFor="unit">Unidad de Peso</Label>
+                      <Select
+                        value={newProduct.unit ? String(newProduct.unit) : ""}
+                        onValueChange={(val) => handleChange("unit", Number(val))}
+                      >
+                        <SelectTrigger id="unit">
+                          <SelectValue placeholder="Unidad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {unitsData.map(u => (
+                            <SelectItem key={u.id} value={String(u.id)}>{u.abreviatura}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="fechaAlta">Fecha de alta</Label>
-              <Input
-                id="fechaAlta"
-                type="date"
-                value={newProduct.fechaAlta}
-                onChange={(e) => handleChange("fechaAlta", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="vidaUtilDias">Vida útil (días)</Label>
-              <Input
-                id="vidaUtilDias"
-                type="number"
-                min={0}
-                value={newProduct.vidaUtilDias}
-                onChange={(e) => handleChange("vidaUtilDias", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="fechaCaducidad">Fecha de caducidad</Label>
-              <Input
-                id="fechaCaducidad"
-                type="date"
-                value={newProduct.fechaCaducidad}
-                onChange={(e) => handleChange("fechaCaducidad", e.target.value)}
-              />
-            </div>
-          </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="stockSeguridad">Stock de seguridad</Label>
+                      <Input
+                        id="stockSeguridad"
+                        type="number"
+                        min={0}
+                        value={newProduct.stockSeguridad}
+                        onChange={(e) => handleChange("stockSeguridad", e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="supplier">Proveedor (opcional)</Label>
+                      <Input
+                        id="supplier"
+                        value={newProduct.supplier}
+                        onChange={(e) => handleChange("supplier", e.target.value)}
+                        placeholder="Selecciona o escribe un proveedor"
+                      />
+                    </div>
+                  </div>
+                </Section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="codigoBarras">Código de barras (EAN/UPC)</Label>
-              <Input
-                id="codigoBarras"
-                value={newProduct.codigoBarras}
-                onChange={(e) => handleChange("codigoBarras", e.target.value)}
-                placeholder="Escanea o ingresa el código"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="imagenUrl">Imagen (URL)</Label>
-              <Input
-                id="imagenUrl"
-                value={newProduct.imagenUrl}
-                onChange={(e) => handleChange("imagenUrl", e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
-          </div>
+                <Section title="Configuración y controles" description="Activa solo lo necesario para simplificar el manejo diario.">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                      <div>
+                        <Label htmlFor="activo">Activo</Label>
+                        <p className="text-sm text-muted-foreground">Disponible para vender y producir.</p>
+                      </div>
+                      <Switch id="activo" checked={newProduct.activo} onCheckedChange={(checked) => handleChange("activo", checked)} />
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                      <div>
+                        <Label htmlFor="controlPorLote">Control por lote</Label>
+                        <p className="text-sm text-muted-foreground">Requiere seguimiento de lotes.</p>
+                      </div>
+                      <Switch id="controlPorLote" checked={newProduct.controlPorLote} onCheckedChange={(checked) => handleChange("controlPorLote", checked)} />
+                    </div>
+                    <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                      <div>
+                        <Label htmlFor="controlPorSerie">Control por serie</Label>
+                        <p className="text-sm text-muted-foreground">Para items serializados.</p>
+                      </div>
+                      <Switch id="controlPorSerie" checked={newProduct.controlPorSerie} onCheckedChange={(checked) => handleChange("controlPorSerie", checked)} />
+                    </div>
+                  </div>
+                </Section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="nivelReorden">Nivel de reorden</Label>
-              <Input
-                id="nivelReorden"
-                type="number"
-                min={0}
-                value={newProduct.nivelReorden}
-                onChange={(e) => handleChange("nivelReorden", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="leadTimeDias">Lead time proveedor (días)</Label>
-              <Input
-                id="leadTimeDias"
-                type="number"
-                min={0}
-                value={newProduct.leadTimeDias}
-                onChange={(e) => handleChange("leadTimeDias", e.target.value)}
-              />
-            </div>
-          </div>
+                {newProduct.categoria > 0 && isFinalCategory && (
+                  <Section
+                    title="Receta e ingredientes"
+                    description="Define merma, rendimiento y los insumos que componen el producto final."
+                  >
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="mermaPorcentaje">Merma / desperdicio (%)</Label>
+                        <Input
+                          id="mermaPorcentaje"
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          value={newProduct.mermaPorcentaje}
+                          onChange={(e) => handleChange("mermaPorcentaje", e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="rendimientoReceta">Rendimiento de receta</Label>
+                        <Input
+                          id="rendimientoReceta"
+                          type="number"
+                          step="0.01"
+                          min={0.01}
+                          value={newProduct.rendimientoReceta}
+                          onChange={(e) => handleChange("rendimientoReceta", e.target.value)}
+                          placeholder="Unidades finales que produce la receta base"
+                        />
+                      </div>
+                    </div>
 
-          { newProduct.categoria > 0 && (isIngredientCategory || isBeverageCategory) && (
-            <div key={isIngredientCategory ? "ingredient-stock" : "beverage-stock"} className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="stock">{isIngredientCategory ? "Peso Inicial" : "Stock Inicial"}</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  min={0}
-                  required
-                  value={newProduct.stock}
-                  onChange={(e) => handleChange("stock", e.target.value)}
-                />
-              </div>
-              {isIngredientCategory && (
-                <div className="grid gap-2">
-                  <Label htmlFor="minStock">Peso Mínimo</Label>
-                  <Input
-                    id="minStock"
-                    type="number"
-                    min={0}
-                    required
-                    value={newProduct.minStock}
-                    onChange={(e) => handleChange("minStock", e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-          {newProduct.categoria > 0 && isFinalCategory && (
-            <div key="final-minStock" className="grid gap-2">
-              <Label htmlFor="minStock">Stock Mínimo</Label>
-              <Input
-                id="minStock"
-                type="number"
-                min={0}
-                required
-                value={newProduct.minStock}
-                onChange={(e) => handleChange("minStock", e.target.value)}
-              />
-            </div>
-            )}
-          {newProduct.categoria > 0 && isIngredientCategory && (
-            <div key="ingredient-unit" className="grid gap-2">
-              <Label htmlFor="unit">Unidad de Peso</Label>
-              <Select
-                value={newProduct.unit ? String(newProduct.unit) : ""}
-                onValueChange={(val) => handleChange("unit", Number(val))}
-              >
-                <SelectTrigger id="unit">
-                  <SelectValue placeholder="Unidad" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unitsData.map(u => (
-                    <SelectItem key={u.id} value={String(u.id)}>{u.abreviatura}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="stockSeguridad">Stock de seguridad</Label>
-              <Input
-                id="stockSeguridad"
-                type="number"
-                min={0}
-                value={newProduct.stockSeguridad}
-                onChange={(e) => handleChange("stockSeguridad", e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="supplier">Proveedor (opcional)</Label>
-              <Input
-                id="supplier"
-                value={newProduct.supplier}
-                onChange={(e) => handleChange("supplier", e.target.value)}
-                placeholder="Selecciona o escribe un proveedor"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <Label htmlFor="activo">Activo</Label>
-                <p className="text-sm text-muted-foreground">Disponible para vender y producir.</p>
-              </div>
-              <Switch id="activo" checked={newProduct.activo} onCheckedChange={(checked) => handleChange("activo", checked)} />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <Label htmlFor="controlPorLote">Control por lote</Label>
-                <p className="text-sm text-muted-foreground">Requiere seguimiento de lotes.</p>
-              </div>
-              <Switch id="controlPorLote" checked={newProduct.controlPorLote} onCheckedChange={(checked) => handleChange("controlPorLote", checked)} />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <Label htmlFor="controlPorSerie">Control por serie</Label>
-                <p className="text-sm text-muted-foreground">Para items serializados.</p>
-              </div>
-              <Switch id="controlPorSerie" checked={newProduct.controlPorSerie} onCheckedChange={(checked) => handleChange("controlPorSerie", checked)} />
-            </div>
-          </div>
-
-          {newProduct.categoria > 0 && isFinalCategory && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="mermaPorcentaje">Merma / desperdicio (%)</Label>
-                <Input
-                  id="mermaPorcentaje"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={newProduct.mermaPorcentaje}
-                  onChange={(e) => handleChange("mermaPorcentaje", e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="rendimientoReceta">Rendimiento de receta</Label>
-                <Input
-                  id="rendimientoReceta"
-                  type="number"
-                  step="0.01"
-                  min={0.01}
-                  value={newProduct.rendimientoReceta}
-                  onChange={(e) => handleChange("rendimientoReceta", e.target.value)}
-                  placeholder="Unidades finales que produce la receta base"
-                />
+                    {ingredientOptions.length > 0 && (
+                      <div key="final-ingredients" className="space-y-2">
+                        <Label>Ingredientes</Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Select
+                            value={currentIng.ingrediente ? String(currentIng.ingrediente) : ""}
+                            onValueChange={(val) => setCurrentIng({ ...currentIng, ingrediente: Number(val) })}
+                          >
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder="Ingrediente" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ingredientOptions.map((p) => (
+                                <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            placeholder="Cantidad"
+                            value={currentIng.cantidad}
+                            onChange={(e) => setCurrentIng({ ...currentIng, cantidad: e.target.value })}
+                            className="w-24"
+                          />
+                          <span className="self-center text-sm text-muted-foreground">
+                            {ingredientOptions.find(p => p.id === currentIng.ingrediente)?.unit ?? ""}
+                          </span>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              if (currentIng.ingrediente && currentIng.cantidad) {
+                                setIngredients([...ingredients, currentIng]);
+                                setCurrentIng({ ingrediente: 0, cantidad: "" });
+                              }
+                            }}
+                          >
+                            Agregar
+                          </Button>
+                        </div>
+                        {ingredients.length > 0 && (
+                          <>
+                            <ul className="list-disc pl-4 text-sm">
+                              {ingredients.map((ing, idx) => {
+                                const opt = ingredientOptions.find((p) => p.id === ing.ingrediente);
+                                const name = opt?.name || ing.ingrediente;
+                                const unit = opt?.unit || "";
+                                return (
+                                  <li key={idx}>{name}: {ing.cantidad} {unit}</li>
+                                );
+                              })}
+                            </ul>
+                            {possibleUnits !== null && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Unidades posibles según stock actual: {possibleUnits}
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </Section>
+                )}
               </div>
             </div>
-          )}
-
-          {/* Ingredientes para productos finales */}
-          {newProduct.categoria > 0 && isFinalCategory && ingredientOptions.length > 0 && (
-          <div key="final-ingredients" className="space-y-2">
-            <Label>Ingredientes</Label>
-            <div className="flex gap-2">
-              <Select
-                value={currentIng.ingrediente ? String(currentIng.ingrediente) : ""}
-                onValueChange={(val) => setCurrentIng({ ...currentIng, ingrediente: Number(val) })}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Ingrediente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ingredientOptions.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                placeholder="Cantidad"
-                value={currentIng.cantidad}
-                onChange={(e) => setCurrentIng({ ...currentIng, cantidad: e.target.value })}
-                className="w-24"
-              />
-              <span className="self-center text-sm text-muted-foreground">
-                {ingredientOptions.find(p => p.id === currentIng.ingrediente)?.unit ?? ''}
-              </span>
-              <Button
-                type="button"
-                onClick={() => {
-                  if (currentIng.ingrediente && currentIng.cantidad) {
-                    setIngredients([...ingredients, currentIng]);
-                    setCurrentIng({ ingrediente: 0, cantidad: "" });
-                  }
-                }}
-              >
-                Agregar
+            <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-background px-6 py-4">
+              <Button variant="outline" onClick={closeDialog}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAddProduct} className="bg-primary hover:bg-primary/90">
+                Agregar Producto
               </Button>
             </div>
-            {ingredients.length > 0 && (
-              <>
-                <ul className="list-disc pl-4 text-sm">
-                  {ingredients.map((ing, idx) => {
-                    const opt = ingredientOptions.find((p) => p.id === ing.ingrediente);
-                    const name = opt?.name || ing.ingrediente;
-                    const unit = opt?.unit || "";
-                    return (
-                      <li key={idx}>{name}: {ing.cantidad} {unit}</li>
-                    );
-                  })}
-                </ul>
-                {possibleUnits !== null && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Unidades posibles según stock actual: {possibleUnits}
-                  </p>
-                )}
-              </>
-            )}
           </div>
-        )}
-      </div>
-      <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={closeDialog}>
-            Cancelar
-          </Button>
-          <Button onClick={handleAddProduct} className="bg-primary hover:bg-primary/90">
-            Agregar Producto
-          </Button>
-        </div>
         </DialogContent>
       </ErrorBoundary>
     </Dialog>
