@@ -44,6 +44,11 @@ class FIFOExpirationTest(TestCase):
         self.assertEqual(float(l1.cantidad_usada), 5)
         self.assertEqual(float(l2.cantidad_usada), 2)
 
+    def test_syncs_product_stock_with_lotes(self):
+        consumir_ingrediente_fifo(self.ing, 7)
+        self.ing.refresh_from_db()
+        self.assertEqual(float(self.ing.stock_actual), 3.0)
+
     def test_alerts(self):
         lote = LoteMateriaPrima.objects.create(
             codigo="L3",

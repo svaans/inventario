@@ -5,6 +5,7 @@ from typing import Optional, Dict, Any, List
 
 from io import BytesIO
 
+from django.db import transaction
 from django.db.models import Sum, F
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -46,39 +47,53 @@ def consumir_ingrediente_fifo(
     Raises:
         ValueError: Si no hay suficiente materia prima disponible.
     """
-    restante = cantidad
-    lotes = (
-        LoteMateriaPrima.objects.filter(
-            producto=producto, fecha_agotado__isnull=True
-        )
-        .order_by("fecha_recepcion")
-        .select_for_update()
-    )
     consumos: List[tuple[Optional[LoteMateriaPrima], Decimal, Decimal]] = []
-    if not lotes.exists():
-        # Fallback al stock del producto si no hay lotes registrados
-        disponible = producto.stock_actual
-        if disponible < cantidad:
+    with transaction.atomic():
+        producto_lock = Producto.objects.select_for_update().get(pk=producto.pk)
+        restante = cantidad
+        lotes = (
+            LoteMateriaPrima.objects.filter(
+                producto=producto_lock, fecha_agotado__isnull=True
+            )
+            .order_by("fecha_recepcion")
+            .select_for_update()
+        )
+        if not lotes.exists():
+            # Fallback al stock del producto si no hay lotes registrados
+            disponible = producto_lock.stock_actual
+            if disponible < cantidad:
+                raise ValueError("No hay suficiente materia prima disponible")
+            producto_lock.stock_actual = disponible - cantidad
+            producto_lock.save(update_fields=["stock_actual"])
+            costo = (producto_lock.costo or Decimal("0")) * cantidad
+            consumos.append((None, cantidad, costo))
+            return consumos
+
+        total_usado = Decimal("0")
+        for lote in lotes:
+            disponible = lote.cantidad_disponible
+            if disponible <= 0:
+                continue
+            usar = min(disponible, restante)
+            if usar > 0:
+                lote.consumir(usar)
+                costo = lote.costo_unitario_restante * usar
+                consumos.append((lote, usar, costo))
+                restante -= usar
+                total_usado += usar
+            if restante <= 0:
+                break
+        if restante > 0:
             raise ValueError("No hay suficiente materia prima disponible")
-        producto.stock_actual -= cantidad
-        producto.save()
-        costo = (producto.costo or Decimal("0")) * cantidad
-        consumos.append((None, cantidad, costo))
-        return consumos
-    for lote in lotes:
-        disponible = lote.cantidad_disponible
-        if disponible <= 0:
-            continue
-        usar = min(disponible, restante)
-        if usar > 0:
-            lote.consumir(usar)
-            costo = lote.costo_unitario_restante * usar
-            consumos.append((lote, usar, costo))
-            restante -= usar
-        if restante <= 0:
-            break
-    if restante > 0:
-        raise ValueError("No hay suficiente materia prima disponible")
+        nuevo_stock = (
+            LoteMateriaPrima.objects.filter(producto=producto_lock)
+            .aggregate(
+                disponible=Sum(F("cantidad_inicial") - F("cantidad_usada"))
+            )["disponible"]
+            or Decimal("0")
+        )
+        producto_lock.stock_actual = nuevo_stock
+        producto_lock.save(update_fields=["stock_actual"])
     return consumos
 
 def vender_producto_final_fifo(
