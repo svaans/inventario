@@ -27,12 +27,14 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from django.contrib import messages
 from django.core.files.storage import default_storage
+from django.db import transaction
 from openpyxl import load_workbook
 from .utils import calcular_perdidas_devolucion
 from django.views.generic import TemplateView
 from django.utils.timezone import now
 from django.db.models import Sum
 from collections import defaultdict
+from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from functools import wraps
@@ -167,43 +169,73 @@ class VentaCreateView(CreateView):
         formset = DetalleFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
-            self.object = form.save(commit=False)
-            self.object.usuario = request.user
-            formset.instance = self.object
+            with transaction.atomic():
+                self.object = form.save(commit=False)
+                self.object.usuario = request.user
+                formset.instance = self.object
 
-            total = 0
-            for detalle in formset:
-                producto = detalle.cleaned_data['producto']
-                cantidad = detalle.cleaned_data['cantidad']
-                if producto.stock_actual < cantidad:
-                    detalle.add_error(
-                        'cantidad', 'Stock insuficiente para este producto'
+                total = 0
+                detalle_data = []
+                producto_cantidades = defaultdict(lambda: Decimal("0"))
+
+                for detalle in formset:
+                    if not detalle.cleaned_data or detalle.cleaned_data.get("DELETE"):
+                        continue
+                    producto = detalle.cleaned_data['producto']
+                    cantidad = detalle.cleaned_data['cantidad']
+                    precio = detalle.cleaned_data['precio_unitario']
+                    detalle_data.append((detalle, producto, cantidad, precio))
+                    producto_cantidades[producto.id] += cantidad
+                    total += cantidad * precio
+
+                productos = {
+                    p.id: p
+                    for p in Producto.objects.select_for_update().filter(
+                        id__in=producto_cantidades.keys()
                     )
+                }
+
+                errores = False
+                for prod_id, cantidad_total in producto_cantidades.items():
+                    producto = productos.get(prod_id)
+                    if producto is None:
+                        continue
+                    if producto.stock_actual < cantidad_total:
+                        errores = True
+                        mensaje = 'Stock insuficiente para este producto'
+                    elif (producto.stock_actual - cantidad_total) < producto.stock_minimo:
+                        errores = True
+                        mensaje = 'La venta dejaría el stock por debajo del mínimo permitido'
+                    else:
+                        continue
+
+                    for detalle_form, prod, _, _ in detalle_data:
+                        if prod.id == prod_id:
+                            detalle_form.add_error('cantidad', mensaje)
+
+                if errores:
                     return render(
                         request, self.template_name, {'form': form, 'formset': formset}
                     )
-                precio = detalle.cleaned_data['precio_unitario']
-                total += cantidad * precio
+                self.object.total = total
+                self.object.save()
+                formset.save()
 
-            self.object.total = total
-            self.object.save()
-            formset.save()
+                for prod_id, cantidad_total in producto_cantidades.items():
+                    producto = productos[prod_id]
+                    producto.stock_actual -= cantidad_total
+                    producto.save()
 
-            for detalle in formset:
-                producto = detalle.cleaned_data['producto']
-                cantidad = detalle.cleaned_data['cantidad']
-                producto.stock_actual -= cantidad
-                producto.save()
+                for _, producto, cantidad, _ in detalle_data:
+                    MovimientoInventario.objects.create(
+                        producto=producto,
+                        tipo='salida',
+                        cantidad=cantidad,
+                        motivo='Venta'
+                    )
 
-                MovimientoInventario.objects.create(
-                    producto=producto,
-                    tipo='salida',
-                    cantidad=cantidad,
-                    motivo='Venta'
-                )
-
-            messages.success(request, "Venta registrada correctamente.")
-            return redirect(self.success_url)
+                messages.success(request, "Venta registrada correctamente.")
+                return redirect(self.success_url)
         
         return render(request, self.template_name, {'form': form, 'formset': formset})
 
@@ -234,35 +266,50 @@ class CompraCreateView(CreateView):
         formset = DetalleFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
-            self.object = form.save(commit=False)
-            formset.instance = self.object
+            with transaction.atomic():
+                self.object = form.save(commit=False)
+                formset.instance = self.object
 
-            total = 0
-            for detalle in formset:
-                producto = detalle.cleaned_data['producto']
-                cantidad = detalle.cleaned_data['cantidad']
-                precio = detalle.cleaned_data['precio_unitario']
-                total += cantidad * precio
+                total = 0
+                detalle_data = []
+                producto_cantidades = defaultdict(lambda: Decimal("0"))
 
-            self.object.total = total
-            self.object.save()
-            formset.save()
+                for detalle in formset:
+                    if not detalle.cleaned_data or detalle.cleaned_data.get("DELETE"):
+                        continue
+                    producto = detalle.cleaned_data['producto']
+                    cantidad = detalle.cleaned_data['cantidad']
+                    precio = detalle.cleaned_data['precio_unitario']
+                    detalle_data.append((detalle, producto, cantidad, precio))
+                    producto_cantidades[producto.id] += cantidad
+                    total += cantidad * precio
 
-            for detalle in formset:
-                producto = detalle.cleaned_data['producto']
-                cantidad = detalle.cleaned_data['cantidad']
-                producto.stock_actual += cantidad
-                producto.save()
+                productos = {
+                    p.id: p
+                    for p in Producto.objects.select_for_update().filter(
+                        id__in=producto_cantidades.keys()
+                    )
+                }
 
-                MovimientoInventario.objects.create(
-                    producto=producto,
-                    tipo='entrada',
-                    cantidad=cantidad,
-                    motivo='Compra'
-                )
+                self.object.total = total
+                self.object.save()
+                formset.save()
 
-            messages.success(request, "Compra registrada correctamente.")
-            return redirect(self.success_url)
+                for prod_id, cantidad_total in producto_cantidades.items():
+                    producto = productos[prod_id]
+                    producto.stock_actual += cantidad_total
+                    producto.save()
+
+                for _, producto, cantidad, _ in detalle_data:
+                    MovimientoInventario.objects.create(
+                        producto=producto,
+                        tipo='entrada',
+                        cantidad=cantidad,
+                        motivo='Compra'
+                    )
+
+                messages.success(request, "Compra registrada correctamente.")
+                return redirect(self.success_url)
 
         return render(request, self.template_name, {'form': form, 'formset': formset})
 
