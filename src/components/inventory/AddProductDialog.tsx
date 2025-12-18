@@ -390,6 +390,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
 
     if (isIngredientCategory) {
       payload.tipo = "ingredientes";
+      payload.unidad_media = newProduct.unit;
       payload.stock_actual = parseFloat(newProduct.stock) || 0;
       payload.stock_minimo = parseFloat(newProduct.minStock) || 0;
       payload.stock_seguridad = parseFloat(newProduct.minStock) || 0;
