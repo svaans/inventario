@@ -60,6 +60,8 @@ class ProductoAPITest(TestCase):
         movimiento = MovimientoInventario.objects.first()
         self.assertEqual(movimiento.tipo, "salida")
         self.assertEqual(float(movimiento.cantidad), 50)
+        self.assertEqual(movimiento.usuario, self.user)
+        self.assertEqual(movimiento.operacion_tipo, MovimientoInventario.OPERACION_ELIMINACION)
 
     def test_crear_producto_con_nombre_de_proveedor(self):
         data = {

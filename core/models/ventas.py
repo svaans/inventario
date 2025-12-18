@@ -108,29 +108,35 @@ class DevolucionProducto(models.Model):
                 .first()
             )
 
-        if self.clasificacion == self.CLASIFICACION_REINTEGRO:
-            if lote:
-                lote.cantidad_devuelta = (lote.cantidad_devuelta or 0) + cantidad
-                lote.save()
-            producto.stock_actual = (producto.stock_actual or 0) + cantidad
-            producto.save()
-            MovimientoInventario.objects.create(
-                producto=producto,
-                tipo="entrada",
-                cantidad=cantidad,
-                motivo=f"Devolución aprovechable: {self.motivo}",
-            )
-        else:
-            if producto.stock_actual < cantidad:
-                raise ValidationError({"cantidad": "Stock insuficiente para registrar la merma"})
-            producto.stock_actual -= cantidad
-            producto.save()
-            if lote:
-                lote.cantidad_descartada = (lote.cantidad_descartada or 0) + cantidad
-                lote.save()
-            MovimientoInventario.objects.create(
-                producto=producto,
-                tipo="salida",
-                cantidad=cantidad,
-                motivo=f"Merma por devolución: {self.motivo}",
-            )
+            if self.clasificacion == self.CLASIFICACION_REINTEGRO:
+                if lote:
+                    lote.cantidad_devuelta = (lote.cantidad_devuelta or 0) + cantidad
+                    lote.save()
+                producto.stock_actual = (producto.stock_actual or 0) + cantidad
+                producto.save()
+                MovimientoInventario.objects.create(
+                    producto=producto,
+                    tipo="entrada",
+                    cantidad=cantidad,
+                    motivo=f"Devolución aprovechable: {self.motivo}",
+                    usuario=self.responsable,
+                    operacion_tipo=MovimientoInventario.OPERACION_DEVOLUCION,
+                    devolucion=self,
+                )
+            else:
+                if producto.stock_actual < cantidad:
+                    raise ValidationError({"cantidad": "Stock insuficiente para registrar la merma"})
+                producto.stock_actual -= cantidad
+                producto.save()
+                if lote:
+                    lote.cantidad_descartada = (lote.cantidad_descartada or 0) + cantidad
+                    lote.save()
+                MovimientoInventario.objects.create(
+                    producto=producto,
+                    tipo="salida",
+                    cantidad=cantidad,
+                    motivo=f"Merma por devolución: {self.motivo}",
+                    usuario=self.responsable,
+                    operacion_tipo=MovimientoInventario.OPERACION_DEVOLUCION,
+                    devolucion=self,
+                )

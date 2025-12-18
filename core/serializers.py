@@ -185,7 +185,9 @@ class ProductoSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", [])
         with transaction.atomic():
-            producto = Producto(**validated_data)
+            producto = self._save_with_validation(Producto(**validated_data))
+            producto = self._save_with_validation(producto)
+            
             for ing in ingredientes_data:
                 ComposicionProducto.objects.create(
                     producto_final=producto,
@@ -413,6 +415,9 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                                 tipo="salida",
                                 cantidad=requerido,
                                 motivo=f"Venta de {producto.nombre}",
+                                usuario=usuario,
+                                operacion_tipo=MovimientoInventario.OPERACION_VENTA,
+                                venta=venta,
                             )
                         except OperationalError:
                             raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
@@ -422,6 +427,9 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                         tipo="salida",
                         cantidad=cantidad,
                         motivo="Venta",
+                        usuario=usuario,
+                        operacion_tipo=MovimientoInventario.OPERACION_VENTA,
+                        venta=venta,
                     )
                 except OperationalError:
                     raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})

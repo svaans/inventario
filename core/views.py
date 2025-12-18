@@ -153,6 +153,8 @@ class ProductoDeleteView(DeleteView):
                 tipo="salida",
                 cantidad=stock,
                 motivo="Eliminación de producto",
+                usuario=request.user if request.user.is_authenticated else None,
+                operacion_tipo=MovimientoInventario.OPERACION_ELIMINACION,
             )
         messages.success(request, "Producto eliminado correctamente.")
         self.object = producto
@@ -244,7 +246,10 @@ class VentaCreateView(CreateView):
                         producto=producto,
                         tipo='salida',
                         cantidad=cantidad,
-                        motivo='Venta'
+                        motivo='Venta',
+                        usuario=request.user,
+                        operacion_tipo=MovimientoInventario.OPERACION_VENTA,
+                        venta=self.object,
                     )
 
                 messages.success(request, "Venta registrada correctamente.")
@@ -281,6 +286,7 @@ class CompraCreateView(CreateView):
         if form.is_valid() and formset.is_valid():
             with transaction.atomic():
                 self.object = form.save(commit=False)
+                self.object.usuario = request.user if request.user.is_authenticated else None
                 formset.instance = self.object
 
                 total = 0
@@ -318,7 +324,10 @@ class CompraCreateView(CreateView):
                         producto=producto,
                         tipo='entrada',
                         cantidad=cantidad,
-                        motivo='Compra'
+                        motivo='Compra',
+                        usuario=request.user if request.user.is_authenticated else None,
+                        operacion_tipo=MovimientoInventario.OPERACION_COMPRA,
+                        compra=self.object,
                     )
 
                 messages.success(request, "Compra registrada correctamente.")
@@ -596,6 +605,8 @@ class MovimientoManualCreateView(CreateView):
     success_url = reverse_lazy('movimiento_list')
 
     def form_valid(self, form):
+        form.instance.usuario = self.request.user if self.request.user.is_authenticated else None
+        form.instance.operacion_tipo = MovimientoInventario.OPERACION_AJUSTE
         response = super().form_valid(form)
         prod = form.instance.producto
         cant = form.instance.cantidad

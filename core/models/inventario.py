@@ -294,6 +294,21 @@ class ComposicionProducto(models.Model):
 
 class MovimientoInventario(models.Model):
     """Registro de entradas y salidas de un ``Producto``."""
+
+    OPERACION_VENTA = "venta"
+    OPERACION_COMPRA = "compra"
+    OPERACION_DEVOLUCION = "devolucion"
+    OPERACION_AJUSTE = "ajuste"
+    OPERACION_REORDEN = "reorden"
+    OPERACION_ELIMINACION = "eliminacion"
+    OPERACION_CHOICES = [
+        (OPERACION_VENTA, "Venta"),
+        (OPERACION_COMPRA, "Compra"),
+        (OPERACION_DEVOLUCION, "Devolución"),
+        (OPERACION_AJUSTE, "Ajuste manual"),
+        (OPERACION_REORDEN, "Reorden automático"),
+        (OPERACION_ELIMINACION, "Eliminación de producto"),
+    ]
     TIPO_CHOICES = [
         ("entrada", "Entrada"),
         ("salida", "Salida"),
@@ -304,6 +319,25 @@ class MovimientoInventario(models.Model):
     cantidad = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     fecha = models.DateTimeField(auto_now_add=True)
     motivo = models.CharField(max_length=100)
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    operacion_tipo = models.CharField(
+        max_length=30, choices=OPERACION_CHOICES, null=True, blank=True
+    )
+    venta = models.ForeignKey(
+        "core.Venta", null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos"
+    )
+    compra = models.ForeignKey(
+        "core.Compra", null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos"
+    )
+    devolucion = models.ForeignKey(
+        "core.DevolucionProducto",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos",
+    )
 
     def __str__(self):
         return f"{self.tipo.title()} - {self.producto.nombre} ({self.cantidad})"

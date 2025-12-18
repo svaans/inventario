@@ -21,7 +21,7 @@ def log_producto_change(sender, instance, **kwargs):
 def log_compra_change(sender, instance, **kwargs):
     action = "creada" if kwargs.get("created") else ("eliminada" if kwargs.get("signal") == post_delete else "actualizada")
     AuditLog.objects.create(
-        usuario=None,
+        usuario=getattr(instance, "usuario", None),
         accion=action,
         tipo_contenido=ContentType.objects.get_for_model(instance),
         objeto_id=instance.pk,

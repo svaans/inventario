@@ -387,6 +387,8 @@ def auto_reordenar(confirmar: bool = False, horizon_days: int = 7) -> List[int]:
                 tipo="entrada",
                 cantidad=cantidad,
                 motivo="Reorden automático",
+                operacion_tipo=MovimientoInventario.OPERACION_REORDEN,
+                compra=compra,
             )
             total += cantidad * precio
         compra.total = total
