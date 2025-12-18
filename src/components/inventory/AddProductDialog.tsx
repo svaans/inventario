@@ -616,7 +616,7 @@ export default function AddProductDialog({ onProductAdded }: AddProductDialogPro
         <DialogContent
           key="dialog-agregar-producto"
           aria-describedby="add-product-description"
-          className="sm:max-w-5xl max-h-[85vh] overflow-hidden p-0"
+          className="sm:max-w-5xl max-h-[85vh] overflow-y-auto p-0"
         >
           <div className="flex h-full flex-col">
             <div className="px-6 pt-6">
