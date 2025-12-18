@@ -1034,11 +1034,9 @@ class TraceabilityView(APIView):
             vendidos = (
                 lpf.detallesventa_set.aggregate(total=Sum("cantidad"))["total"] or 0
             )
-            devueltos = (
-                DevolucionProducto.objects.filter(lote_final=lpf).aggregate(total=Sum("cantidad"))["total"]
-                or 0
-            )
-            en_stock = lpf.cantidad_producida - vendidos - devueltos
+            devueltos = lpf.cantidad_descartada or 0
+            recuperados = lpf.cantidad_devuelta or 0
+            en_stock = lpf.cantidad_producida - vendidos - devueltos + recuperados
             usos_data.append(
                 {
                     "lote_final": lpf.codigo,
@@ -1048,6 +1046,7 @@ class TraceabilityView(APIView):
                     "cantidad_utilizada": uso.cantidad,
                     "vendidos": vendidos,
                     "devueltos": devueltos,
+                    "recuperados": recuperados,
                     "en_stock": en_stock,
                 }
             )

@@ -103,8 +103,9 @@ class DevolucionProductoAdmin(admin.ModelAdmin):
         'responsable',
         'reembolso',
         'sustitucion',
+        'clasificacion',
     )
-    list_filter = ('fecha', 'producto')
+    list_filter = ('fecha', 'producto', 'clasificacion')
 
 
 @admin.register(HistorialPrecio)
@@ -135,6 +136,7 @@ class LoteProductoFinalAdmin(admin.ModelAdmin):
         'cantidad_producida',
         'cantidad_vendida',
         'cantidad_devuelta',
+        'cantidad_descartada',
     )
     list_filter = ('producto', 'fecha_produccion')
 

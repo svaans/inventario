@@ -119,7 +119,10 @@ def vender_producto_final_fifo(
 
     for lote in lotes:
         disponible = (
-            lote.cantidad_producida - lote.cantidad_vendida - lote.cantidad_devuelta
+            lote.cantidad_producida
+            - lote.cantidad_vendida
+            - lote.cantidad_descartada
+            + lote.cantidad_devuelta
         )
         if disponible <= 0:
             continue
@@ -144,7 +147,9 @@ def calcular_perdidas_devolucion(
     end: Optional[date] = None,
 ) -> Dict[str, Any]:
     """Calcular pérdidas económicas por devoluciones."""
-    qs = DevolucionProducto.objects.select_related("producto")
+    qs = DevolucionProducto.objects.select_related("producto").filter(
+        clasificacion=DevolucionProducto.CLASIFICACION_MERMA
+    )
     if start:
         qs = qs.filter(fecha__gte=start)
     if end:
