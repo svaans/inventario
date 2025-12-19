@@ -32,6 +32,7 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 from openpyxl import load_workbook
 from .utils import calcular_perdidas_devolucion
+from .serializers import VentaCreateSerializer
 from django.views.generic import TemplateView
 from django.utils.timezone import now
 from django.db.models import Sum
@@ -209,76 +210,45 @@ class VentaCreateView(CreateView):
         formset = DetalleFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
-            with transaction.atomic():
-                self.object = form.save(commit=False)
-                self.object.usuario = request.user
-                formset.instance = self.object
+            detalles_payload = []
+            for detalle in formset:
+                if not detalle.cleaned_data or detalle.cleaned_data.get("DELETE"):
+                    continue
+                producto = detalle.cleaned_data["producto"]
+                detalles_payload.append(
+                    {
+                        "producto": producto.id,
+                        "cantidad": detalle.cleaned_data["cantidad"],
+                        "precio_unitario": detalle.cleaned_data["precio_unitario"],
+                    }
+                )
 
-                total = 0
-                detalle_data = []
-                producto_cantidades = defaultdict(lambda: Decimal("0"))
+            if not detalles_payload:
+                form.add_error(None, "Debe agregar al menos un producto a la venta.")
+                return render(
+                    request, self.template_name, {"form": form, "formset": formset}
+                )
 
-                for detalle in formset:
-                    if not detalle.cleaned_data or detalle.cleaned_data.get("DELETE"):
-                        continue
-                    producto = detalle.cleaned_data['producto']
-                    cantidad = detalle.cleaned_data['cantidad']
-                    precio = detalle.cleaned_data['precio_unitario']
-                    detalle_data.append((detalle, producto, cantidad, precio))
-                    producto_cantidades[producto.id] += cantidad
-                    total += cantidad * precio
-
-                productos = {
-                    p.id: p
-                    for p in Producto.objects.select_for_update().filter(
-                        id__in=producto_cantidades.keys()
-                    )
-                }
-
-                errores = False
-                for prod_id, cantidad_total in producto_cantidades.items():
-                    producto = productos.get(prod_id)
-                    if producto is None:
-                        continue
-                    if producto.stock_actual < cantidad_total:
-                        errores = True
-                        mensaje = 'Stock insuficiente para este producto'
-                    elif (producto.stock_actual - cantidad_total) < producto.stock_minimo:
-                        errores = True
-                        mensaje = 'La venta dejaría el stock por debajo del mínimo permitido'
-                    else:
-                        continue
-
-                    for detalle_form, prod, _, _ in detalle_data:
-                        if prod.id == prod_id:
-                            detalle_form.add_error('cantidad', mensaje)
-
-                if errores:
-                    return render(
-                        request, self.template_name, {'form': form, 'formset': formset}
-                    )
-                self.object.total = total
-                self.object.save()
-                formset.save()
-
-                for prod_id, cantidad_total in producto_cantidades.items():
-                    producto = productos[prod_id]
-                    producto.stock_actual -= cantidad_total
-                    producto.save()
-
-                for _, producto, cantidad, _ in detalle_data:
-                    MovimientoInventario.objects.create(
-                        producto=producto,
-                        tipo='salida',
-                        cantidad=cantidad,
-                        motivo='Venta',
-                        usuario=request.user,
-                        operacion_tipo=MovimientoInventario.OPERACION_VENTA,
-                        venta=self.object,
-                    )
+            venta_data = {
+                "fecha": form.cleaned_data["fecha"],
+                "cliente": form.cleaned_data["cliente"].id,
+                "detalles": detalles_payload,
+            }
+            serializer = VentaCreateSerializer(
+                data=venta_data, context={"request": request}
+            )
+            if serializer.is_valid():
+                serializer.save()
 
                 messages.success(request, "Venta registrada correctamente.")
                 return redirect(self.success_url)
+            
+            for errores in serializer.errors.values():
+                if isinstance(errores, (list, tuple)):
+                    for error in errores:
+                        form.add_error(None, error)
+                else:
+                    form.add_error(None, errores)
         
         return render(request, self.template_name, {'form': form, 'formset': formset})
 
