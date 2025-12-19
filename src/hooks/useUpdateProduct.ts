@@ -8,6 +8,7 @@ export interface UpdateProductPayload {
   precio?: number;
   costo?: number;
   stock_minimo?: number;
+  ingredientes?: { ingrediente: number; cantidad_requerida: number }[];
 }
 
 export function useUpdateProduct() {

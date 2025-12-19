@@ -8,6 +8,7 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import AddProductDialog from "../components/inventory/AddProductDialog";
 import { InventoryStats } from "../components/inventory/InventoryStats";
 import { Skeleton } from "../components/ui/skeleton";
@@ -51,6 +52,11 @@ export default function Inventory() {
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const [form, setForm] = useState({ stock: 0, price: 0, cost: 0, minStock: 0 });
+  const [ingredients, setIngredients] = useState<{ ingrediente: number; cantidad: string }[]>([]);
+  const [currentIngredient, setCurrentIngredient] = useState<{ ingrediente: number; cantidad: string }>({
+    ingrediente: 0,
+    cantidad: "",
+  });
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -81,18 +87,36 @@ export default function Inventory() {
         cost: editing.cost,
         minStock: editing.minStock,
       });
+      setIngredients(
+        (editing.ingredientes ?? []).map((ing) => ({
+          ingrediente: ing.ingrediente,
+          cantidad: String(ing.cantidad_requerida),
+        }))
+      );
+      setCurrentIngredient({ ingrediente: 0, cantidad: "" });
+    } else {
+      setIngredients([]);
+      setCurrentIngredient({ ingrediente: 0, cantidad: "" });
     }
   }, [editing]);
 
   const handleUpdate = async () => {
     if (!editing) return;
     try {
+      const isRecipeProduct = editing.tipo === "empanada" || editing.tipo === "producto_final";
+      const sanitizedIngredients = ingredients
+        .filter((ing) => ing.ingrediente && (parseFloat(ing.cantidad) || 0) > 0)
+        .map((ing) => ({
+          ingrediente: ing.ingrediente,
+          cantidad_requerida: parseFloat(ing.cantidad) || 0,
+        }));
       await updateProduct.mutateAsync({
         id: editing.id,
         stock_actual: form.stock,
         precio: form.price,
         costo: form.cost,
         stock_minimo: form.minStock,
+        ...(isRecipeProduct ? { ingredientes: sanitizedIngredients } : {}),
       });
       toast({ title: "Producto actualizado" });
       setEditing(null);
@@ -105,6 +129,8 @@ export default function Inventory() {
       toast({ title: "Error", description, variant: "destructive" });
     }
   };
+
+  const ingredientOptions = products.filter(p => p.tipo?.startsWith("ingred"));
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Estás seguro de eliminar este producto?")) return;
@@ -163,6 +189,90 @@ export default function Inventory() {
               <Label htmlFor="upd-min">Stock Mínimo</Label>
               <Input id="upd-min" type="number" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: parseFloat(e.target.value) || 0 })} />
             </div>
+            {editing && (editing.tipo === "empanada" || editing.tipo === "producto_final") && (
+              <div className="grid gap-3">
+                <div className="flex items-center justify-between">
+                  <Label>Ingredientes</Label>
+                  <span className="text-xs text-muted-foreground">Opcional</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={currentIngredient.ingrediente ? String(currentIngredient.ingrediente) : ""}
+                    onValueChange={(val) =>
+                      setCurrentIngredient({ ...currentIngredient, ingrediente: Number(val) })
+                    }
+                  >
+                    <SelectTrigger className="w-44">
+                      <SelectValue placeholder="Ingrediente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ingredientOptions.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    placeholder="Cantidad"
+                    value={currentIngredient.cantidad}
+                    onChange={(e) => setCurrentIngredient({ ...currentIngredient, cantidad: e.target.value })}
+                    className="w-24"
+                  />
+                  <span className="self-center text-sm text-muted-foreground">
+                    {ingredientOptions.find(p => p.id === currentIngredient.ingrediente)?.unit ?? ""}
+                  </span>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!currentIngredient.ingrediente || !currentIngredient.cantidad) return;
+                      setIngredients((prev) => {
+                        const existingIndex = prev.findIndex((ing) => ing.ingrediente === currentIngredient.ingrediente);
+                        if (existingIndex >= 0) {
+                          const next = [...prev];
+                          next[existingIndex] = { ...currentIngredient };
+                          return next;
+                        }
+                        return [...prev, currentIngredient];
+                      });
+                      setCurrentIngredient({ ingrediente: 0, cantidad: "" });
+                    }}
+                  >
+                    Agregar
+                  </Button>
+                </div>
+                {ingredients.length > 0 && (
+                  <div className="space-y-2">
+                    {ingredients.map((ing, index) => {
+                      const opt = ingredientOptions.find((p) => p.id === ing.ingrediente);
+                      return (
+                        <div key={`${ing.ingrediente}-${index}`} className="flex items-center gap-2">
+                          <span className="flex-1 text-sm">{opt?.name ?? ing.ingrediente}</span>
+                          <Input
+                            type="number"
+                            value={ing.cantidad}
+                            onChange={(e) => {
+                              const next = [...ingredients];
+                              next[index] = { ...ing, cantidad: e.target.value };
+                              setIngredients(next);
+                            }}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">{opt?.unit ?? ""}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIngredients(ingredients.filter((_, i) => i !== index))}
+                          >
+                            Quitar
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
               <Button onClick={handleUpdate} disabled={updateProduct.isPending}>Guardar</Button>
