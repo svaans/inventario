@@ -447,7 +447,7 @@ class CargarProductosView(View):
         if 'confirmar' in request.POST:
             # Paso 2: Confirmar importación desde sesión
             datos = request.session.get('vista_previa_productos', [])
-            creados, errores = 0, 0, 0
+            creados, errores = 0, 0
             for fila in datos:
                 if fila['estado'] != 'nuevo':
                     continue
