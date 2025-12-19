@@ -29,7 +29,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from django.contrib import messages
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import transaction, IntegrityError, DatabaseError
+from django.core.exceptions import ValidationError
 from openpyxl import load_workbook
 from .utils import calcular_perdidas_devolucion
 from .serializers import VentaCreateSerializer
@@ -459,7 +460,7 @@ class CargarProductosView(View):
                     unidad_media_id = fila.get("unidad_media_id")
                     if not unidad_media_id:
                         raise ValueError(fila.get("unidad_media_error") or "Unidad de medida inválida.")
-                    Producto.objects.create(
+                    producto = Producto(
                         codigo=fila['codigo'],
                         nombre=fila['nombre'],
                         tipo=fila['tipo'],
@@ -469,12 +470,29 @@ class CargarProductosView(View):
                         unidad_media_id=unidad_media_id,
                         categoria=categoria
                     )
+                    producto.full_clean()
+                    producto.save()
                     creados += 1
+                except ValidationError as exc:
+                    errores += 1
+                    fila_excel = fila.get("fila_excel", "desconocida")
+                    if hasattr(exc, "message_dict"):
+                        detalles = []
+                        for campo, mensajes in exc.message_dict.items():
+                            detalles.append(f"{campo}: {', '.join(mensajes)}")
+                        mensaje = "; ".join(detalles)
+                    else:
+                        mensaje = str(exc)
+                    errores_detalle.append(f"Fila {fila_excel}: {mensaje}")
+                except IntegrityError:
+                    errores += 1
+                    fila_excel = fila.get("fila_excel", "desconocida")
+                    errores_detalle.append(f"Fila {fila_excel}: Código duplicado o conflicto de integridad.")
                 except ValueError as exc:
                     errores += 1
                     fila_excel = fila.get("fila_excel", "desconocida")
                     errores_detalle.append(f"Fila {fila_excel}: {exc}")
-                except Exception as exc:
+                except (TypeError, DatabaseError) as exc:
                     errores += 1
                     fila_excel = fila.get("fila_excel", "desconocida")
                     errores_detalle.append(f"Fila {fila_excel}: {exc}")
