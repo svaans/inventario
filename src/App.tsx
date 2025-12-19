@@ -2,7 +2,7 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navigation } from "./components/ui/navigation";
 import Home from "./pages/Home";
 import Inventory from "./pages/Inventory";
@@ -15,12 +15,7 @@ import BusinessEvolution from "./pages/BusinessEvolution";
 import MonthlyTrends from "./pages/MonthlyTrends";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/login";
-
-const ProtectedRoute = ({ children }: any) => {
-  const isAuthenticated = Boolean(localStorage.getItem("token"));
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <>{children}</>;
-};
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
