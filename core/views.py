@@ -39,6 +39,7 @@ from django.utils.timezone import now
 from django.db.models import Sum
 from collections import defaultdict
 from decimal import Decimal
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from functools import wraps
@@ -111,6 +112,14 @@ def resolver_unidad_media(valor):
 
     return None, f'Unidad de medida "{valor_normalizado}" no encontrada.'
 
+def obtener_categoria_importacion(nombre_categoria: str) -> tuple[str, FamiliaProducto]:
+    nombre = nombre_categoria or settings.IMPORT_DEFAULT_CATEGORY_NAME
+    if nombre == settings.IMPORT_DEFAULT_CATEGORY_NAME:
+        familia = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.OTROS)
+    else:
+        familia = inferir_familia(nombre)
+    return nombre, familia
+
 @ensure_csrf_cookie
 def login_view(request):
     """Authenticate and log in a user using username and password."""
@@ -182,6 +191,10 @@ class ProductoDeleteView(DeleteView):
                 motivo="Eliminación de producto",
                 usuario=request.user if request.user.is_authenticated else None,
                 operacion_tipo=MovimientoInventario.OPERACION_ELIMINACION,
+            )
+            messages.warning(
+                request,
+                f"Se registró una salida de {stock} por eliminación del producto.",
             )
         messages.success(request, "Producto eliminado correctamente.")
         self.object = producto
@@ -449,9 +462,9 @@ class CargarProductosView(View):
                 if fila['estado'] != 'nuevo':
                     continue
                 try:
-                    familia = inferir_familia(fila['categoria'])
+                    categoria_nombre, familia = obtener_categoria_importacion(fila['categoria'])
                     categoria, created = Categoria.objects.get_or_create(
-                        nombre_categoria=fila['categoria'],
+                        nnombre_categoria=categoria_nombre,
                         defaults={"familia": familia},
                     )
                     if not created and categoria.familia_id != familia.id:
@@ -527,6 +540,7 @@ class CargarProductosView(View):
                 if estado == 'nuevo' and unidad_error:
                     estado = 'invalido'
                     error_msg = unidad_error
+                categoria_nombre = categoria or settings.IMPORT_DEFAULT_CATEGORY_NAME
                 vista_previa.append({
                     'fila_excel': i,
                     'codigo': codigo or '',
@@ -534,11 +548,11 @@ class CargarProductosView(View):
                     'tipo': tipo or '',
                     'precio': precio or 0,
                     'stock_actual': stock_actual or 0,
-                    'stock_minimo': stock_minimo or 5,
+                    'stock_minimo': stock_minimo or settings.IMPORT_DEFAULT_STOCK_MINIMO,
                     'unidad_media': unidad_media or 'unidad',
                     'unidad_media_id': unidad.id if unidad else None,
                     'unidad_media_error': unidad_error,
-                    'categoria': categoria or 'Sin categoría',
+                    'categoria': categoria_nombre,
                     'estado': estado,
                     'error': error_msg,
                 })
@@ -554,7 +568,7 @@ class CargarProductosView(View):
                     'unidad_media': 'unidad',
                     'unidad_media_id': None,
                     'unidad_media_error': "Fila con formato inválido.",
-                    'categoria': 'Sin categoría',
+                    'categoria': settings.IMPORT_DEFAULT_CATEGORY_NAME,
                     'estado': 'invalido',
                     'error': 'Fila con formato inválido.',
                 })

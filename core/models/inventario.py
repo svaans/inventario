@@ -78,7 +78,7 @@ class Producto(models.Model):
     costo = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     stock_actual = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     stock_minimo = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    unidad_media = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT, null=True)
+    unidad_media = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     familia = models.ForeignKey(FamiliaProducto, on_delete=models.PROTECT, related_name="productos")
     proveedor = models.ForeignKey('Proveedor', on_delete=models.CASCADE, null=True, blank=True)

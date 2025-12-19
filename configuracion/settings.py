@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from decimal import Decimal
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -142,6 +143,10 @@ LOGOUT_REDIRECT_URL = '/login/'
 # Emails se envían a la consola durante el desarrollo
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@example.com'
+
+# Valores por defecto para la importación de productos.
+IMPORT_DEFAULT_STOCK_MINIMO = Decimal(os.environ.get("IMPORT_DEFAULT_STOCK_MINIMO", "5"))
+IMPORT_DEFAULT_CATEGORY_NAME = os.environ.get("IMPORT_DEFAULT_CATEGORY_NAME", "Sin clasificar")
 
 # Allow API requests from the Vite dev server during development
 # (both default 4173 and our custom 8080 port)

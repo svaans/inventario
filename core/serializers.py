@@ -76,7 +76,7 @@ class ProductoSerializer(serializers.ModelSerializer):
     categoria_nombre = serializers.CharField(source="categoria.nombre_categoria", read_only=True)
     familia = serializers.PrimaryKeyRelatedField(queryset=FamiliaProducto.objects.all(), required=False)
     familia_nombre = serializers.CharField(source="familia.nombre", read_only=True)
-    unidad_media = serializers.PrimaryKeyRelatedField(queryset=UnidadMedida.objects.all(), required=False)
+    unidad_media = serializers.PrimaryKeyRelatedField(queryset=UnidadMedida.objects.all())
     unidad_media_nombre = serializers.CharField(source="unidad_media.nombre", read_only=True)
     unidad_media_abreviatura = serializers.CharField(source="unidad_media.abreviatura", read_only=True)
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
@@ -135,7 +135,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             "precio": {"required": True},
             "stock_actual": {"required": False},
             "stock_minimo": {"required": False},
-            "unidad_media": {"required": False},
+            "unidad_media": {"required": True},
             "proveedor": {"required": False},
             "tipo": {"required": True},
             "impuesto": {"required": False},
