@@ -223,6 +223,20 @@ export default function Products() {
                       <p className="font-semibold text-golden">{margin}%</p>
                     </div>
                   </div>
+                  {!product.tipo.startsWith("ingred") && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">Unidades posibles</p>
+                      <p
+                        className={
+                          product.unidades_posibles && product.unidades_posibles < 1
+                            ? "font-semibold text-destructive"
+                            : "font-semibold"
+                        }
+                      >
+                        {product.unidades_posibles ?? "-"}
+                      </p>
+                    </div>
+                  )}
                   <div className="pt-2 border-t">
                     <p className="text-sm text-muted-foreground">Proveedor: {product.supplier}</p>
                   </div>
