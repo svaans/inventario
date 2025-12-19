@@ -264,6 +264,7 @@ class VentaListView(ListView):
     context_object_name = 'ventas'
     ordering = ['-fecha']
 
+@group_decorator("compras")
 class CompraCreateView(CreateView):
     model = Compra
     form_class = CompraForm
@@ -286,7 +287,7 @@ class CompraCreateView(CreateView):
         if form.is_valid() and formset.is_valid():
             with transaction.atomic():
                 self.object = form.save(commit=False)
-                self.object.usuario = request.user if request.user.is_authenticated else None
+                self.object.usuario = request.user
                 formset.instance = self.object
 
                 total = 0
@@ -325,7 +326,7 @@ class CompraCreateView(CreateView):
                         tipo='entrada',
                         cantidad=cantidad,
                         motivo='Compra',
-                        usuario=request.user if request.user.is_authenticated else None,
+                        usuario=request.user,
                         operacion_tipo=MovimientoInventario.OPERACION_COMPRA,
                         compra=self.object,
                     )
