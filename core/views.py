@@ -608,17 +608,19 @@ class MovimientoManualCreateView(CreateView):
     def form_valid(self, form):
         form.instance.usuario = self.request.user if self.request.user.is_authenticated else None
         form.instance.operacion_tipo = MovimientoInventario.OPERACION_AJUSTE
-        response = super().form_valid(form)
-        prod = form.instance.producto
-        cant = form.instance.cantidad
-        if form.instance.tipo == 'entrada':
-            prod.stock_actual += cant
-        else:
-            if prod.stock_actual < cant:
+        with transaction.atomic():
+            prod = Producto.objects.select_for_update().get(pk=form.instance.producto_id)
+            cant = form.cleaned_data["cantidad"]
+            tipo = form.cleaned_data["tipo"]
+            if tipo != 'entrada' and prod.stock_actual < cant:
                 form.add_error('cantidad', 'Stock insuficiente para este producto')
                 return self.form_invalid(form)
-            prod.stock_actual -= cant
-        prod.save()
+            response = super().form_valid(form)
+            if tipo == 'entrada':
+                prod.stock_actual += cant
+            else:
+                prod.stock_actual -= cant
+            prod.save(update_fields=["stock_actual"])
         messages.success(self.request, "Movimiento registrado correctamente.")
         return response
     
