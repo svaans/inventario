@@ -17,6 +17,7 @@ from .models import (
     Categoria,
     Balance,
     FamiliaProducto,
+    UnidadMedida,
 )
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import Group
@@ -83,6 +84,30 @@ def inferir_familia(nombre_categoria: str) -> FamiliaProducto:
     else:
         clave = FamiliaProducto.Clave.OTROS
     return FamiliaProducto.objects.get(clave=clave)
+
+
+def resolver_unidad_media(valor):
+    valor_normalizado = str(valor).strip() if valor is not None else ""
+    if not valor_normalizado:
+        valor_normalizado = "unidad"
+
+    if isinstance(valor, (int, Decimal)):
+        unidad = UnidadMedida.objects.filter(id=valor).first()
+        if unidad:
+            return unidad, None
+    elif isinstance(valor, float) and valor.is_integer():
+        unidad = UnidadMedida.objects.filter(id=int(valor)).first()
+        if unidad:
+            return unidad, None
+
+    unidad = UnidadMedida.objects.filter(abreviatura__iexact=valor_normalizado).first()
+    if unidad:
+        return unidad, None
+    unidad = UnidadMedida.objects.filter(nombre__iexact=valor_normalizado).first()
+    if unidad:
+        return unidad, None
+
+    return None, f'Unidad de medida "{valor_normalizado}" no encontrada.'
 
 @ensure_csrf_cookie
 def login_view(request):
@@ -448,6 +473,7 @@ class CargarProductosView(View):
             # Paso 2: Confirmar importación desde sesión
             datos = request.session.get('vista_previa_productos', [])
             creados, errores = 0, 0
+            errores_detalle = []
             for fila in datos:
                 if fila['estado'] != 'nuevo':
                     continue
@@ -460,6 +486,9 @@ class CargarProductosView(View):
                     if not created and categoria.familia_id != familia.id:
                         categoria.familia = familia
                         categoria.save(update_fields=["familia"])
+                    unidad_media_id = fila.get("unidad_media_id")
+                    if not unidad_media_id:
+                        raise ValueError(fila.get("unidad_media_error") or "Unidad de medida inválida.")
                     Producto.objects.create(
                         codigo=fila['codigo'],
                         nombre=fila['nombre'],
@@ -467,12 +496,20 @@ class CargarProductosView(View):
                         precio=fila['precio'],
                         stock_actual=fila['stock_actual'],
                         stock_minimo=fila['stock_minimo'],
-                        unidad_media=fila['unidad_media'],
+                        unidad_media_id=unidad_media_id,
                         categoria=categoria
                     )
                     creados += 1
-                except Exception:
+                except ValueError as exc:
                     errores += 1
+                    fila_excel = fila.get("fila_excel", "desconocida")
+                    errores_detalle.append(f"Fila {fila_excel}: {exc}")
+                except Exception as exc:
+                    errores += 1
+                    fila_excel = fila.get("fila_excel", "desconocida")
+                    errores_detalle.append(f"Fila {fila_excel}: {exc}")
+            if errores_detalle:
+                messages.error(request, "Errores en importación:\n" + "\n".join(errores_detalle))
             messages.success(request, f"Se importaron {creados} productos. Errores: {errores}.")
             return redirect('producto_list')
 
@@ -491,11 +528,19 @@ class CargarProductosView(View):
             try:
                 codigo, nombre, tipo, precio, stock_actual, stock_minimo, unidad_media, categoria = fila
                 estado = 'nuevo'
+                error_msg = ''
                 if not codigo or not nombre or not precio:
                     estado = 'invalido'
+                    error_msg = 'Faltan campos obligatorios.'
                 elif Producto.objects.filter(codigo=codigo).exists():
                     estado = 'duplicado'
+                    error_msg = 'Código duplicado.'
+                unidad, unidad_error = resolver_unidad_media(unidad_media)
+                if estado == 'nuevo' and unidad_error:
+                    estado = 'invalido'
+                    error_msg = unidad_error
                 vista_previa.append({
+                    'fila_excel': i,
                     'codigo': codigo or '',
                     'nombre': nombre or '',
                     'tipo': tipo or '',
@@ -503,11 +548,28 @@ class CargarProductosView(View):
                     'stock_actual': stock_actual or 0,
                     'stock_minimo': stock_minimo or 5,
                     'unidad_media': unidad_media or 'unidad',
+                    'unidad_media_id': unidad.id if unidad else None,
+                    'unidad_media_error': unidad_error,
                     'categoria': categoria or 'Sin categoría',
-                    'estado': estado
+                    'estado': estado,
+                    'error': error_msg,
                 })
-            except Exception:
-                continue
+            except ValueError:
+                vista_previa.append({
+                    'fila_excel': i,
+                    'codigo': '',
+                    'nombre': '',
+                    'tipo': '',
+                    'precio': 0,
+                    'stock_actual': 0,
+                    'stock_minimo': 0,
+                    'unidad_media': 'unidad',
+                    'unidad_media_id': None,
+                    'unidad_media_error': "Fila con formato inválido.",
+                    'categoria': 'Sin categoría',
+                    'estado': 'invalido',
+                    'error': 'Fila con formato inválido.',
+                })
 
         request.session['vista_previa_productos'] = vista_previa
         return render(request, self.template_name, {'vista_previa': vista_previa})
