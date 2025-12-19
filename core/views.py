@@ -361,7 +361,7 @@ class CompraCreateView(CreateView):
 
         return render(request, self.template_name, {'form': form, 'formset': formset})
 
-@login_decorador  
+@group_decorator("compras")  
 class CompraListView(ListView):
     model = Compra
     template_name = 'core/compra_list.html'
