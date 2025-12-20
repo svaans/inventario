@@ -16,6 +16,7 @@ import MonthlyTrends from "./pages/MonthlyTrends";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import FinancialBalance from "./pages/FinancialBalance";
 
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
@@ -75,7 +76,7 @@ const App = () => (
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["finanzas"]}>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -83,7 +84,7 @@ const App = () => (
           <Route
             path="/evolucion"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["finanzas"]}>
                 <BusinessEvolution />
               </ProtectedRoute>
             }
@@ -91,8 +92,16 @@ const App = () => (
           <Route
             path="/tendencias"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["finanzas"]}>
                 <MonthlyTrends />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finanzas"
+            element={
+              <ProtectedRoute allowedRoles={["finanzas"]}>
+                <FinancialBalance />
               </ProtectedRoute>
             }
           />
