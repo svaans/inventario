@@ -94,7 +94,7 @@ from .analytics import (
     association_rules,
     purchase_recommendations,
 )
-from .planning import generar_plan\
+from .planning import generar_plan
 from .profitability import monthly_profitability_ranking
 
 
@@ -607,9 +607,9 @@ class FlujoCajaReportView(APIView):
 
         grouped = (
             qs.annotate(p=trunc)
-            .values("p", "tipo")
+            .values("p", "tipo", "naturaleza")
             .annotate(total=Sum("monto"))
-            .order_by("p")
+            .order_by("p", "tipo", "naturaleza")
         )
 
         result = []
@@ -619,6 +619,7 @@ class FlujoCajaReportView(APIView):
                 {
                     "period": item["p"],
                     "tipo": item["tipo"],
+                    "naturaleza": item["naturaleza"],
                     "total": float(item["total"]),
                     "promedio_diario": promedio,
                 }
