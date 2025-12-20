@@ -32,7 +32,7 @@ from django.core.files.storage import default_storage
 from django.db import transaction, IntegrityError, DatabaseError
 from django.core.exceptions import ValidationError
 from openpyxl import load_workbook
-from .utils import calcular_perdidas_devolucion
+from .utils import calcular_perdidas_devolucion, calcular_balance_mensual
 from .serializers import VentaCreateSerializer
 from django.views.generic import TemplateView
 from django.utils.timezone import now
@@ -359,30 +359,61 @@ class BalanceView(FormView):
     success_url = reverse_lazy('balance')
 
     def form_valid(self, form):
-        mes = form.cleaned_data['mes']
-        anio = form.cleaned_data['anio']
+        mes = int(form.cleaned_data['mes'])
+        anio = int(form.cleaned_data['anio'])
 
+        balance_existente = Balance.objects.filter(mes=mes, anio=anio).first()
         ventas = Venta.objects.filter(fecha__month=mes, fecha__year=anio)
         compras = Compra.objects.filter(fecha__month=mes, fecha__year=anio)
 
-        total_ingresos = sum(v.total for v in ventas)
-        total_egresos = sum(c.total for c in compras)
-        utilidad = total_ingresos - total_egresos
+        if balance_existente and balance_existente.cerrado:
+            total_ingresos = balance_existente.total_ingresos
+            total_egresos = balance_existente.total_egresos
+            utilidad = balance_existente.utilidad
+            ingresos_operativos = balance_existente.ingresos_operativos
+            costos_variables = balance_existente.costos_variables
+            costos_fijos = balance_existente.costos_fijos
+            gastos_financieros = balance_existente.gastos_financieros
+            utilidad_operativa = balance_existente.utilidad_operativa
+            utilidad_neta_real = balance_existente.utilidad_neta_real
+        else:
+            calculo = calcular_balance_mensual(int(mes), int(anio))
+            total_ingresos = calculo.total_ingresos
+            total_egresos = calculo.total_egresos
+            utilidad = calculo.utilidad
+            ingresos_operativos = calculo.ingresos_operativos
+            costos_variables = calculo.costos_variables
+            costos_fijos = calculo.costos_fijos
+            gastos_financieros = calculo.gastos_financieros
+            utilidad_operativa = calculo.utilidad_operativa
+            utilidad_neta_real = calculo.utilidad_neta_real
 
-        Balance.objects.update_or_create(
-            mes=mes,
-            anio=anio,
-            defaults={
-                'total_ingresos': total_ingresos,
-                'total_egresos': total_egresos,
-                'utilidad': utilidad
-            }
-        )
+            Balance.objects.update_or_create(
+                mes=mes,
+                anio=anio,
+                defaults={
+                    'total_ingresos': total_ingresos,
+                    'total_egresos': total_egresos,
+                    'utilidad': utilidad,
+                    'ingresos_operativos': ingresos_operativos,
+                    'costos_variables': costos_variables,
+                    'costos_fijos': costos_fijos,
+                    'gastos_financieros': gastos_financieros,
+                    'utilidad_operativa': utilidad_operativa,
+                    'utilidad_neta_real': utilidad_neta_real,
+                }
+            )
 
         context = self.get_context_data(form=form, ventas=ventas, compras=compras,
                                         total_ingresos=total_ingresos,
                                         total_egresos=total_egresos,
                                         utilidad=utilidad,
+                                        ingresos_operativos=ingresos_operativos,
+                                        costos_variables=costos_variables,
+                                        costos_fijos=costos_fijos,
+                                        gastos_financieros=gastos_financieros,
+                                        utilidad_operativa=utilidad_operativa,
+                                        utilidad_neta_real=utilidad_neta_real,
                                         mes=mes, anio=anio)
         return self.render_to_response(context)
 
@@ -410,6 +441,13 @@ def exportar_balance_excel(request):
     ws.append(["Total Ingresos (COP)", balance.total_ingresos])
     ws.append(["Total Egresos (COP)", balance.total_egresos])
     ws.append(["Utilidad (COP)", balance.utilidad])
+    ws.append([])
+    ws.append(["Ingresos Operativos (COP)", balance.ingresos_operativos])
+    ws.append(["Costos Variables (COP)", balance.costos_variables])
+    ws.append(["Costos Fijos (COP)", balance.costos_fijos])
+    ws.append(["Gastos Financieros (COP)", balance.gastos_financieros])
+    ws.append(["Utilidad Operativa (COP)", balance.utilidad_operativa])
+    ws.append(["Utilidad Neta Real (COP)", balance.utilidad_neta_real])
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -439,6 +477,12 @@ def exportar_balance_pdf(request):
     p.drawString(50, 730, f"Total Ingresos: $ {balance.total_ingresos}")
     p.drawString(50, 710, f"Total Egresos: $ {balance.total_egresos}")
     p.drawString(50, 690, f"Utilidad: $ {balance.utilidad}")
+    p.drawString(50, 670, f"Ingresos Operativos: $ {balance.ingresos_operativos}")
+    p.drawString(50, 650, f"Costos Variables: $ {balance.costos_variables}")
+    p.drawString(50, 630, f"Costos Fijos: $ {balance.costos_fijos}")
+    p.drawString(50, 610, f"Gastos Financieros: $ {balance.gastos_financieros}")
+    p.drawString(50, 590, f"Utilidad Operativa: $ {balance.utilidad_operativa}")
+    p.drawString(50, 570, f"Utilidad Neta Real: $ {balance.utilidad_neta_real}")
 
     p.showPage()
     p.save()

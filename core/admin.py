@@ -85,7 +85,16 @@ class DetallesVentaAdmin(admin.ModelAdmin):
 
 @admin.register(Balance)
 class BalanceAdmin(admin.ModelAdmin):
-    list_display = ('mes', 'anio', 'total_ingresos', 'total_egresos', 'utilidad')
+    list_display = (
+        'mes',
+        'anio',
+        'total_ingresos',
+        'total_egresos',
+        'utilidad',
+        'utilidad_operativa',
+        'utilidad_neta_real',
+        'cerrado',
+    )
     list_filter = ('anio',)
 
 @admin.register(Transaccion)

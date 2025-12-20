@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import date, timedelta
+from dataclasses import dataclass
 from calendar import monthrange
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
@@ -27,6 +28,78 @@ from .models import (
     LoteProductoFinal,
 )
 from .analytics import purchase_recommendations
+
+
+@dataclass(frozen=True)
+class BalanceCalculado:
+    ventas_total: Decimal
+    compras_total: Decimal
+    total_ingresos: Decimal
+    total_egresos: Decimal
+    utilidad: Decimal
+    ingresos_operativos: Decimal
+    costos_variables: Decimal
+    costos_fijos: Decimal
+    gastos_financieros: Decimal
+    utilidad_operativa: Decimal
+    utilidad_neta_real: Decimal
+
+
+def calcular_balance_mensual(mes: int, anio: int) -> BalanceCalculado:
+    """Calcular métricas financieras mensuales usando ventas, compras y transacciones."""
+
+    def _sum_queryset(qs, field: str) -> Decimal:
+        return qs.aggregate(total=Sum(field))["total"] or Decimal("0")
+
+    ventas = Venta.objects.filter(fecha__month=mes, fecha__year=anio)
+    compras = Compra.objects.filter(fecha__month=mes, fecha__year=anio)
+    transacciones = Transaccion.objects.filter(fecha__month=mes, fecha__year=anio)
+
+    ventas_total = _sum_queryset(ventas, "total")
+    compras_total = _sum_queryset(compras, "total")
+
+    ingresos_transacciones = transacciones.filter(tipo="ingreso")
+    egresos_transacciones = transacciones.filter(tipo="egreso")
+
+    ingresos_operativos = ventas_total + _sum_queryset(
+        ingresos_transacciones.filter(naturaleza="operativo"),
+        "monto",
+    )
+
+    costos_variables = compras_total + _sum_queryset(
+        egresos_transacciones.filter(tipo_costo="variable").exclude(
+            naturaleza="financiero"
+        ),
+        "monto",
+    )
+    costos_fijos = _sum_queryset(
+        egresos_transacciones.filter(tipo_costo="fijo").exclude(naturaleza="financiero"),
+        "monto",
+    )
+    gastos_financieros = _sum_queryset(
+        egresos_transacciones.filter(naturaleza="financiero"),
+        "monto",
+    )
+
+    utilidad_operativa = ingresos_operativos - costos_variables - costos_fijos
+
+    total_ingresos = ventas_total + _sum_queryset(ingresos_transacciones, "monto")
+    total_egresos = compras_total + _sum_queryset(egresos_transacciones, "monto")
+    utilidad_neta_real = total_ingresos - total_egresos
+
+    return BalanceCalculado(
+        ventas_total=ventas_total,
+        compras_total=compras_total,
+        total_ingresos=total_ingresos,
+        total_egresos=total_egresos,
+        utilidad=utilidad_neta_real,
+        ingresos_operativos=ingresos_operativos,
+        costos_variables=costos_variables,
+        costos_fijos=costos_fijos,
+        gastos_financieros=gastos_financieros,
+        utilidad_operativa=utilidad_operativa,
+        utilidad_neta_real=utilidad_neta_real,
+    )
 
 
 def generar_transacciones_recurrentes(

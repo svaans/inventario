@@ -20,6 +20,43 @@ class Balance(models.Model):
     total_ingresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     total_egresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     utilidad = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    ingresos_operativos = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    costos_variables = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    costos_fijos = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    gastos_financieros = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    utilidad_operativa = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    utilidad_neta_real = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    cerrado = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Balance {self.mes}/{self.anio}"
