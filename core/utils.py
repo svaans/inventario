@@ -26,6 +26,7 @@ from .models import (
     MonthlyReport,
     LoteMateriaPrima,
     LoteProductoFinal,
+    Balance,
 )
 from .analytics import purchase_recommendations
 
@@ -100,6 +101,59 @@ def calcular_balance_mensual(mes: int, anio: int) -> BalanceCalculado:
         utilidad_operativa=utilidad_operativa,
         utilidad_neta_real=utilidad_neta_real,
     )
+
+
+def obtener_balance_mensual(mes: int, anio: int) -> Dict[str, Any]:
+    """Devuelve el balance mensual usando el cierre si existe."""
+    balance = Balance.objects.filter(mes=mes, anio=anio).first()
+    if balance and balance.cerrado:
+        return {
+            "mes": mes,
+            "anio": anio,
+            "cerrado": True,
+            "total_ingresos": float(balance.total_ingresos),
+            "total_egresos": float(balance.total_egresos),
+            "utilidad": float(balance.utilidad),
+            "ingresos_operativos": float(balance.ingresos_operativos),
+            "costos_variables": float(balance.costos_variables),
+            "costos_fijos": float(balance.costos_fijos),
+            "gastos_financieros": float(balance.gastos_financieros),
+            "utilidad_operativa": float(balance.utilidad_operativa),
+            "utilidad_neta_real": float(balance.utilidad_neta_real),
+        }
+
+    calculo = calcular_balance_mensual(mes, anio)
+    data = {
+        "mes": mes,
+        "anio": anio,
+        "cerrado": False,
+        "total_ingresos": float(calculo.total_ingresos),
+        "total_egresos": float(calculo.total_egresos),
+        "utilidad": float(calculo.utilidad),
+        "ingresos_operativos": float(calculo.ingresos_operativos),
+        "costos_variables": float(calculo.costos_variables),
+        "costos_fijos": float(calculo.costos_fijos),
+        "gastos_financieros": float(calculo.gastos_financieros),
+        "utilidad_operativa": float(calculo.utilidad_operativa),
+        "utilidad_neta_real": float(calculo.utilidad_neta_real),
+    }
+
+    Balance.objects.update_or_create(
+        mes=mes,
+        anio=anio,
+        defaults={
+            "total_ingresos": calculo.total_ingresos,
+            "total_egresos": calculo.total_egresos,
+            "utilidad": calculo.utilidad,
+            "ingresos_operativos": calculo.ingresos_operativos,
+            "costos_variables": calculo.costos_variables,
+            "costos_fijos": calculo.costos_fijos,
+            "gastos_financieros": calculo.gastos_financieros,
+            "utilidad_operativa": calculo.utilidad_operativa,
+            "utilidad_neta_real": calculo.utilidad_neta_real,
+        },
+    )
+    return data
 
 
 def generar_transacciones_recurrentes(

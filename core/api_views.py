@@ -87,6 +87,8 @@ from .utils import (
     calcular_perdidas_devolucion,
     detectar_faltantes,
     auto_reordenar,
+    compile_monthly_metrics,
+    obtener_balance_mensual,
 )
 from .analytics import (
     _parse_date,
@@ -952,6 +954,30 @@ class ProfitabilityRankingView(APIView):
         year = int(request.query_params.get("year", today.year))
         data = monthly_profitability_ranking(year, month)
         return Response(data)
+    
+
+class FinancialSummaryView(APIView):
+    """Entrega un resumen financiero con balance, KPIs y rentabilidad."""
+
+    permission_classes = [IsFinanzasUser]
+
+    def get(self, request):
+        today = now().date()
+        month = int(request.query_params.get("month", today.month))
+        year = int(request.query_params.get("year", today.year))
+
+        balance = obtener_balance_mensual(month, year)
+        kpis = compile_monthly_metrics(year, month)
+        profitability = monthly_profitability_ranking(
+            year, month, include_summary=True
+        )
+        return Response(
+            {
+                "balance": balance,
+                "kpis": kpis,
+                "rentabilidad": profitability,
+            }
+        )
 
 
 class InventoryAnalysisView(APIView):
