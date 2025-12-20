@@ -14,6 +14,7 @@ from .api_views import (
     EmployeeListCreateView,
     CurrentUserView,
     TransaccionViewSet,
+    GastoRecurrenteViewSet,
     DevolucionViewSet,
     DevolucionRatesView,
     DevolucionLossReportView,
@@ -44,6 +45,7 @@ def cerrar_sesion(request):
 router = DefaultRouter()
 router.register(r"api/productos", ProductoViewSet, basename="productos")
 router.register(r"api/transacciones", TransaccionViewSet, basename="transacciones")
+router.register(r"api/gastos-recurrentes", GastoRecurrenteViewSet, basename="gastosrecurrentes")
 router.register(r"api/devoluciones", DevolucionViewSet, basename="devoluciones")
 router.register(r"api/shift-logs", RegistroTurnoViewSet, basename="shiftlogs")
 router.register(r"api/audit-logs", AuditLogViewSet, basename="auditlogs")

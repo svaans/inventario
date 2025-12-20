@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Sum, Count, Case, When, Avg, Q, Prefetch
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
@@ -58,6 +58,7 @@ from .models import (
     Cliente,
     Proveedor,
     Transaccion,
+    GastoRecurrente,
     DevolucionProducto,
     HistorialPrecio,
     RegistroTurno,
@@ -76,6 +77,7 @@ from .serializers import (
     ClienteCreateSerializer,
     EmployeeSerializer,
     TransaccionSerializer,
+    GastoRecurrenteSerializer,
     DevolucionSerializer,
     RegistroTurnoSerializer,
     UnidadMedidaSerializer,
@@ -514,6 +516,34 @@ class TransaccionViewSet(viewsets.ModelViewSet):
         if tipo:
             qs = qs.filter(tipo=tipo)
         return qs
+    
+
+class GastoRecurrenteViewSet(viewsets.ModelViewSet):
+    """CRUD API para gastos recurrentes."""
+
+    queryset = GastoRecurrente.objects.all().order_by("nombre")
+    serializer_class = GastoRecurrenteSerializer
+    permission_classes = [IsFinanzasUser]
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related("responsable")
+        activo = self.request.query_params.get("activo")
+        if activo is not None:
+            activo_value = activo.lower() in {"1", "true", "t", "yes", "si"}
+            qs = qs.filter(activo=activo_value)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        with transaction.atomic():
+            return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        with transaction.atomic():
+            return super().destroy(request, *args, **kwargs)
 
 
 class FlujoCajaReportView(APIView):

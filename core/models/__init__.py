@@ -26,7 +26,7 @@ from .produccion import (
     RegistroTurno,
     PlanProduccion,
 )
-from .finanzas import Balance, Transaccion
+from .finanzas import Balance, Transaccion, GastoRecurrente
 from .audit import AuditLog
 
 __all__ = [
@@ -45,6 +45,7 @@ __all__ = [
     "Balance",
     "MovimientoInventario",
     "Transaccion",
+    "GastoRecurrente",
     "DevolucionProducto",
     "LoteMateriaPrima",
     "LoteProductoFinal",

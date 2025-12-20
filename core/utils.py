@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import date, timedelta
+from calendar import monthrange
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
 
@@ -16,6 +17,7 @@ from .models import (
     DevolucionProducto,
     Venta,
     Transaccion,
+    GastoRecurrente,
     Producto,
     Compra,
     DetalleCompra,
@@ -25,6 +27,54 @@ from .models import (
     LoteProductoFinal,
 )
 from .analytics import purchase_recommendations
+
+
+def generar_transacciones_recurrentes(
+    fecha_referencia: Optional[date] = None,
+) -> List[Transaccion]:
+    """Genera transacciones mensuales desde gastos recurrentes activos."""
+    fecha_base = fecha_referencia or date.today()
+    last_day = monthrange(fecha_base.year, fecha_base.month)[1]
+    created: List[Transaccion] = []
+    with transaction.atomic():
+        gastos = GastoRecurrente.objects.select_for_update().filter(activo=True)
+        for gasto in gastos:
+            if gasto.ultima_generacion and (
+                gasto.ultima_generacion.year == fecha_base.year
+                and gasto.ultima_generacion.month == fecha_base.month
+            ):
+                continue
+            dia = min(gasto.dia_corte, last_day)
+            fecha_transaccion = date(fecha_base.year, fecha_base.month, dia)
+            descripcion = f"Gasto recurrente: {gasto.nombre}"
+            exists = Transaccion.objects.filter(
+                tipo="egreso",
+                categoria=gasto.categoria,
+                monto=gasto.monto,
+                responsable=gasto.responsable,
+                fecha__year=fecha_base.year,
+                fecha__month=fecha_base.month,
+                descripcion=descripcion,
+            ).exists()
+            if exists:
+                gasto.ultima_generacion = fecha_transaccion
+                gasto.save(update_fields=["ultima_generacion"])
+                continue
+            transaccion = Transaccion.objects.create(
+                fecha=fecha_transaccion,
+                monto=gasto.monto,
+                tipo="egreso",
+                categoria=gasto.categoria,
+                operativo=gasto.naturaleza == "operativo",
+                naturaleza=gasto.naturaleza,
+                tipo_costo=gasto.tipo_costo or "",
+                responsable=gasto.responsable,
+                descripcion=descripcion,
+            )
+            gasto.ultima_generacion = fecha_transaccion
+            gasto.save(update_fields=["ultima_generacion"])
+            created.append(transaccion)
+    return created
 
 
 def consumir_ingrediente_fifo(

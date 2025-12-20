@@ -15,6 +15,7 @@ from .models import (
     UsoLoteMateriaPrima,
     Balance,
     Transaccion,
+    GastoRecurrente,
     DevolucionProducto,
     MonthlyReport,
     AuditLog,
@@ -99,6 +100,23 @@ class TransaccionAdmin(admin.ModelAdmin):
         'responsable',
     )
     list_filter = ('tipo', 'categoria', 'tipo_costo', 'revisado', 'fecha')
+
+
+@admin.register(GastoRecurrente)
+class GastoRecurrenteAdmin(admin.ModelAdmin):
+    list_display = (
+        "nombre",
+        "categoria",
+        "monto",
+        "dia_corte",
+        "activo",
+        "naturaleza",
+        "tipo_costo",
+        "responsable",
+        "ultima_generacion",
+    )
+    list_filter = ("activo", "naturaleza", "tipo_costo")
+    search_fields = ("nombre", "categoria")
 
 
 @admin.register(DevolucionProducto)

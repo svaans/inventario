@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal, ROUND_HALF_UP
 
 
@@ -131,3 +131,28 @@ class Transaccion(models.Model):
                 self.revisado = False
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class GastoRecurrente(models.Model):
+    """Configuración de gastos recurrentes para generar transacciones mensuales."""
+
+    nombre = models.CharField(max_length=120)
+    categoria = models.CharField(max_length=50)
+    monto = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    dia_corte = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(31)])
+    activo = models.BooleanField(default=True)
+    naturaleza = models.CharField(
+        max_length=15,
+        choices=Transaccion.NATURALEZA_CHOICES,
+        default="operativo",
+    )
+    tipo_costo = models.CharField(
+        max_length=10,
+        choices=Transaccion.TIPO_COSTO_CHOICES,
+        blank=True,
+    )
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    ultima_generacion = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre

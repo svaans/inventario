@@ -18,6 +18,7 @@ from .models import (
     Cliente,
     ComposicionProducto,
     Transaccion,
+    GastoRecurrente,
     DevolucionProducto,
     RegistroTurno,
     LoteMateriaPrima,
@@ -517,6 +518,31 @@ class TransaccionSerializer(serializers.ModelSerializer):
             ).exists():
                 raise serializers.ValidationError("Egreso duplicado")
         return attrs
+    
+
+class GastoRecurrenteSerializer(serializers.ModelSerializer):
+    """Serializer para gastos recurrentes."""
+
+    naturaleza = serializers.ChoiceField(
+        choices=Transaccion.NATURALEZA_CHOICES,
+        required=False,
+    )
+
+    class Meta:
+        model = GastoRecurrente
+        fields = [
+            "id",
+            "nombre",
+            "categoria",
+            "monto",
+            "dia_corte",
+            "activo",
+            "naturaleza",
+            "tipo_costo",
+            "responsable",
+            "ultima_generacion",
+        ]
+        read_only_fields = ["ultima_generacion"]
 
 
 class DevolucionSerializer(serializers.ModelSerializer):
