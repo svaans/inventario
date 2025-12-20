@@ -481,6 +481,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
 class TransaccionSerializer(serializers.ModelSerializer):
     """Serializer para registrar ingresos y egresos."""
 
+    naturaleza = serializers.ChoiceField(
+        choices=Transaccion.NATURALEZA_CHOICES,
+        required=False,
+    )
+
     class Meta:
         model = Transaccion
         fields = [
@@ -490,6 +495,7 @@ class TransaccionSerializer(serializers.ModelSerializer):
             "tipo",
             "categoria",
             "operativo",
+            "naturaleza",
             "actividad",
             "tipo_costo",
             "revisado",

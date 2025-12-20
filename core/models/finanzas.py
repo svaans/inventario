@@ -65,12 +65,22 @@ class Transaccion(models.Model):
     }
 
     TIPO_COSTO_CHOICES = [("fijo", "Fijo"), ("variable", "Variable")]
+    NATURALEZA_CHOICES = [
+        ("operativo", "Operativo"),
+        ("estructural", "Estructural"),
+        ("financiero", "Financiero"),
+    ]
 
     fecha = models.DateField()
     monto = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     categoria = models.CharField(max_length=50)
     operativo = models.BooleanField(default=True)
+    naturaleza = models.CharField(
+        max_length=15,
+        choices=NATURALEZA_CHOICES,
+        default="operativo",
+    )
     ACTIVIDAD_CHOICES = [
         ("produccion", "Producción"),
         ("distribucion", "Distribución"),
@@ -112,7 +122,7 @@ class Transaccion(models.Model):
         if self.monto is not None:
             self.monto = Decimal(str(self.monto)).quantize(quant, ROUND_HALF_UP)
         if self.tipo == "egreso":
-            if not self.tipo_costo:
+            if self.tipo_costo in ("", None):
                 if self.categoria in self.COSTO_FIJO_CATEGORIAS:
                     self.tipo_costo = "fijo"
                 elif self.categoria in self.COSTO_VARIABLE_CATEGORIAS:
