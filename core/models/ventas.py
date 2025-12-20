@@ -62,6 +62,13 @@ class DevolucionProducto(models.Model):
     ]
 
     fecha = models.DateField()
+    venta = models.ForeignKey(
+        "Venta",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="devoluciones",
+    )
     lote_final = models.ForeignKey('LoteProductoFinal', on_delete=models.CASCADE, null=True, blank=True)
     producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
     motivo = models.CharField(max_length=200)

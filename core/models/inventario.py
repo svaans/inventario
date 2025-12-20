@@ -290,6 +290,34 @@ class ComposicionProducto(models.Model):
 
     def __str__(self):
         return f"{self.producto_final.nombre} -> {self.ingrediente.nombre}"
+    
+
+class AjusteInventario(models.Model):
+    """Registro de ajustes manuales al inventario."""
+
+    TIPO_INCREMENTO = "incremento"
+    TIPO_DECREMENTO = "decremento"
+    TIPO_CHOICES = [
+        (TIPO_INCREMENTO, "Incremento"),
+        (TIPO_DECREMENTO, "Decremento"),
+    ]
+
+    producto = models.ForeignKey("Producto", on_delete=models.PROTECT)
+    cantidad_antes = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    cantidad_despues = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    motivo = models.CharField(max_length=200)
+    responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="ajustes_inventario"
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Ajuste {self.producto.nombre} ({self.cantidad_antes} -> {self.cantidad_despues})"
 
 
 class MovimientoInventario(models.Model):
@@ -333,6 +361,13 @@ class MovimientoInventario(models.Model):
     )
     devolucion = models.ForeignKey(
         "core.DevolucionProducto",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos",
+    )
+    ajuste = models.ForeignKey(
+        "core.AjusteInventario",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
