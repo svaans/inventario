@@ -172,6 +172,17 @@ class ProductoSerializer(serializers.ModelSerializer):
             )
         return value
     
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        ingredientes = data.get("ingredientes")
+        if isinstance(ingredientes, list):
+            data["ingredientes"] = [
+                ing
+                for ing in ingredientes
+                if ing.get("activo", True) and not ing.get("lote")
+            ]
+        return data
+    
 
 
     def _save_with_validation(self, instance: Producto) -> Producto:
