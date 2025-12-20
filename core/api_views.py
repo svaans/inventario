@@ -16,6 +16,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+logger = logging.getLogger(__name__)
+
 class IsAdminUser(BasePermission):
     """Allow access to admin group members and superusers."""
 
@@ -547,6 +549,38 @@ class TransaccionViewSet(viewsets.ModelViewSet):
             qs = qs.filter(tipo=tipo)
         return qs
     
+    def create(self, request, *args, **kwargs):
+        with transaction.atomic():
+            return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        with transaction.atomic():
+            response = super().destroy(request, *args, **kwargs)
+        logger.info(
+            "Transaccion eliminada",
+            extra={"transaccion_id": instance.pk, "usuario_id": request.user.id},
+        )
+        return response
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        logger.info(
+            "Transaccion creada",
+            extra={"transaccion_id": instance.pk, "usuario_id": self.request.user.id},
+        )
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        logger.info(
+            "Transaccion actualizada",
+            extra={"transaccion_id": instance.pk, "usuario_id": self.request.user.id},
+        )
+    
 
 class GastoRecurrenteViewSet(viewsets.ModelViewSet):
     """CRUD API para gastos recurrentes."""
@@ -572,8 +606,28 @@ class GastoRecurrenteViewSet(viewsets.ModelViewSet):
             return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
         with transaction.atomic():
-            return super().destroy(request, *args, **kwargs)
+            response = super().destroy(request, *args, **kwargs)
+        logger.info(
+            "Gasto recurrente eliminado",
+            extra={"gasto_recurrente_id": instance.pk, "usuario_id": request.user.id},
+        )
+        return response
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        logger.info(
+            "Gasto recurrente creado",
+            extra={"gasto_recurrente_id": instance.pk, "usuario_id": self.request.user.id},
+        )
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        logger.info(
+            "Gasto recurrente actualizado",
+            extra={"gasto_recurrente_id": instance.pk, "usuario_id": self.request.user.id},
+        )
 
 
 class FlujoCajaReportView(APIView):
