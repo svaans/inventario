@@ -94,7 +94,8 @@ from .analytics import (
     association_rules,
     purchase_recommendations,
 )
-from .planning import generar_plan
+from .planning import generar_plan\
+from .profitability import monthly_profitability_ranking
 
 
 class CriticalProductPagination(PageNumberPagination):
@@ -331,13 +332,31 @@ class DashboardStatsView(APIView):
         ).exclude(motivo='Compra').aggregate(total=Sum('cantidad'))['total'] or 0
 
         month_start = today.replace(day=1)
-        fixed_costs = (
+        fixed_costs_operational = (
             Transaccion.objects.filter(
                 tipo='egreso',
                 fecha__range=[month_start, today],
-                tipo_costo='fijo'
+                tipo_costo='fijo',
+                naturaleza='operativo',
             ).aggregate(total=Sum('monto'))['total'] or 0
         )
+        fixed_costs_structural = (
+            Transaccion.objects.filter(
+                tipo='egreso',
+                fecha__range=[month_start, today],
+                tipo_costo='fijo',
+                naturaleza='estructural',
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        )
+        fixed_costs_financial = (
+            Transaccion.objects.filter(
+                tipo='egreso',
+                fecha__range=[month_start, today],
+                tipo_costo='fijo',
+                naturaleza='financiero',
+            ).aggregate(total=Sum('monto'))['total'] or 0
+        )
+        fixed_costs = fixed_costs_operational + fixed_costs_structural
         variable_costs = (
             Transaccion.objects.filter(
                 tipo='egreso',
@@ -377,10 +396,14 @@ class DashboardStatsView(APIView):
             or 0
         )
         break_even = None
+        break_even_operativo = None
+        break_even_total = None
         if ventas_mes:
             cm_ratio = 1 - (float(variable_costs) / float(ventas_mes))
             if cm_ratio > 0:
-                break_even = float(fixed_costs) / float(cm_ratio)
+                break_even_operativo = float(fixed_costs_operational) / float(cm_ratio)
+                break_even_total = float(fixed_costs) / float(cm_ratio)
+                break_even = break_even_total
         top_products_qs = (
             DetallesVenta.objects.filter(venta__fecha__range=[month_start, today])
             .values('producto__nombre')
@@ -414,11 +437,16 @@ class DashboardStatsView(APIView):
             'inventory_value': inventory_value,
             'production_today': production_today,
             'fixed_costs': fixed_costs,
+            'fixed_costs_operational': fixed_costs_operational,
+            'fixed_costs_structural': fixed_costs_structural,
+            'fixed_costs_financial': fixed_costs_financial,
             'variable_costs': variable_costs,
             'operational_costs': float(operational_costs),
             'non_operational_costs': float(non_operational_costs),
             'non_operational_percent': non_operational_percent,
             'break_even': break_even,
+            'break_even_operativo': break_even_operativo,
+            'break_even_total': break_even_total,
             'top_products': top_products,
             'week_sales': week_sales,
             'alerts': alerts,
@@ -911,6 +939,18 @@ class MarginImpactView(APIView):
             )
 
         return Response(result)
+    
+class ProfitabilityRankingView(APIView):
+    """Devuelve ranking mensual de rentabilidad por producto."""
+
+    permission_classes = [IsFinanzasUser]
+
+    def get(self, request):
+        today = now().date()
+        month = int(request.query_params.get("month", today.month))
+        year = int(request.query_params.get("year", today.year))
+        data = monthly_profitability_ranking(year, month)
+        return Response(data)
 
 
 class InventoryAnalysisView(APIView):

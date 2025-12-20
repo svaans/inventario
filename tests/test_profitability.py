@@ -76,6 +76,21 @@ class ProfitabilityRankingTest(TestCase):
         self.assertEqual(data["most_profitable"][0]["nombre"], self.p1.nombre)
         self.assertEqual(data["least_profitable"][0]["nombre"], self.p2.nombre)
 
+    def test_unit_profit_net_includes_financial_costs(self):
+        Transaccion.objects.create(
+            fecha="2024-01-20",
+            monto=15,
+            tipo="egreso",
+            categoria="otros",
+            responsable=self.user,
+            naturaleza="financiero",
+        )
+
+        data = monthly_profitability_ranking(2024, 1)
+        unit_profit = data["most_profitable"][0]["unit_profit"]
+        unit_profit_net = data["most_profitable"][0]["unit_profit_net"]
+        self.assertAlmostEqual(unit_profit_net, unit_profit - 1.0, places=2)
+
 
 class FifoCostingTest(TestCase):
     """Verify cost calculations across multiple lots with different costs."""

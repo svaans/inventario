@@ -59,6 +59,15 @@ def monthly_profitability_ranking(year: int, month: int) -> Dict[str, List[Dict[
         ).aggregate(total=Sum("monto"))["total"] or Decimal("0")
     )
     fixed_per_unit = fixed_costs / Decimal(total_units)
+    net_costs = (
+        Transaccion.objects.filter(
+            tipo="egreso",
+            fecha__gte=start,
+            fecha__lt=end,
+            naturaleza__in=["financiero", "estructural"],
+        ).aggregate(total=Sum("monto"))["total"] or Decimal("0")
+    )
+    net_per_unit = net_costs / Decimal(total_units)
 
     ranking: List[Dict[str, float]] = []
     for prod_id, data in by_prod.items():
@@ -86,11 +95,13 @@ def monthly_profitability_ranking(year: int, month: int) -> Dict[str, List[Dict[
             loss_cost += u_cost * dev.cantidad
         loss_per_unit = loss_cost / qty if qty else Decimal("0")
         profit = avg_price - variable_cost - fixed_per_unit - loss_per_unit
+        profit_net = profit - net_per_unit
         ranking.append(
             {
                 "id": prod.id,
                 "nombre": data["nombre"],
                 "unit_profit": float(profit),
+                "unit_profit_net": float(profit_net),
             }
         )
 
