@@ -461,9 +461,6 @@ class LoteProductoFinal(models.Model):
     cantidad_vendida = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     cantidad_devuelta = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     cantidad_descartada = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
-    cantidad_descartada = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)]
-    )
     costo_unitario = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
     )
