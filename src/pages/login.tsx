@@ -13,26 +13,36 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-    // Obtener primero la cookie de CSRF del backend
-    await fetch(`${backendUrl}/login/`, { credentials: "include" });
-    const res = await fetch(`${backendUrl}/login/`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCSRFToken(),
-      },
-      body: JSON.stringify({ username, password }),
-    });
-    if (res.ok) {
-      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
-      navigate("/dashboard");
-    } else {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "";
+    const loginUrl = `${backendUrl}/login/`;
+    try {
+      // Obtener primero la cookie de CSRF del backend
+      await fetch(loginUrl, { credentials: "include" });
+      const res = await fetch(loginUrl, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken(),
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.ok) {
+        await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+        navigate("/dashboard");
+        return;
+      }
       toast({
         title: "Error",
         description:
           "Credenciales inválidas. Verifica tu usuario y contraseña e intenta de nuevo",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error de conexión",
+        description:
+          "No se pudo conectar con el servidor. Revisa la URL del backend y tu conexión.",
         variant: "destructive",
       });
     }
