@@ -1,8 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL =
+  import.meta.env.VITE_BACKEND_URL ?? import.meta.env.VITE_API_BASE_URL;
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
   if (!API_BASE_URL) {
-    throw new Error("VITE_API_BASE_URL is not set");
+    throw new Error("VITE_BACKEND_URL is not set");
   }
   const trimmedBase = API_BASE_URL.replace(/\/$/, "");
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
