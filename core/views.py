@@ -531,7 +531,8 @@ class CargarProductosView(View):
                         stock_actual=fila['stock_actual'],
                         stock_minimo=fila['stock_minimo'],
                         unidad_media_id=unidad_media_id,
-                        categoria=categoria
+                        categoria=categoria,
+                        familia=familia,
                     )
                     producto.full_clean()
                     producto.save()
