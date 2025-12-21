@@ -24,10 +24,13 @@ export default function Dashboard() {
     }
   }, [isError]);
 
-  const alerts = data?.alerts.map(a => ({
+  const alerts = data?.alerts?.map((a) => ({
     type: a.stock_actual <= 0 ? "danger" : "warning",
-    message: `${a.nombre}: ${a.stock_actual}`
+    message: `${a.nombre}: ${a.stock_actual}`,
   })) ?? [];
+
+  const topProducts = data?.top_products ?? [];
+  const weekSales = data?.week_sales ?? [];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -100,7 +103,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data?.top_products.map((product, index) => (
+              {topProducts.map((product, index) => (
                 <div key={product.producto__nombre} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
@@ -184,8 +187,8 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-4">
-            {data?.week_sales.map((item) => {
-              const height = (item.total / Math.max(...data.week_sales.map(w => w.total), 1)) * 100;
+            {weekSales.map((item) => {
+              const height = (item.total / Math.max(...weekSales.map((w) => w.total), 1)) * 100;
               
               return (
                 <div key={item.day} className="text-center">

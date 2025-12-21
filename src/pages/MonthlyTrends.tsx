@@ -16,7 +16,7 @@ export default function MonthlyTrends() {
 
   const stockData = (() => {
     const map: Record<string, { period: string; productos: number; insumos: number }> = {};
-    data?.stock.forEach((s) => {
+    data?.stock?.forEach((s) => {
       if (!map[s.period]) {
         map[s.period] = { period: s.period.slice(0, 7), productos: 0, insumos: 0 };
       }
@@ -31,7 +31,7 @@ export default function MonthlyTrends() {
 
   const salesData = (() => {
     const grouped: Record<string, Record<string, number>> = {};
-    data?.sales.forEach((s) => {
+    data?.sales?.forEach((s) => {
       const p = s.period.slice(0, 7);
       grouped[p] = grouped[p] || {};
       grouped[p][s.categoria] = (grouped[p][s.categoria] || 0) + s.total;
@@ -39,9 +39,9 @@ export default function MonthlyTrends() {
     return Object.entries(grouped).map(([period, cats]) => ({ period, ...cats })).sort((a, b) => a.period.localeCompare(b.period));
   })();
 
-  const lossData = data?.losses.map((l) => ({ period: l.period.slice(0, 7), loss: l.loss })) || [];
+  const lossData = data?.losses?.map((l) => ({ period: l.period.slice(0, 7), loss: l.loss })) || [];
 
-  const priceData = data?.prices.map((p) => ({ period: p.period.slice(0, 7), precio: p.precio_promedio })) || [];
+  const priceData = data?.prices?.map((p) => ({ period: p.period.slice(0, 7), precio: p.precio_promedio })) || [];
 
   const exportCsv = () => {
     const rows: string[] = [];
