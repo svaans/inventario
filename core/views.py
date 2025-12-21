@@ -45,6 +45,7 @@ from django.http import HttpResponseForbidden
 from functools import wraps
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
 import json
 
 
@@ -144,6 +145,11 @@ def login_view(request):
             return JsonResponse({"success": False, "error": error_msg}, status=400)
         messages.error(request, error_msg)
     return render(request, "core/login.html")
+
+
+@ensure_csrf_cookie
+def csrf_token_view(request):
+    return JsonResponse({"csrfToken": get_token(request)})
     
     
 class ProductoListView(ListView):
