@@ -1,4 +1,10 @@
 export function getCSRFToken() {
+  if (typeof window !== "undefined") {
+    const stored = window.sessionStorage.getItem("csrfToken");
+    if (stored) {
+      return stored;
+    }
+  }
   let cookieValue: string | null = null;
   if (document.cookie && document.cookie !== "") {
     const cookies = document.cookie.split(";");
@@ -11,4 +17,11 @@ export function getCSRFToken() {
     }
   }
   return cookieValue || "";
+}
+
+export function storeCSRFToken(token: string) {
+  if (!token || typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem("csrfToken", token);
 }

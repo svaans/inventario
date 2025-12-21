@@ -2,7 +2,7 @@ import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../components/ui/button";
-import { getCSRFToken } from "../utils/csrf";
+import { getCSRFToken, storeCSRFToken } from "../utils/csrf";
 import { toast } from "../hooks/use-toast";
 import { apiFetch } from "../utils/api";
 
@@ -16,12 +16,19 @@ export default function Login() {
     e.preventDefault();
     try {
       // Obtener primero la cookie de CSRF del backend
-      await apiFetch("/api/csrf/");
+      const csrfRes = await apiFetch("/api/csrf/");
+      if (csrfRes.ok) {
+        const csrfData = (await csrfRes.json()) as { csrfToken?: string };
+        if (csrfData?.csrfToken) {
+          storeCSRFToken(csrfData.csrfToken);
+        }
+      }
+      const csrfToken = getCSRFToken();
       const res = await apiFetch("/api/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": getCSRFToken(),
+          "X-CSRFToken": csrfToken,
         },
         body: JSON.stringify({ username, password }),
       });
