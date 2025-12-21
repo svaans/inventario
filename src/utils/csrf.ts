@@ -1,6 +1,6 @@
 import { apiFetch } from "./api";
 
-function getCSRFToken() {
+export function getCSRFToken() {
   if (typeof window !== "undefined") {
     const stored = window.sessionStorage.getItem("csrfToken");
     if (stored) {
@@ -21,14 +21,14 @@ function getCSRFToken() {
   return cookieValue || "";
 }
 
-function storeCSRFToken(token: string) {
+export function storeCSRFToken(token: string) {
   if (!token || typeof window === "undefined") {
     return;
   }
   window.sessionStorage.setItem("csrfToken", token);
 }
 
-async function ensureCSRFToken() {
+export async function ensureCSRFToken() {
   if (typeof window === "undefined") {
     return;
   }
@@ -49,5 +49,3 @@ async function ensureCSRFToken() {
     return;
   }
 }
-
-export { ensureCSRFToken, getCSRFToken, storeCSRFToken };
