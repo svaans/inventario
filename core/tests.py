@@ -155,3 +155,33 @@ class ProductoTests(TestCase):
         producto = Producto.objects.get(codigo="PX1")
         self.assertEqual(producto.categoria_id, self.categoria.id)
         self.assertEqual(resp.json()["categoria_nombre"], self.categoria.nombre_categoria)
+
+    def test_importacion_crea_categoria_y_producto(self):
+        self.client.force_login(self.user)
+        session = self.client.session
+        session["vista_previa_productos"] = [
+            {
+                "estado": "nuevo",
+                "categoria": "Bebidas",
+                "codigo": "IMP1",
+                "nombre": "Agua",
+                "tipo": "bebida",
+                "precio": 1,
+                "stock_actual": 5,
+                "stock_minimo": 1,
+                "unidad_media_id": self.unidad.id,
+                "fila_excel": 2,
+            }
+        ]
+        session.save()
+
+        response = self.client.post(reverse("cargar_productos"), {"confirmar": "1"})
+        self.assertEqual(response.status_code, 302)
+
+        producto = Producto.objects.get(codigo="IMP1")
+        self.assertEqual(producto.nombre, "Agua")
+        self.assertEqual(producto.categoria.nombre_categoria, "Bebidas")
+        self.assertEqual(
+            producto.categoria.familia.clave,
+            FamiliaProducto.Clave.BEBIDAS,
+        )

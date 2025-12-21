@@ -514,7 +514,7 @@ class CargarProductosView(View):
                 try:
                     categoria_nombre, familia = obtener_categoria_importacion(fila['categoria'])
                     categoria, created = Categoria.objects.get_or_create(
-                        nnombre_categoria=categoria_nombre,
+                        nombre_categoria=categoria_nombre,
                         defaults={"familia": familia},
                     )
                     if not created and categoria.familia_id != familia.id:
