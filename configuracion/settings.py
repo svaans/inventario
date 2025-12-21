@@ -166,6 +166,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
     "https://empanadas-de-sabor.onrender.com",
+    "https://inventario-o9gf.onrender.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -174,6 +175,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
     "https://empanadas-de-sabor.onrender.com",
+    "https://inventario-o9gf.onrender.com",
 ]
 
 SESSION_COOKIE_SAMESITE = "None"

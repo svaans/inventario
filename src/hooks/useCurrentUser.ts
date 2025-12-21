@@ -8,14 +8,19 @@ export interface CurrentUser {
 }
 
 export function useCurrentUser() {
-  return useQuery<CurrentUser>({
+  return useQuery<CurrentUser | null>({
     queryKey: ["current-user"],
     queryFn: async () => {
-      const res = await apiFetch("/api/me/", { credentials: "include" });
+      const res = await apiFetch("/api/me/");
+      if (res.status === 401 || res.status === 403) {
+        return null;
+      }
       if (!res.ok) {
-        throw new Error("Not authenticated");
+        throw new Error("Failed to load current user");
       }
       return res.json();
     },
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 }
