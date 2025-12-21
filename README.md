@@ -117,7 +117,7 @@ Tests read additional settings from `tests/.env.test`.
 | --- | --- | --- |
 | `DJANGO_SECRET_KEY` | `django-insecure-change-me` | Secret key used by Django; required for cryptographic signing. |
 | `DJANGO_DEBUG` | `True` | Enables Django debug mode when set to `True`. Use `False` in production. |
-| `VITE_BACKEND_URL` | `http://localhost:8000` | Base URL for API requests from the React app. |
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Base URL for API requests from the React app. |
 | `SUPPLIER_API_URL` | `http://api.supplier.com/orders` | If provided, purchase orders are sent to this endpoint. |
 | `SUPPLIER_API_TOKEN` | `token` | Bearer token used when calling `SUPPLIER_API_URL`. |
 | `SUPPLIER_EMAIL` | `supplier@example.com` | Fallback email address for purchase orders when no API URL is configured. |

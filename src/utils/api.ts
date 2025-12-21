@@ -1,26 +1,28 @@
-export function apiUrl(path: string): string {
-  const base = import.meta.env.VITE_BACKEND_URL;
-  if (!base) return path;
-  const trimmedBase = base.replace(/\/$/, "");
-  return `${trimmedBase}${path.startsWith("/") ? path : `/${path}`}`;
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export function apiFetch(input: string, init?: RequestInit) {
-  return fetch(apiUrl(input), init);
-
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  if (!API_BASE_URL) {
+    throw new Error("VITE_API_BASE_URL is not set");
+  }
+  const trimmedBase = API_BASE_URL.replace(/\/$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return fetch(`${trimmedBase}${normalizedPath}`, {
+    ...options,
+    credentials: "include",
+  });
 }
 
 export async function fetchCategories() {
-  const res = await apiFetch("/api/categorias/", { credentials: "include" });
+  const res = await apiFetch("/api/categorias/");
   if (!res.ok) {
     throw new Error(`Failed to fetch categories: ${res.status}`);
   }
   const data = await res.json();
   return Array.isArray(data) ? data : data.results ?? [];
-  }
+}
 
 export async function fetchUnits() {
-  const res = await apiFetch("/api/unidades/", { credentials: "include" });
+  const res = await apiFetch("/api/unidades/");
   if (!res.ok) {
     throw new Error(`Failed to fetch units: ${res.status}`);
   }

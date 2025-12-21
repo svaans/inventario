@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { translateCategory } from "../utils/categoryTranslations";
+import { apiFetch } from "../utils/api";
 
 export interface Product {
   id: number;
@@ -99,10 +100,7 @@ export function useProducts(search = "", codigo?: string) {
       // Solicitar un gran page_size para obtener todos los productos de una sola vez
       params.append("page_size", "1000");
 
-      const url = `/api/productos/?${params.toString()}`;
-      const res = await fetch(url, {
-        credentials: "include",
-      });
+      const res = await apiFetch(`/api/productos/?${params.toString()}`);
       if (!res.ok) {
         const text = await res.text();
         console.error("Failed to fetch products", res.status, text);

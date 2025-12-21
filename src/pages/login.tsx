@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../components/ui/button";
 import { getCSRFToken } from "../utils/csrf";
 import { toast } from "../hooks/use-toast";
+import { apiFetch } from "../utils/api";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -13,14 +14,11 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "";
-    const loginUrl = `${backendUrl}/login/`;
     try {
       // Obtener primero la cookie de CSRF del backend
-      await fetch(loginUrl, { credentials: "include" });
-      const res = await fetch(loginUrl, {
+      await apiFetch("/login/");
+      const res = await apiFetch("/login/", {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken(),
