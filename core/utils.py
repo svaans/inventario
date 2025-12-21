@@ -9,6 +9,7 @@ from io import BytesIO
 
 from django.db import transaction
 from django.db.models import Sum, F
+from django.contrib.auth import get_user_model
 from django.core.mail import EmailMessage
 from django.conf import settings
 from reportlab.pdfgen import canvas
@@ -465,8 +466,9 @@ def send_monthly_report(year: int, month: int) -> None:
     pdf = generate_monthly_report_pdf(metrics, report.notas or "")
     subject = f"Reporte mensual {month:02d}/{year}"
     message = "Adjunto encontrarás el resumen mensual del sistema de inventario."
+    user_model = get_user_model()
     recipients = list(
-        settings.AUTH_USER_MODEL.objects.filter(is_superuser=True).values_list("email", flat=True)
+        user_model.objects.filter(is_superuser=True).values_list("email", flat=True)
     )
     if not recipients:
         return
@@ -496,10 +498,9 @@ def enviar_alertas_vencimiento(dias: int = 7) -> None:
     ]
     mensaje = "\n".join(lines)
     subject = "Lotes próximos a vencer"
+    user_model = get_user_model()
     recipients = list(
-        settings.AUTH_USER_MODEL.objects.filter(is_superuser=True).values_list(
-            "email", flat=True
-        )
+        user_model.objects.filter(is_superuser=True).values_list("email", flat=True)
     )
     if recipients:
         email = EmailMessage(subject=subject, body=mensaje, to=recipients)
