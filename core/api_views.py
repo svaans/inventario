@@ -15,6 +15,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 logger = logging.getLogger(__name__)
 
@@ -508,6 +510,7 @@ class EmployeeListCreateView(ListCreateAPIView):
         return super().get_permissions()
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class CurrentUserView(APIView):
     """Return basic information about the current authenticated user."""
 

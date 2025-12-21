@@ -1,3 +1,5 @@
+import { apiFetch } from "./api";
+
 export function getCSRFToken() {
   if (typeof window !== "undefined") {
     const stored = window.sessionStorage.getItem("csrfToken");
@@ -24,4 +26,26 @@ export function storeCSRFToken(token: string) {
     return;
   }
   window.sessionStorage.setItem("csrfToken", token);
+}
+
+export async function ensureCSRFToken() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const stored = window.sessionStorage.getItem("csrfToken");
+  if (stored) {
+    return;
+  }
+  try {
+    const res = await apiFetch("/api/csrf/");
+    if (!res.ok) {
+      return;
+    }
+    const data = (await res.json()) as { csrfToken?: string };
+    if (data?.csrfToken) {
+      storeCSRFToken(data.csrfToken);
+    }
+  } catch {
+    return;
+  }
 }
