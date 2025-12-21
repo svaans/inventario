@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from datetime import timedelta, datetime, date
 from django.contrib.contenttypes.models import ContentType
 import logging
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.models import Group
 from rest_framework.generics import ListAPIView, ListCreateAPIView
 from django.shortcuts import get_object_or_404
@@ -522,6 +522,37 @@ class CurrentUserView(APIView):
         })
 
 
+class LoginAPIView(APIView):
+    """Authenticate user credentials and establish a session."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        if not username or not password:
+            return Response(
+                {"detail": "Username y password son obligatorios."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return Response(
+                {"detail": "Credenciales inválidas."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        login(request, user)
+        return Response(
+            {
+                "username": user.username,
+                "groups": list(user.groups.values_list("name", flat=True)),
+                "is_superuser": user.is_superuser,
+            }
+        )
+    
+    
 class TransaccionViewSet(viewsets.ModelViewSet):
     """CRUD API para transacciones de flujo de caja."""
 

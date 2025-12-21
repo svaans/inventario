@@ -33,6 +33,7 @@ from .api_views import (
     TraceabilityView,
     ReorderSuggestionView,
     AuditLogViewSet,
+    LoginAPIView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -74,6 +75,7 @@ urlpatterns = [
     path('productos/cargar/', views.CargarProductosView.as_view(), name='cargar_productos'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('login/', login_view, name='login'),
+    path('api/login/', LoginAPIView.as_view(), name='api_login'),
     path('api/csrf/', csrf_token_view, name='csrf_token'),
     path('logout/', cerrar_sesion, name='logout'),
     path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),

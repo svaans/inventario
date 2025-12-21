@@ -16,8 +16,8 @@ export default function Login() {
     e.preventDefault();
     try {
       // Obtener primero la cookie de CSRF del backend
-      await apiFetch("/login/");
-      const res = await apiFetch("/login/", {
+      await apiFetch("/api/csrf/");
+      const res = await apiFetch("/api/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
