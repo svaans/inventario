@@ -511,9 +511,11 @@ class EmployeeListCreateView(ListCreateAPIView):
 class CurrentUserView(APIView):
     """Return basic information about the current authenticated user."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
+        if not request.user.is_authenticated:
+            return Response(None, status=status.HTTP_200_OK)
         groups = list(request.user.groups.values_list('name', flat=True))
         return Response({
             'username': request.user.username,
@@ -552,7 +554,7 @@ class LoginAPIView(APIView):
             }
         )
     
-    
+
 class TransaccionViewSet(viewsets.ModelViewSet):
     """CRUD API para transacciones de flujo de caja."""
 

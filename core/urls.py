@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.views.generic import RedirectView
 from . import views
 from .views import login_view, csrf_token_view
 from rest_framework.routers import DefaultRouter
@@ -74,6 +75,7 @@ urlpatterns = [
     path("movimientos/nuevo/", views.MovimientoManualCreateView.as_view(), name="movimiento_create"),
     path('productos/cargar/', views.CargarProductosView.as_view(), name='cargar_productos'),
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path("login", RedirectView.as_view(pattern_name="login", permanent=False)),
     path('login/', login_view, name='login'),
     path('api/login/', LoginAPIView.as_view(), name='api_login'),
     path('api/csrf/', csrf_token_view, name='csrf_token'),
