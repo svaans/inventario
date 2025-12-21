@@ -165,6 +165,7 @@ IMPORT_DEFAULT_CATEGORY_NAME = os.environ.get("IMPORT_DEFAULT_CATEGORY_NAME", "S
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
+    "https://inventario-o9gf.onrender.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -173,6 +174,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://inventario-o9gf.onrender.com",
     "http://localhost:4173",
     "http://localhost:8080",
+    "https://inventario-o9gf.onrender.com",
 ]
 
 CSRF_COOKIE_SECURE = True
