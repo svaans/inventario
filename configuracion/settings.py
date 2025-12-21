@@ -161,6 +161,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Allow cross-site POSTs from the Vite dev server during development
 CSRF_TRUSTED_ORIGINS = [
+    "https://inventario-o9gf.onrender.com",
     "http://localhost:4173",
     "http://localhost:8080",
 ]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
