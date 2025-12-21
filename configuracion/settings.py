@@ -52,8 +52,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -165,19 +165,20 @@ IMPORT_DEFAULT_CATEGORY_NAME = os.environ.get("IMPORT_DEFAULT_CATEGORY_NAME", "S
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
-    "https://inventario-o9gf.onrender.com",
     "https://empanadas-de-sabor.onrender.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 # Allow cross-site POSTs from the Vite dev server during development
 CSRF_TRUSTED_ORIGINS = [
-    "https://inventario-o9gf.onrender.com",
     "http://localhost:4173",
     "http://localhost:8080",
-    "https://inventario-o9gf.onrender.com",
     "https://empanadas-de-sabor.onrender.com",
 ]
 
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+
