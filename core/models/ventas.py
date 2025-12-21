@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from django.db.models import Sum
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
@@ -91,9 +92,45 @@ class DevolucionProducto(models.Model):
             self.cantidad = Decimal(str(self.cantidad)).quantize(quant, ROUND_HALF_UP)
         is_new = self.pk is None
         with transaction.atomic():
+            self._validar_devolucion()
             super().save(*args, **kwargs)
             if is_new:
                 self._ajustar_inventario()
+
+    def _validar_devolucion(self):
+        if not self.venta_id:
+            raise ValidationError({"venta": "Venta requerida para la devolución"})
+        if not Venta.objects.filter(pk=self.venta_id).exists():
+            raise ValidationError({"venta": "Venta inexistente"})
+        if self.cantidad is None or self.cantidad <= 0:
+            raise ValidationError({"cantidad": "La cantidad debe ser mayor a cero"})
+
+        total_vendido = (
+            DetallesVenta.objects.filter(
+                venta_id=self.venta_id,
+                producto_id=self.producto_id,
+            )
+            .aggregate(total=Sum("cantidad"))
+            .get("total")
+        )
+        if not total_vendido:
+            raise ValidationError({"producto": "El producto no está en la venta indicada"})
+
+        total_devuelto = (
+            DevolucionProducto.objects.filter(
+                venta_id=self.venta_id,
+                producto_id=self.producto_id,
+            )
+            .exclude(pk=self.pk)
+            .aggregate(total=Sum("cantidad"))
+            .get("total")
+            or Decimal("0")
+        )
+        disponible = Decimal(total_vendido) - Decimal(total_devuelto)
+        if self.cantidad > disponible:
+            raise ValidationError(
+                {"cantidad": "La cantidad devuelta excede lo vendido disponible"}
+            )
 
     def _ajustar_inventario(self):
         from .inventario import Producto, LoteProductoFinal, MovimientoInventario
@@ -131,10 +168,6 @@ class DevolucionProducto(models.Model):
                     devolucion=self,
                 )
             else:
-                if producto.stock_actual < cantidad:
-                    raise ValidationError({"cantidad": "Stock insuficiente para registrar la merma"})
-                producto.stock_actual -= cantidad
-                producto.save()
                 if lote:
                     lote.cantidad_descartada = (lote.cantidad_descartada or 0) + cantidad
                     lote.save()
