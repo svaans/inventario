@@ -6,3 +6,4 @@ reportlab
 django-cors-headers
 djangorestframework
 requests
+gunicorn
