@@ -1,16 +1,14 @@
 import { getCSRFToken } from "./csrf";
 
 const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL ?? import.meta.env.VITE_API_BASE_URL;
+  import.meta.env.VITE_BACKEND_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
-  if (!API_BASE_URL) {
-    throw new Error("VITE_BACKEND_URL is not set");
-  }
-  const trimmedBase = API_BASE_URL.replace(/\/$/, "");
+  const trimmedBase = API_BASE_URL ? API_BASE_URL.replace(/\/$/, "") : "";
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const requestUrl = trimmedBase ? `${trimmedBase}${normalizedPath}` : normalizedPath;
   const method = options.method?.toUpperCase() ?? "GET";
   const headers = new Headers(options.headers);
   if (unsafeMethods.has(method) && !headers.has("X-CSRFToken")) {
@@ -19,7 +17,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
       headers.set("X-CSRFToken", csrfToken);
     }
   }
-  return fetch(`${trimmedBase}${normalizedPath}`, {
+  return fetch(requestUrl, {
     ...options,
     headers,
     credentials: "include",
