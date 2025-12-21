@@ -33,7 +33,13 @@ export default function Login() {
         body: JSON.stringify({ username, password }),
       });
       if (res.ok) {
-        await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+        const meRes = await apiFetch("/api/me/");
+        if (meRes.ok) {
+          const me = await meRes.json();
+          queryClient.setQueryData(["current-user"], me);
+        } else {
+          queryClient.setQueryData(["current-user"], null);
+        }
         navigate("/dashboard");
         return;
       }
