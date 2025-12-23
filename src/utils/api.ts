@@ -1,7 +1,12 @@
 import { getCSRFToken } from "./csrf";
 
+const runtimeBaseUrl = typeof window !== "undefined" ? window.__BACKEND_URL__ ?? "" : "";
+
 const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL ?? import.meta.env.VITE_API_BASE_URL ?? "";
+  runtimeBaseUrl ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "";
 
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
