@@ -21,11 +21,3 @@ services:
         value: "False"
       - key: WEB_CONCURRENCY
         value: "4"
-
-  - type: static
-    name: inventario-frontend
-    buildCommand: "npm install && npm run build"
-    publishPath: "dist"
-    envVars:
-      - key: VITE_BACKEND_URL
-        value: https://inventario-backend.onrender.com
