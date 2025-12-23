@@ -1,0 +1,31 @@
+databases:
+  - name: inventario-db
+    plan: free
+    databaseName: inventario
+    user: inventario
+
+services:
+  - type: web
+    name: inventario-backend
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "python -m gunicorn configuracion.asgi:application -k uvicorn.workers.UvicornWorker"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inventario-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: WEB_CONCURRENCY
+        value: "4"
+
+  - type: static
+    name: inventario-frontend
+    buildCommand: "npm install && npm run build"
+    publishPath: "dist"
+    envVars:
+      - key: VITE_BACKEND_URL
+        value: https://inventario-backend.onrender.com
