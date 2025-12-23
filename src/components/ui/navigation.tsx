@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 // If 'button.tsx' exists in the same folder, ensure the file is present.
 // Otherwise, update the import path to the correct location, for example:
 // Update the path below to the actual location of your Button component
@@ -11,6 +11,7 @@ import { apiFetch } from "../../utils/api";
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path: string) => location.pathname === path;
   const { data: user } = useCurrentUser();
@@ -64,7 +65,7 @@ export function Navigation() {
               size="sm"
               onClick={() => {
                 apiFetch("/logout/", { credentials: "include" }).then(() => {
-                  window.location.href = "/login";
+                  navigate("/login", { replace: true });
                 });
               }}
             >
@@ -119,7 +120,7 @@ export function Navigation() {
                   onClick={() => {
                     setIsOpen(false);
                     apiFetch("/logout/", { credentials: "include" }).then(() => {
-                      window.location.href = "/login";
+                      navigate("/login", { replace: true });
                     });
                   }}
                   className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted w-full text-left"
