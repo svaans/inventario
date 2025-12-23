@@ -1,24 +1,35 @@
 import { apiFetch } from "./api";
 
+function readCSRFCookie() {
+  if (typeof document === "undefined" || !document.cookie) {
+    return null;
+  }
+  const cookies = document.cookie.split(";");
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].trim();
+    if (cookie.startsWith("csrftoken=")) {
+      return decodeURIComponent(cookie.substring("csrftoken=".length));
+    }
+  }
+  return null;
+}
+
 export function getCSRFToken() {
+  const cookieToken = readCSRFCookie();
+  if (cookieToken) {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("csrfToken", cookieToken);
+    }
+    return cookieToken;
+  }
+
   if (typeof window !== "undefined") {
     const stored = window.sessionStorage.getItem("csrfToken");
     if (stored) {
       return stored;
     }
   }
-  let cookieValue: string | null = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, "csrftoken=".length) === "csrftoken=") {
-        cookieValue = decodeURIComponent(cookie.substring("csrftoken=".length));
-        break;
-      }
-    }
-  }
-  return cookieValue || "";
+  return "";
 }
 
 export function storeCSRFToken(token: string) {
