@@ -167,21 +167,22 @@ IMPORT_DEFAULT_CATEGORY_NAME = os.environ.get("IMPORT_DEFAULT_CATEGORY_NAME", "S
 
 # Allow API requests from the Vite dev server during development
 # (both default 4173 and our custom 8080 port)
-CORS_ALLOWED_ORIGINS = [
+def _env_list(env_var):
+    raw = os.environ.get(env_var, "")
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+_DEFAULT_ORIGINS = [
     "http://localhost:4173",
     "http://localhost:8080",
     "https://inventario-frontend-kbie.onrender.com",
     "https://inventario-backend-3pjc.onrender.com",
 ]
+_EXTRA_ORIGINS = _env_list("DJANGO_EXTRA_ORIGINS")
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys([*_DEFAULT_ORIGINS, *_EXTRA_ORIGINS]))
 CORS_ALLOW_CREDENTIALS = True
 
 # Allow cross-site POSTs from the Vite dev server during development
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:4173",
-    "http://localhost:8080",
-    "https://inventario-frontend-kbie.onrender.com",
-    "https://inventario-backend-3pjc.onrender.com",
-]
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([*_DEFAULT_ORIGINS, *_EXTRA_ORIGINS]))
 
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = not DEBUG
