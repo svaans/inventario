@@ -426,6 +426,10 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                         producto = Producto.objects.select_for_update(nowait=True).get(id=prod_id)
                     except OperationalError:
                         raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                    if producto.tipo.startswith("ingred"):
+                        raise serializers.ValidationError(
+                            {"detalles": f"No se pueden vender ingredientes ({producto.nombre})."}
+                        )
                     cantidad = det["cantidad"]
                     precio = det["precio_unitario"]
                     lote = det.get("lote")

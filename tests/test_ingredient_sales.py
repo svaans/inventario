@@ -1,8 +1,9 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIRequestFactory
+from rest_framework import serializers as drf_serializers
 from inventario.models import Categoria, Producto, ComposicionProducto, UnidadMedida, FamiliaProducto
-from inventario.serializers import VentaCreateSerializer
+from inventario.serializers import ProductoSerializer, VentaCreateSerializer
 
 class IngredientSaleTest(TestCase):
     def setUp(self):
@@ -122,3 +123,50 @@ class IngredientSaleTest(TestCase):
         )
         self.assertFalse(serializer_invalid.is_valid())
         self.assertIn("stock_actual", serializer_invalid.errors)
+
+    def test_maximum_production_clears_ingredients(self):
+        factory = APIRequestFactory()
+        request = factory.patch("/productos/")
+        request.user = self.user
+
+        # Ajustar existencias para producir exactamente 14 unidades (ingredientes en cero)
+        self.har.stock_actual = 1400
+        self.har.save()
+        self.carne.stock_actual = 700
+        self.carne.save()
+        self.final.stock_actual = 0
+        self.final.save()
+
+        update_data = {"stock_actual": 14}
+        serializer = ProductoSerializer(
+            instance=self.final,
+            data=update_data,
+            partial=True,
+            context={"request": request},
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        self.har.refresh_from_db()
+        self.carne.refresh_from_db()
+
+        self.assertEqual(float(self.har.stock_actual), 0.0)
+        self.assertEqual(float(self.carne.stock_actual), 0.0)
+
+    def test_cannot_sell_ingredient_products(self):
+        factory = APIRequestFactory()
+        request = factory.post("/ventas/")
+        request.user = self.user
+        data = {
+            "fecha": "2024-01-03",
+            "cliente": None,
+            "detalles": [
+                {"producto": self.har.id, "cantidad": 1, "precio_unitario": 1},
+            ],
+        }
+        serializer = VentaCreateSerializer(data=data, context={"request": request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        with self.assertRaises(drf_serializers.ValidationError):
+            serializer.save()
+        self.har.refresh_from_db()
+        self.assertEqual(float(self.har.stock_actual), 1000.0)
