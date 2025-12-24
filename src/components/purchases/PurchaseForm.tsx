@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreatePurchase } from "@/hooks/useCreatePurchase";
-import { useSuppliers } from "@/hooks/useSuppliers";
 import { useProducts } from "@/hooks/useProducts";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -18,20 +16,12 @@ const SUPPLIER_API_TOKEN = import.meta.env.VITE_SUPPLIER_API_TOKEN || import.met
 
 export function PurchaseForm() {
   const navigate = useNavigate();
-  const { data: suppliers = [], isLoading: loadingSuppliers, isError: suppliersError } = useSuppliers();
-  const { data: products = [], isLoading: loadingProducts, isError: productsError } = useProducts();
+  const { data: products = [], isError: productsError } = useProducts();
   const createPurchase = useCreatePurchase();
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [fecha, setFecha] = useState(today);
-  const [proveedor, setProveedor] = useState<number | undefined>(undefined);
   const [items, setItems] = useState<PurchaseItem[]>([{ cantidad: 0, precio_unitario: 0, unidad: "", producto: undefined }]);
-
-  useEffect(() => {
-    if (suppliersError) {
-      toast({ title: "Error", description: "No se pudo cargar la lista de proveedores.", variant: "destructive" });
-    }
-  }, [suppliersError]);
 
   useEffect(() => {
     if (productsError) {
@@ -53,11 +43,22 @@ export function PurchaseForm() {
 
   const total = items.reduce((sum, item) => sum + (item.cantidad || 0) * (item.precio_unitario || 0), 0);
 
-  const validate = () => {
-    if (!proveedor) {
-      toast({ title: "Proveedor requerido", description: "Selecciona un proveedor antes de registrar la compra.", variant: "destructive" });
-      return false;
-    }
+  const derivedSupplierId = useMemo<number | null | undefined>(() => {
+    const supplierIds = items
+      .map((item) => products.find((p) => p.id === item.producto)?.supplierId)
+      .filter((id): id is number => typeof id === "number" && !Number.isNaN(id));
+    if (!supplierIds.length) return undefined;
+    const unique = Array.from(new Set(supplierIds));
+    if (unique.length > 1) return null;
+    return unique[0];
+  }, [items, products]);
+
+  const derivedSupplierName = useMemo(() => {
+    if (typeof derivedSupplierId !== "number") return undefined;
+    return products.find((p) => p.supplierId === derivedSupplierId)?.supplier;
+  }, [derivedSupplierId, products]);
+
+  const validate = (): number | false => {
     if (!items.length) {
       toast({ title: "Sin líneas", description: "Agrega al menos un producto a la compra.", variant: "destructive" });
       return false;
@@ -71,6 +72,22 @@ export function PurchaseForm() {
       });
       return false;
     }
+    if (derivedSupplierId === null) {
+      toast({
+        title: "Productos de diferentes proveedores",
+        description: "Usa productos del mismo proveedor para registrar la compra automáticamente.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (derivedSupplierId === undefined) {
+      toast({
+        title: "Proveedor no definido",
+        description: "Selecciona productos con proveedor asignado para poder registrar la compra.",
+        variant: "destructive",
+      });
+      return false;
+    }
     if (total <= 0) {
       toast({
         title: "Total no válido",
@@ -79,14 +96,15 @@ export function PurchaseForm() {
       });
       return false;
     }
-    return true;
+    return derivedSupplierId;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    const supplierId = validate();
+    if (supplierId === false) return;
     try {
       const payload = {
-        proveedor: Number(proveedor),
+        proveedor: supplierId,
         fecha,
         detalles: items.map((item) => ({
           producto: Number(item.producto),
@@ -110,14 +128,15 @@ export function PurchaseForm() {
   };
 
   const handleSendToSupplier = async () => {
-    if (!validate()) return;
+    const supplierId = validate();
+    if (supplierId === false) return;
     if (!SUPPLIER_API_URL || !SUPPLIER_API_TOKEN) {
       toast({ title: "Configuración faltante", description: "No hay API de proveedor configurada.", variant: "destructive" });
       return;
     }
     try {
       const body = {
-        proveedor,
+        proveedor: supplierId,
         fecha,
         total,
         items: items.map((item) => ({
@@ -159,27 +178,25 @@ export function PurchaseForm() {
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="proveedor">Proveedor</Label>
-            <Select
-              value={proveedor ? String(proveedor) : ""}
-              onValueChange={(value) => setProveedor(Number(value))}
-              disabled={loadingSuppliers}
-            >
-              <SelectTrigger id="proveedor">
-                <SelectValue placeholder={loadingSuppliers ? "Cargando proveedores..." : "Seleccionar proveedor"} />
-              </SelectTrigger>
-              <SelectContent>
-                {suppliers.map((supplier) => (
-                  <SelectItem key={supplier.id} value={String(supplier.id)}>
-                    {supplier.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="fecha">Fecha de compra</Label>
             <Input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Proveedor</Label>
+            <div className="rounded-md border bg-muted/20 p-3 text-sm">
+              <p className="text-muted-foreground">El proveedor se asigna automáticamente a partir de los productos seleccionados.</p>
+              {typeof derivedSupplierId === "number" ? (
+                <p className="mt-2 font-medium">Proveedor detectado: {derivedSupplierName ?? "Sin nombre"}</p>
+              ) : derivedSupplierId === null ? (
+                <p className="mt-2 text-destructive">
+                  Los productos seleccionados pertenecen a diferentes proveedores. Ajusta las líneas para continuar.
+                </p>
+              ) : (
+                <p className="mt-2 text-muted-foreground">
+                  Selecciona productos con proveedor asignado para detectar la información automáticamente.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

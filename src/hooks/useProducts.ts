@@ -17,6 +17,7 @@ export interface Product {
   unit: string;
   unitId: number;
   supplier: string;
+  supplierId: number;
   impuesto?: number;
   descuento_base?: number;
   unidad_empaque?: number;
