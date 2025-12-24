@@ -12,12 +12,14 @@ from django.db.models import Sum, F
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMessage
 from django.conf import settings
+from django.core.files.base import ContentFile
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
 from .models import (
     DevolucionProducto,
     Venta,
+    FacturaVenta,
     Transaccion,
     GastoRecurrente,
     Producto,
@@ -102,6 +104,29 @@ def calcular_balance_mensual(mes: int, anio: int) -> BalanceCalculado:
         utilidad_operativa=utilidad_operativa,
         utilidad_neta_real=utilidad_neta_real,
     )
+
+
+def actualizar_balance_por_venta(venta: Venta) -> Balance:
+    """Actualiza el balance del mes de la venta con los valores recalculados."""
+    mes = venta.fecha.month
+    anio = venta.fecha.year
+    calculo = calcular_balance_mensual(mes, anio)
+    balance, _ = Balance.objects.update_or_create(
+        mes=mes,
+        anio=anio,
+        defaults={
+            "total_ingresos": calculo.total_ingresos,
+            "total_egresos": calculo.total_egresos,
+            "utilidad": calculo.utilidad,
+            "ingresos_operativos": calculo.ingresos_operativos,
+            "costos_variables": calculo.costos_variables,
+            "costos_fijos": calculo.costos_fijos,
+            "gastos_financieros": calculo.gastos_financieros,
+            "utilidad_operativa": calculo.utilidad_operativa,
+            "utilidad_neta_real": calculo.utilidad_neta_real,
+        },
+    )
+    return balance
 
 
 def obtener_balance_mensual(mes: int, anio: int) -> Dict[str, Any]:
@@ -457,6 +482,96 @@ def generate_monthly_report_pdf(data: Dict[str, Any], notes: str = "") -> bytes:
     pdf = buffer.getvalue()
     buffer.close()
     return pdf
+
+
+def _draw_invoice_header(p: canvas.Canvas, venta: Venta, y: int) -> int:
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(200, y, "Factura de venta")
+    y -= 25
+    p.setFont("Helvetica", 12)
+    p.drawString(50, y, f"Factura: F-{venta.id:06d}")
+    y -= 18
+    p.drawString(50, y, f"Fecha: {venta.fecha}")
+    y -= 18
+    cliente = venta.cliente.nombre if venta.cliente else "Consumidor final"
+    p.drawString(50, y, f"Cliente: {cliente}")
+    y -= 18
+    if venta.cliente and venta.cliente.email:
+        p.drawString(50, y, f"Email: {venta.cliente.email}")
+        y -= 18
+    p.drawString(50, y, f"Vendedor: {venta.usuario}")
+    y -= 30
+    return y
+
+
+def generar_factura_pdf(venta: Venta) -> bytes:
+    """Construye un PDF simple de factura con detalle de productos."""
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    y = height - 50
+
+    y = _draw_invoice_header(p, venta, y)
+
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, y, "Detalle")
+    y -= 20
+    p.setFont("Helvetica", 11)
+    p.drawString(50, y, "Producto")
+    p.drawString(260, y, "Cantidad")
+    p.drawString(340, y, "Precio")
+    p.drawString(430, y, "Subtotal")
+    y -= 15
+    p.line(50, y, width - 50, y)
+    y -= 15
+
+    for det in venta.detallesventa_set.all():
+        p.drawString(50, y, det.producto.nombre[:30])
+        p.drawRightString(310, y, f"{det.cantidad}")
+        p.drawRightString(400, y, f"${det.precio_unitario}")
+        p.drawRightString(500, y, f"${det.cantidad * det.precio_unitario}")
+        y -= 15
+        if y < 80:
+            p.showPage()
+            y = _draw_invoice_header(p, venta, height - 80)
+            p.setFont("Helvetica", 11)
+
+    y -= 10
+    p.line(350, y, width - 50, y)
+    y -= 20
+    p.setFont("Helvetica-Bold", 12)
+    p.drawRightString(500, y, f"Total: ${venta.total}")
+
+    p.showPage()
+    p.save()
+    pdf = buffer.getvalue()
+    buffer.close()
+    return pdf
+
+
+def crear_factura_para_venta(venta: Venta) -> FacturaVenta:
+    """Genera y guarda la factura en PDF si no existe."""
+    if hasattr(venta, "factura"):
+        return venta.factura
+    pdf_bytes = generar_factura_pdf(venta)
+    numero = f"F-{venta.id:06d}"
+    factura = FacturaVenta(venta=venta, numero=numero)
+    factura.pdf.save(f"{numero}.pdf", ContentFile(pdf_bytes), save=True)
+    return factura
+
+
+def enviar_factura_por_correo(factura: FacturaVenta, correo: str) -> None:
+    """Envía la factura generada al correo indicado."""
+    subject = f"Factura {factura.numero}"
+    message = "Adjuntamos la factura de tu compra. Gracias por tu preferencia."
+    email = EmailMessage(subject=subject, body=message, to=[correo])
+    factura.pdf.open("rb")
+    try:
+        email.attach(factura.pdf.name.split('/')[-1], factura.pdf.read(), "application/pdf")
+        email.send()
+        factura.marcar_enviado(correo)
+    finally:
+        factura.pdf.close()
 
 
 def send_monthly_report(year: int, month: int) -> None:

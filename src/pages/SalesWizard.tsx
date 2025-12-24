@@ -22,6 +22,7 @@ import { useCreateClient } from "../hooks/useCreateClient";
 import { toast } from "../hooks/use-toast";
 import { formatCurrency } from "../utils/formatCurrency";
 import { apiFetch } from "../utils/api";
+import { ensureCSRFToken, getCSRFToken } from "../utils/csrf";
 
 interface Item {
   id: number;
@@ -59,6 +60,8 @@ export default function SalesWizard() {
     count: number;
     total: number;
   } | null>(null);
+  const [saleId, setSaleId] = useState<number | null>(null);
+  const [invoiceEmail, setInvoiceEmail] = useState("");
   const addProduct = (p: Item) => {
     setItems((prev) => [...prev, { ...p, cantidad: 1 }]);
     setProdSearch("");
@@ -88,7 +91,7 @@ export default function SalesWizard() {
 
   const handleConfirm = async () => {
     try {
-      await createSale.mutateAsync({
+      const created = await createSale.mutateAsync({
         fecha: today,
         cliente: clientId ?? undefined,
         detalles: items.map((i) => ({
@@ -97,6 +100,8 @@ export default function SalesWizard() {
           precio_unitario: i.precio,
         })),
       });
+      setSaleId(created.id);
+      setInvoiceEmail(newClient.email || "");
       const res = await apiFetch("/api/sales-summary/", {
         credentials: "include",
       });
@@ -326,7 +331,9 @@ export default function SalesWizard() {
             <Button variant="outline" onClick={() => setStep(2)}>
               Atrás
             </Button>
-            <Button onClick={handleConfirm}>Confirmar Venta</Button>
+            <Button onClick={handleConfirm} disabled={createSale.isPending}>
+              {createSale.isPending ? "Registrando..." : "Confirmar Venta"}
+            </Button>
           </div>
         </div>
       )}
@@ -340,11 +347,58 @@ export default function SalesWizard() {
               {formatCurrency(summary.total)}.
             </p>
           )}
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
+              <Button
+                disabled={!saleId}
+                onClick={() => saleId && window.open(`/api/ventas/${saleId}/factura/`, "_blank")}
+              >
+                Descargar factura
+              </Button>
+              <div className="flex gap-2 items-center">
+                <Input
+                  placeholder="Correo para enviar factura"
+                  value={invoiceEmail}
+                  onChange={(e) => setInvoiceEmail(e.target.value)}
+                  className="w-64"
+                />
+                <Button
+                  variant="secondary"
+                  disabled={!saleId || (!invoiceEmail && !newClient.email)}
+                  onClick={async () => {
+                    if (!saleId) return;
+                    try {
+                      await ensureCSRFToken();
+                      const res = await apiFetch(`/api/ventas/${saleId}/factura/enviar/`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "X-CSRFToken": getCSRFToken(),
+                        },
+                        credentials: "include",
+                        body: JSON.stringify({ email: invoiceEmail || newClient.email || undefined }),
+                      });
+                      if (!res.ok) {
+                        throw new Error("No se pudo enviar la factura");
+                      }
+                      toast({ title: "Factura enviada" });
+                    } catch {
+                      toast({ title: "Error al enviar factura", variant: "destructive" });
+                    }
+                  }}
+                >
+                  Enviar al correo
+                </Button>
+              </div>
+            </div>
+          </div>
           <Button
             onClick={() => {
               setItems([]);
               setClientId(null);
               setClientSearch("");
+              setSaleId(null);
+              setInvoiceEmail("");
               setStep(1);
             }}
           >

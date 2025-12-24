@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.models import Group
 from rest_framework.generics import ListAPIView, ListCreateAPIView
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
@@ -56,6 +57,7 @@ from .models import (
     Producto,
     Venta,
     DetallesVenta,
+    FacturaVenta,
     MovimientoInventario,
     Compra,
     Categoria,
@@ -93,6 +95,8 @@ from .utils import (
     auto_reordenar,
     compile_monthly_metrics,
     obtener_balance_mensual,
+    crear_factura_para_venta,
+    enviar_factura_por_correo,
 )
 from .analytics import (
     _parse_date,
@@ -316,6 +320,55 @@ class VentaListCreateView(ListCreateAPIView):
         if usuario:
             qs = qs.filter(usuario_id=usuario)
         return qs
+    
+
+class VentaFacturaView(APIView):
+    """Permite descargar la factura generada para una venta."""
+
+    permission_classes = [IsVentasUser]
+
+    def get(self, request, venta_id: int):
+        venta = get_object_or_404(
+            Venta.objects.select_related("cliente", "usuario").prefetch_related("detallesventa_set__producto"),
+            pk=venta_id,
+        )
+        factura = crear_factura_para_venta(venta)
+        factura.pdf.open("rb")
+        try:
+            filename = factura.pdf.name.split("/")[-1]
+            response = HttpResponse(factura.pdf.read(), content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+            return response
+        finally:
+            factura.pdf.close()
+
+
+class VentaFacturaEmailView(APIView):
+    """Envía la factura al correo proporcionado o al del cliente."""
+
+    permission_classes = [IsVentasUser]
+
+    def post(self, request, venta_id: int):
+        venta = get_object_or_404(
+            Venta.objects.select_related("cliente", "usuario").prefetch_related("detallesventa_set__producto"),
+            pk=venta_id,
+        )
+        correo = request.data.get("email") or (venta.cliente.email if venta.cliente and venta.cliente.email else None)
+        if not correo:
+            return Response(
+                {"detail": "No hay correo disponible para enviar la factura."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        factura = crear_factura_para_venta(venta)
+        try:
+            enviar_factura_por_correo(factura, correo)
+        except Exception:
+            logger.exception("Error al enviar factura por correo", extra={"venta_id": venta.id, "correo": correo})
+            return Response(
+                {"detail": "No se pudo enviar la factura en este momento."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        return Response({"detail": "Factura enviada correctamente.", "correo": correo})
 
 
 class DashboardStatsView(APIView):

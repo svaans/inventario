@@ -9,6 +9,7 @@ from .models import (
     Cliente,
     Venta,
     DetallesVenta,
+    FacturaVenta,
     HistorialPrecio,
     LoteMateriaPrima,
     LoteProductoFinal,
@@ -82,6 +83,12 @@ class VentaAdmin(admin.ModelAdmin):
 @admin.register(DetallesVenta)
 class DetallesVentaAdmin(admin.ModelAdmin):
     list_display = ('venta', 'producto', 'cantidad', 'precio_unitario')
+
+@admin.register(FacturaVenta)
+class FacturaVentaAdmin(admin.ModelAdmin):
+    list_display = ("numero", "venta", "enviado", "enviado_a", "fecha_envio", "creado_en")
+    search_fields = ("numero", "venta__id", "enviado_a")
+    list_filter = ("enviado", "fecha_envio")
 
 @admin.register(Balance)
 class BalanceAdmin(admin.ModelAdmin):

@@ -18,6 +18,7 @@ from core.models.ventas import (
     Cliente,
     Venta,
     DetallesVenta,
+    FacturaVenta,
     DevolucionProducto,
 )
 
@@ -32,6 +33,7 @@ __all__ = [
     "Cliente",
     "Venta",
     "DetallesVenta",
+    "FacturaVenta",
     "ComposicionProducto",
     "FamiliaProducto",
     "MovimientoInventario",

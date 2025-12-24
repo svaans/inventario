@@ -17,6 +17,7 @@ from .ventas import (
     Cliente,
     Venta,
     DetallesVenta,
+    FacturaVenta,
     DevolucionProducto,
 )
 from .produccion import (
@@ -40,6 +41,7 @@ __all__ = [
     "Cliente",
     "Venta",
     "DetallesVenta",
+    "FacturaVenta",
     "ComposicionProducto",
     "FamiliaProducto",
     "Balance",

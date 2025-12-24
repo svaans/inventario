@@ -7,7 +7,12 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import transaction, OperationalError
 from django.db.models import F
-from .utils import consumir_ingrediente_fifo, vender_producto_final_fifo
+from .utils import (
+    consumir_ingrediente_fifo,
+    vender_producto_final_fifo,
+    crear_factura_para_venta,
+    actualizar_balance_por_venta,
+)
 from .models import (
     Producto,
     UnidadMedida,
@@ -284,7 +289,8 @@ class VentaCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venta
-        fields = ["id", "fecha", "cliente", "detalles"]
+        fields = ["id", "fecha", "cliente", "detalles", "total"]
+        read_only_fields = ["id", "total"]
 
     def create(self, validated_data):
         detalles_data = validated_data.pop("detalles", [])
@@ -450,6 +456,9 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     
                 venta.total = total
                 venta.save()
+                # Generar factura y actualizar balance del mes
+                crear_factura_para_venta(venta)
+                actualizar_balance_por_venta(venta)
 
             return venta
         except serializers.ValidationError:

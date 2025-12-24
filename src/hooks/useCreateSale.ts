@@ -14,8 +14,14 @@ export interface CreateSale {
   detalles: SaleItem[];
 }
 
+export interface SaleCreated {
+  id: number;
+  fecha: string;
+  total: number;
+}
+
 export function useCreateSale() {
-  return useMutation<unknown, Error, CreateSale>({
+  return useMutation<SaleCreated, Error, CreateSale>({
     mutationFn: async (sale: CreateSale) => {
       await ensureCSRFToken();
 
@@ -36,7 +42,12 @@ export function useCreateSale() {
       if (!res.ok) {
         throw new Error("Error al registrar la venta. Inténtalo de nuevo más tarde.");
       }
-      return res.json();
+      const data = await res.json();
+      return {
+        id: data.id,
+        fecha: data.fecha,
+        total: Number(data.total ?? 0),
+      };
     },
   });
 }

@@ -3,6 +3,7 @@ from django.db.models import Sum
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
 
 
@@ -50,6 +51,31 @@ class DetallesVenta(models.Model):
         if self.precio_unitario is not None:
             self.precio_unitario = Decimal(str(self.precio_unitario)).quantize(quant, ROUND_HALF_UP)
         super().save(*args, **kwargs)
+
+
+class FacturaVenta(models.Model):
+    """Factura generada automáticamente al confirmar una venta."""
+
+    venta = models.OneToOneField(
+        Venta,
+        on_delete=models.CASCADE,
+        related_name="factura",
+    )
+    numero = models.CharField(max_length=30, unique=True)
+    pdf = models.FileField(upload_to="facturas/")
+    enviado = models.BooleanField(default=False)
+    enviado_a = models.EmailField(null=True, blank=True)
+    fecha_envio = models.DateTimeField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Factura {self.numero}"
+
+    def marcar_enviado(self, correo: str) -> None:
+        self.enviado = True
+        self.enviado_a = correo
+        self.fecha_envio = timezone.now()
+        self.save(update_fields=["enviado", "enviado_a", "fecha_envio"])
 
 
 class DevolucionProducto(models.Model):
