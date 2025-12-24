@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from unittest.mock import patch
 
-from core.models import Compra, GastoRecurrente, Proveedor, Transaccion, Venta
+from core.models import Balance, Compra, GastoRecurrente, Proveedor, Transaccion, Venta
 from core.utils import (
     calcular_balance_mensual,
     generar_transacciones_recurrentes,
@@ -98,6 +98,35 @@ class BalanceCalculationTest(TestCase):
         third = obtener_balance_mensual(3, 2024)
         self.assertEqual(third["total_egresos"], 0.0)
         self.assertEqual(third["utilidad_neta_real"], 50.0)
+
+    def test_balance_updates_immediately_on_purchase_and_transaction(self):
+        Venta.objects.create(fecha="2024-02-10", total=80, usuario=self.user)
+        balance = Balance.objects.get(mes=2, anio=2024)
+        self.assertEqual(balance.total_ingresos, 80)
+        self.assertEqual(balance.total_egresos, 0)
+
+        Compra.objects.create(
+            proveedor=self.proveedor,
+            fecha="2024-02-11",
+            total=30,
+        )
+        balance.refresh_from_db()
+        self.assertEqual(balance.total_egresos, 30)
+        self.assertEqual(balance.utilidad, 50)
+
+        Transaccion.objects.create(
+            fecha="2024-02-15",
+            monto=10,
+            tipo="egreso",
+            categoria="materia_prima",
+            responsable=self.user,
+            tipo_costo="variable",
+            naturaleza="operativo",
+        )
+        balance.refresh_from_db()
+        self.assertEqual(balance.total_egresos, 40)
+        self.assertEqual(balance.costos_variables, 40)
+        self.assertEqual(balance.utilidad, 40)
 
 
 class RecurringExpensesTest(TestCase):

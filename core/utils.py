@@ -106,11 +106,18 @@ def calcular_balance_mensual(mes: int, anio: int) -> BalanceCalculado:
     )
 
 
-def actualizar_balance_por_venta(venta: Venta) -> Balance:
-    """Actualiza el balance del mes de la venta con los valores recalculados."""
-    mes = venta.fecha.month
-    anio = venta.fecha.year
-    calculo = calcular_balance_mensual(mes, anio)
+def actualizar_balance_para_periodo(
+    mes: int,
+    anio: int,
+    calculo: BalanceCalculado | None = None,
+) -> Balance:
+    """Recalcula y persiste el balance de un periodo.
+
+    Se usa para sincronizar el modelo ``Balance`` inmediatamente después de
+    operaciones financieras (ventas, compras o transacciones).
+    """
+
+    calculo = calculo or calcular_balance_mensual(mes, anio)
     balance, _ = Balance.objects.update_or_create(
         mes=mes,
         anio=anio,
@@ -127,6 +134,11 @@ def actualizar_balance_por_venta(venta: Venta) -> Balance:
         },
     )
     return balance
+
+
+def actualizar_balance_por_venta(venta: Venta) -> Balance:
+    """Actualiza el balance del mes de la venta con los valores recalculados."""
+    return actualizar_balance_para_periodo(venta.fecha.month, venta.fecha.year)
 
 
 def obtener_balance_mensual(mes: int, anio: int) -> Dict[str, Any]:
@@ -164,21 +176,7 @@ def obtener_balance_mensual(mes: int, anio: int) -> Dict[str, Any]:
         "utilidad_neta_real": float(calculo.utilidad_neta_real),
     }
 
-    Balance.objects.update_or_create(
-        mes=mes,
-        anio=anio,
-        defaults={
-            "total_ingresos": calculo.total_ingresos,
-            "total_egresos": calculo.total_egresos,
-            "utilidad": calculo.utilidad,
-            "ingresos_operativos": calculo.ingresos_operativos,
-            "costos_variables": calculo.costos_variables,
-            "costos_fijos": calculo.costos_fijos,
-            "gastos_financieros": calculo.gastos_financieros,
-            "utilidad_operativa": calculo.utilidad_operativa,
-            "utilidad_neta_real": calculo.utilidad_neta_real,
-        },
-    )
+    actualizar_balance_para_periodo(mes, anio, calculo)
     return data
 
 

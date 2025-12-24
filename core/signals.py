@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from .models import AuditLog, Producto, Compra, Venta, Transaccion, GastoRecurrente
+from .utils import actualizar_balance_para_periodo, calcular_balance_mensual
 
 
 @receiver(post_save, sender=Producto)
@@ -26,6 +27,8 @@ def log_compra_change(sender, instance, **kwargs):
         tipo_contenido=ContentType.objects.get_for_model(instance),
         objeto_id=instance.pk,
     )
+    if instance.fecha:
+        calcular_y_actualizar_balance(instance.fecha.month, instance.fecha.year)
 
 
 @receiver(post_save, sender=Venta)
@@ -38,6 +41,8 @@ def log_venta_change(sender, instance, **kwargs):
         tipo_contenido=ContentType.objects.get_for_model(instance),
         objeto_id=instance.pk,
     )
+    if instance.fecha:
+        calcular_y_actualizar_balance(instance.fecha.month, instance.fecha.year)
 
 
 @receiver(post_save, sender=Transaccion)
@@ -50,6 +55,8 @@ def log_transaccion_change(sender, instance, **kwargs):
         tipo_contenido=ContentType.objects.get_for_model(instance),
         objeto_id=instance.pk,
     )
+    if instance.fecha:
+        calcular_y_actualizar_balance(instance.fecha.month, instance.fecha.year)
 
 
 @receiver(post_save, sender=GastoRecurrente)
@@ -62,3 +69,9 @@ def log_gasto_recurrente_change(sender, instance, **kwargs):
         tipo_contenido=ContentType.objects.get_for_model(instance),
         objeto_id=instance.pk,
     )
+
+
+def calcular_y_actualizar_balance(mes: int, anio: int) -> None:
+    """Recalcula y persiste el balance para el periodo dado."""
+    calculo = calcular_balance_mensual(mes, anio)
+    actualizar_balance_para_periodo(mes, anio, calculo)

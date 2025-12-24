@@ -480,7 +480,11 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     try:
                         producto = Producto.objects.select_for_update(nowait=True).get(id=prod_id)
                     except OperationalError:
-                        raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                        raise serializers.ValidationError(
+                            {
+                                "detalles": "Otra operación está usando el inventario en este momento. Intenta nuevamente en unos segundos."
+                            }
+                        )
                     if producto.tipo.startswith("ingred"):
                         raise serializers.ValidationError(
                             {"detalles": f"No se pueden vender ingredientes ({producto.nombre})."}
@@ -490,12 +494,22 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     lote = det.get("lote")
                     if producto.stock_actual < cantidad:
                         raise serializers.ValidationError(
-                            {"detalles": "Stock insuficiente para %s" % producto.nombre}
+                            {
+                                "detalles": (
+                                    f"Stock insuficiente para {producto.nombre}. "
+                                    f"Disponible: {producto.stock_actual}, solicitado: {cantidad}. "
+                                    "Reduce la cantidad o repón inventario antes de vender."
+                                )
+                            }
                         )
                     if producto.stock_actual - cantidad < producto.stock_minimo:
                         raise serializers.ValidationError(
                             {
-                                "detalles": f"Stock mínimo alcanzado para {producto.nombre}"
+                                "detalles": (
+                                    f"La venta de {producto.nombre} dejaría el stock por debajo del mínimo. "
+                                    f"Disponible: {producto.stock_actual}, mínimo permitido: {producto.stock_minimo}. "
+                                    "Ajusta la cantidad o repón stock antes de continuar."
+                                )
                             }
                         )
                             
@@ -511,7 +525,11 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 try:
                     venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
                 except OperationalError:
-                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                    raise serializers.ValidationError(
+                        {
+                            "detalles": "Otra operación está usando el inventario en este momento. Intenta nuevamente en unos segundos."
+                        }
+                    )
                 for item in locked_items:
                     producto = item["producto"]
                     cantidad = item["cantidad"]
@@ -522,8 +540,16 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     if not producto.tipo.startswith("ingred"):
                         try:
                             consumos = vender_producto_final_fifo(producto, cantidad)
-                        except ValueError:
-                            raise serializers.ValidationError({"detalles": f"Stock de lotes insuficiente para {producto.nombre}"})
+                        except ValueError as exc:
+                            raise serializers.ValidationError(
+                                {
+                                    "detalles": (
+                                        f"Stock de lotes insuficiente para {producto.nombre}. "
+                                        f"Disponible total: {producto.stock_actual}, solicitado: {cantidad}. "
+                                        f"Detalle técnico: {exc}. Revisa los lotes o ajusta la cantidad."
+                                    )
+                                }
+                            )
                     if consumos:
                         for lpf, cant_lote, _ in consumos:
                             DetallesVenta.objects.create(
@@ -549,9 +575,21 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                             stock_actual__gte=cantidad,
                         ).update(stock_actual=F("stock_actual") - cantidad)
                     except OperationalError:
-                        raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                        raise serializers.ValidationError(
+                            {
+                                "detalles": "Otra operación está usando el inventario en este momento. Intenta nuevamente en unos segundos."
+                            }
+                        )
                     if not updated:
-                        raise serializers.ValidationError({"detalles": f"Stock insuficiente para {producto.nombre}"})
+                        raise serializers.ValidationError(
+                            {
+                                "detalles": (
+                                    f"El stock de {producto.nombre} cambió durante la venta. "
+                                    f"Disponible actual: {producto.stock_actual}, solicitado: {cantidad}. "
+                                    "Actualiza la cantidad o repón inventario y vuelve a intentar."
+                                )
+                            }
+                        )
                     producto.refresh_from_db()
                     try:
                         MovimientoInventario.objects.create(
@@ -564,7 +602,11 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                             venta=venta,
                         )
                     except OperationalError:
-                        raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                        raise serializers.ValidationError(
+                            {
+                                "detalles": "Otra operación está usando el inventario en este momento. Intenta nuevamente en unos segundos."
+                            }
+                        )
                     
                 venta.total = total
                 venta.save()
@@ -581,7 +623,12 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                 extra={"usuario_id": getattr(usuario, "id", None)},
             )
             raise serializers.ValidationError(
-                {"detalles": "Error interno al registrar la venta. Inténtalo de nuevo."}
+                {
+                    "detalles": (
+                        "Ocurrió un error interno al registrar la venta. "
+                        "Vuelve a intentarlo y, si persiste, contacta al administrador."
+                    )
+                }
             )
         
 
