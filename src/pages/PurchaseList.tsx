@@ -15,18 +15,18 @@ export default function PurchaseList() {
   const { data: suppliers = [] } = useSuppliers();
   const [params, setParams] = useSearchParams();
   const initialFecha = params.get("fecha") ?? "";
-  const initialProveedor = params.get("proveedor") ?? "";
+  const initialProveedor = params.get("proveedor") || "all";
 
   const [fecha, setFecha] = useState(initialFecha);
   const [proveedor, setProveedor] = useState(initialProveedor);
 
-  const filters = useMemo(
-    () => ({
+  const filters = useMemo(() => {
+    const proveedorFilter = proveedor === "all" ? undefined : proveedor;
+    return {
       fecha: fecha || undefined,
-      proveedor: proveedor || undefined,
-    }),
-    [fecha, proveedor]
-  );
+      proveedor: proveedorFilter,
+    };
+  }, [fecha, proveedor]);
 
   const { data: purchases = [], isLoading, isError } = usePurchases(filters);
 
@@ -43,14 +43,16 @@ export default function PurchaseList() {
   const updateSearchParams = (nextFecha: string, nextProveedor: string) => {
     const next = new URLSearchParams();
     if (nextFecha) next.set("fecha", nextFecha);
-    if (nextProveedor) next.set("proveedor", nextProveedor);
+    if (nextProveedor && nextProveedor !== "all") next.set("proveedor", nextProveedor);
     setParams(next);
   };
 
   const handleFilterChange = (nextFecha: string, nextProveedor: string) => {
+    const normalizedProveedor = nextProveedor || "all";
+
     setFecha(nextFecha);
-    setProveedor(nextProveedor);
-    updateSearchParams(nextFecha, nextProveedor);
+    setProveedor(normalizedProveedor);
+    updateSearchParams(nextFecha, normalizedProveedor);
   };
 
   return (
@@ -89,7 +91,7 @@ export default function PurchaseList() {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 {suppliers.map((s) => (
                   <SelectItem key={s.id} value={String(s.id)}>
                     {s.nombre}
