@@ -24,6 +24,7 @@ from .models import (
     Categoria,
     Cliente,
     ComposicionProducto,
+    AjusteInventario,
     Transaccion,
     GastoRecurrente,
     DevolucionProducto,
@@ -275,6 +276,39 @@ class ProductoSerializer(serializers.ModelSerializer):
         except ValidationError as exc:
             raise serializers.ValidationError(exc.message_dict)
         
+    def _registrar_ajuste_stock(
+        self, producto: Producto, cantidad_antes: Decimal, cantidad_despues: Decimal
+    ) -> None:
+        if cantidad_despues >= cantidad_antes:
+            return
+        request = self.context.get("request")
+        usuario = (
+            request.user
+            if request and hasattr(request, "user") and request.user.is_authenticated
+            else None
+        )
+        if usuario is None:
+            raise serializers.ValidationError(
+                {"stock_actual": "No se pudo registrar el ajuste sin un usuario autenticado."}
+            )
+        ajuste = AjusteInventario.objects.create(
+            producto=producto,
+            cantidad_antes=cantidad_antes,
+            cantidad_despues=cantidad_despues,
+            tipo=AjusteInventario.TIPO_DECREMENTO,
+            motivo="Ajuste manual de stock por edición de producto",
+            responsable=usuario,
+        )
+        MovimientoInventario.objects.create(
+            producto=producto,
+            tipo="salida",
+            cantidad=cantidad_antes - cantidad_despues,
+            motivo="Ajuste manual de stock",
+            usuario=usuario,
+            operacion_tipo=MovimientoInventario.OPERACION_AJUSTE,
+            ajuste=ajuste,
+        )
+        
     def _consumir_por_produccion(self, producto: Producto, unidades: Decimal) -> None:
         if unidades <= 0 or producto.tipo.startswith("ingred"):
             return
@@ -369,6 +403,12 @@ class ProductoSerializer(serializers.ModelSerializer):
             delta = Decimal(str(instance.stock_actual or 0)) - previous_stock
             if delta > 0 and instance.tipo in ("empanada", "producto_final"):
                 self._consumir_por_produccion(instance, delta)
+            elif delta < 0:
+                self._registrar_ajuste_stock(
+                    producto=instance,
+                    cantidad_antes=previous_stock,
+                    cantidad_despues=Decimal(str(instance.stock_actual or 0)),
+                )
         return instance
 
     def get_unidades_posibles(self, obj):
