@@ -19,12 +19,14 @@ export function Navigation() {
   const isAdmin = user?.is_superuser || user?.groups.includes("admin");
   const isVentas = isAdmin || user?.groups.includes("ventas");
   const isProduccion = isAdmin || user?.groups.includes("produccion");
+  const isCompras = isAdmin || user?.groups.includes("compras");
   const isFinanzas = isAdmin || user?.groups.includes("finanzas");
 
   const navItems = [
     ...(isAdmin || isProduccion ? [{ name: "Inventario", path: "/inventory" }] : []),
     ...(user ? [{ name: "Productos", path: "/products" }] : []),
     ...(isVentas ? [{ name: "Ventas", path: "/sales" }] : []),
+    ...(isCompras ? [{ name: "Compras", path: "/purchases" }] : []),
     ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),
     ...(isFinanzas ? [{ name: "Balance", path: "/finanzas" }] : []),
     ...(isFinanzas ? [{ name: "Dashboard", path: "/dashboard" }] : []),
