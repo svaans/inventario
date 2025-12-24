@@ -232,7 +232,9 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         tipo = attrs.get("tipo") or (self.instance.tipo if self.instance else None)
-        stock_actual = attrs.get("stock_actual") or (self.instance.stock_actual if self.instance else None)
+        new_stock = attrs.get("stock_actual")
+        previous_stock = Decimal(str(self.instance.stock_actual or 0)) if self.instance else Decimal("0")
+        stock_actual = new_stock if new_stock is not None else (self.instance.stock_actual if self.instance else None)
         unidades_posibles = self._unidades_posibles_desde_ingredientes(
             tipo=tipo,
             stock_actual=stock_actual,
@@ -240,10 +242,17 @@ class ProductoSerializer(serializers.ModelSerializer):
             merma_porcentaje=attrs.get("merma_porcentaje") or (self.instance.merma_porcentaje if self.instance else None),
             rendimiento_receta=attrs.get("rendimiento_receta") or (self.instance.rendimiento_receta if self.instance else None),
         )
-        if unidades_posibles is not None and stock_actual is not None and Decimal(str(stock_actual)) > Decimal(unidades_posibles):
-            raise serializers.ValidationError(
-                {"stock_actual": "El stock actual no puede superar las unidades posibles según los ingredientes disponibles."}
-            )
+        if unidades_posibles is not None and stock_actual is not None:
+            maximo_permitido = Decimal(str(unidades_posibles))
+            if self.instance:
+                maximo_permitido += previous_stock
+            if Decimal(str(stock_actual)) > maximo_permitido:
+                mensaje = "El stock actual no puede superar las unidades posibles según los ingredientes disponibles."
+                if self.instance:
+                    mensaje = (
+                        "El stock actual no puede ser mayor que el stock anterior más las unidades posibles según los ingredientes disponibles."
+                    )
+                raise serializers.ValidationError({"stock_actual": mensaje})
         return super().validate(attrs)
     
     def to_representation(self, instance):
@@ -272,6 +281,10 @@ class ProductoSerializer(serializers.ModelSerializer):
         composiciones = list(
             producto.ingredientes.filter(activo=True, lote__isnull=True).select_related("ingrediente")
         )
+        if not composiciones:
+            composiciones = list(
+                producto.ingredientes.filter(activo=True).select_related("ingrediente")
+            )
         if not composiciones:
             return
         merma = Decimal(str(producto.merma_porcentaje or 0)) / Decimal("100")

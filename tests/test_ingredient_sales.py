@@ -124,6 +124,63 @@ class IngredientSaleTest(TestCase):
         self.assertFalse(serializer_invalid.is_valid())
         self.assertIn("stock_actual", serializer_invalid.errors)
 
+
+class IngredientConsumptionWithLotRecipeTest(TestCase):
+    def setUp(self):
+        fam_emp = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.EMPANADAS)
+        fam_ing = FamiliaProducto.objects.get(clave=FamiliaProducto.Clave.INGREDIENTES)
+        cat_f, _ = Categoria.objects.get_or_create(nombre_categoria="Empanadas Lote", defaults={"familia": fam_emp})
+        cat_i, _ = Categoria.objects.get_or_create(nombre_categoria="Ingredientes Lote", defaults={"familia": fam_ing})
+        unidad_g = UnidadMedida.objects.get(abreviatura="g")
+        unidad_u = UnidadMedida.objects.get(abreviatura="u")
+        self.har = Producto.objects.create(
+            codigo="HLOT",
+            nombre="Harina Lote",
+            tipo="ingrediente",
+            precio=0,
+            stock_actual=50,
+            stock_minimo=0,
+            unidad_media=unidad_g,
+            categoria=cat_i,
+        )
+        self.final = Producto.objects.create(
+            codigo="ELOT",
+            nombre="Empanada Lote",
+            tipo="empanada",
+            precio=1,
+            stock_actual=0,
+            stock_minimo=0,
+            unidad_media=unidad_u,
+            categoria=cat_f,
+        )
+        ComposicionProducto.objects.create(
+            producto_final=self.final,
+            ingrediente=self.har,
+            cantidad_requerida=5,
+            lote="R1",
+        )
+        self.user = User.objects.create_user(username="lot_user", password="p")
+
+    def test_stock_update_consumes_ingredients_with_lot_recipe(self):
+        factory = APIRequestFactory()
+        request = factory.patch("/productos/")
+        request.user = self.user
+        update_data = {"stock_actual": 5}
+        serializer = ProductoSerializer(
+            instance=self.final,
+            data=update_data,
+            partial=True,
+            context={"request": request},
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        self.final.refresh_from_db()
+        self.har.refresh_from_db()
+
+        self.assertEqual(float(self.final.stock_actual), 5.0)
+        self.assertEqual(float(self.har.stock_actual), 25.0)
+
     def test_maximum_production_clears_ingredients(self):
         factory = APIRequestFactory()
         request = factory.patch("/productos/")
