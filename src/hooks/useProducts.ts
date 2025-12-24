@@ -124,6 +124,12 @@ export function useProducts(search = "", codigo?: string) {
         unit: p.unidad_media_abreviatura,
         unitId: Number(p.unidad_media),
         supplier: p.proveedor_nombre ?? String(p.proveedor),
+        supplierId:
+          typeof p.proveedor === "number"
+            ? p.proveedor
+            : Number.isNaN(Number(p.proveedor))
+              ? null
+              : Number(p.proveedor),
         impuesto: p.impuesto ? Number(p.impuesto) : 0,
         descuento_base: p.descuento_base ? Number(p.descuento_base) : 0,
         unidad_empaque: p.unidad_empaque ? Number(p.unidad_empaque) : undefined,
