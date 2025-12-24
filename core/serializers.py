@@ -25,6 +25,8 @@ from .models import (
     Cliente,
     ComposicionProducto,
     AjusteInventario,
+    Compra,
+    DetalleCompra,
     Transaccion,
     GastoRecurrente,
     DevolucionProducto,
@@ -581,6 +583,127 @@ class VentaCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"detalles": "Error interno al registrar la venta. Inténtalo de nuevo."}
             )
+        
+
+class DetalleCompraOutputSerializer(serializers.ModelSerializer):
+    """Detalle serializado para respuestas de compras."""
+
+    producto_nombre = serializers.CharField(source="producto.nombre", read_only=True)
+    unidad = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DetalleCompra
+        fields = [
+            "producto",
+            "producto_nombre",
+            "cantidad",
+            "unidad",
+            "precio_unitario",
+            "subtotal",
+        ]
+
+    def get_unidad(self, obj):
+        unidad_media = getattr(obj.producto, "unidad_media", None)
+        if unidad_media and unidad_media.abreviatura:
+            return unidad_media.abreviatura
+        return ""
+
+    def get_subtotal(self, obj):
+        return obj.cantidad * obj.precio_unitario
+
+
+class DetalleCompraInputSerializer(serializers.Serializer):
+    """Detalle de compra usado al crear compras vía API."""
+
+    producto = serializers.PrimaryKeyRelatedField(queryset=Producto.objects.all())
+    cantidad = serializers.DecimalField(max_digits=10, decimal_places=2)
+    precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
+    unidad = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    def validate(self, attrs):
+        if attrs["cantidad"] <= 0 or attrs["precio_unitario"] <= 0:
+            raise serializers.ValidationError("Cantidad y precio deben ser mayores a 0.")
+        return attrs
+
+
+class CompraSerializer(serializers.ModelSerializer):
+    """Serializer de solo lectura para compras."""
+
+    proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
+    detalles = DetalleCompraOutputSerializer(many=True, source="detallecompra_set", read_only=True)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Compra
+        fields = ["id", "proveedor", "proveedor_nombre", "fecha", "total", "detalles"]
+
+
+class CompraCreateSerializer(serializers.ModelSerializer):
+    """Serializer para registrar compras y actualizar inventario."""
+
+    detalles = DetalleCompraInputSerializer(many=True, write_only=True)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Compra
+        fields = ["id", "proveedor", "fecha", "detalles", "total"]
+
+    def validate_detalles(self, value):
+        if not value:
+            raise serializers.ValidationError("Agrega al menos un detalle de compra.")
+        return value
+
+    def create(self, validated_data):
+        detalles_data = validated_data.pop("detalles", [])
+        request = self.context.get("request")
+        if not (request and hasattr(request, "user") and request.user.is_authenticated):
+            raise PermissionDenied("Debes iniciar sesión para registrar compras.")
+
+        usuario = request.user
+        proveedor = validated_data.get("proveedor")
+        proveedor_id = proveedor.id if proveedor else None
+        with transaction.atomic():
+            compra = Compra.objects.create(total=0, **validated_data)
+            total = Decimal("0")
+
+            for det in detalles_data:
+                producto = det["producto"]
+                cantidad = det["cantidad"]
+                precio_unitario = det["precio_unitario"]
+
+                if producto.proveedor_id is None:
+                    raise serializers.ValidationError(
+                        {"detalles": f"{producto.nombre} no tiene proveedor asignado."}
+                    )
+                if proveedor_id and producto.proveedor_id and producto.proveedor_id != proveedor_id:
+                    raise serializers.ValidationError(
+                        {"detalles": f"{producto.nombre} pertenece a otro proveedor."}
+                    )
+                producto_locked = Producto.objects.select_for_update().get(id=producto.id)
+                DetalleCompra.objects.create(
+                    compra=compra,
+                    producto=producto_locked,
+                    cantidad=cantidad,
+                    precio_unitario=precio_unitario,
+                )
+                Producto.objects.filter(id=producto_locked.id).update(
+                    stock_actual=F("stock_actual") + cantidad
+                )
+                MovimientoInventario.objects.create(
+                    producto=producto_locked,
+                    tipo="entrada",
+                    cantidad=cantidad,
+                    motivo="Compra",
+                    usuario=usuario,
+                    operacion_tipo=MovimientoInventario.OPERACION_COMPRA,
+                    compra=compra,
+                )
+                total += cantidad * precio_unitario
+
+            compra.total = total
+            compra.save(update_fields=["total"])
+            return compra
 
 
 class VentaSerializer(serializers.ModelSerializer):

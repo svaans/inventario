@@ -14,6 +14,7 @@ from .api_views import (
     InventoryActivityView,
     EmployeeListCreateView,
     CurrentUserView,
+    CompraViewSet,
     VentaFacturaView,
     VentaFacturaEmailView,
     TransaccionViewSet,
@@ -55,6 +56,7 @@ router.register(r"api/gastos-recurrentes", GastoRecurrenteViewSet, basename="gas
 router.register(r"api/devoluciones", DevolucionViewSet, basename="devoluciones")
 router.register(r"api/shift-logs", RegistroTurnoViewSet, basename="shiftlogs")
 router.register(r"api/audit-logs", AuditLogViewSet, basename="auditlogs")
+router.register(r"api/compras", CompraViewSet, basename="compras")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),

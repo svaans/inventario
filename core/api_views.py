@@ -53,6 +53,9 @@ class IsProduccionUser(BaseGroupPermission):
 class IsFinanzasUser(BaseGroupPermission):
     group_name = "finanzas"
 
+class IsComprasUser(BaseGroupPermission):
+    group_name = "compras"
+
 from .models import (
     Producto,
     Venta,
@@ -81,6 +84,8 @@ from .serializers import (
     CategoriaSerializer,
     ClienteSerializer,
     ClienteCreateSerializer,
+    CompraSerializer,
+    CompraCreateSerializer,
     EmployeeSerializer,
     TransaccionSerializer,
     GastoRecurrenteSerializer,
@@ -289,6 +294,48 @@ class ClienteListView(ListCreateAPIView):
             )
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+
+
+class CompraPagination(PageNumberPagination):
+    page_size = 20
+
+
+class CompraViewSet(viewsets.ModelViewSet):
+    """CRUD limitado para registrar y consultar compras."""
+
+    queryset = Compra.objects.all().order_by("-fecha")
+    serializer_class = CompraSerializer
+    permission_classes = [IsComprasUser]
+    pagination_class = CompraPagination
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CompraCreateSerializer
+        return CompraSerializer
+
+    def get_queryset(self):
+        qs = (
+            super()
+            .get_queryset()
+            .select_related("proveedor")
+            .prefetch_related("detallecompra_set__producto__unidad_media")
+        )
+        proveedor = self.request.query_params.get("proveedor")
+        fecha = self.request.query_params.get("fecha")
+        if proveedor:
+            qs = qs.filter(proveedor_id=proveedor)
+        if fecha:
+            qs = qs.filter(fecha=fecha)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        compra = serializer.save()
+        output = CompraSerializer(compra, context=self.get_serializer_context())
+        headers = self.get_success_headers(output.data)
+        return Response(output.data, status=status.HTTP_201_CREATED, headers=headers)
     
 class VentaPagination(PageNumberPagination):
     page_size = 20
