@@ -37,8 +37,8 @@ class IngredientSaleTest(TestCase):
         self.har.refresh_from_db()
         self.carne.refresh_from_db()
         self.assertEqual(float(self.final.stock_actual), 8)
-        self.assertEqual(float(self.har.stock_actual), 800)
-        self.assertEqual(float(self.carne.stock_actual), 400)
+        self.assertEqual(float(self.har.stock_actual), 1000)
+        self.assertEqual(float(self.carne.stock_actual), 500)
 
     def test_recipe_update_by_lot(self):
         factory = APIRequestFactory()
@@ -81,6 +81,44 @@ class IngredientSaleTest(TestCase):
 
         self.har.refresh_from_db()
         self.carne.refresh_from_db()
-        # First sale consumed 100g/50g, second 120g/60g
-        self.assertEqual(float(self.har.stock_actual), 780)
-        self.assertEqual(float(self.carne.stock_actual), 390)
+        # Ingredientes no se descuentan en ventas
+        self.assertEqual(float(self.har.stock_actual), 1000)
+        self.assertEqual(float(self.carne.stock_actual), 500)
+
+    def test_production_consumes_ingredients_and_limits_stock(self):
+        factory = APIRequestFactory()
+        request = factory.patch("/productos/")
+        request.user = self.user
+
+        self.har.stock_actual = 2000
+        self.har.save()
+        self.carne.stock_actual = 1000
+        self.carne.save()
+
+        update_data = {"stock_actual": 15}
+        serializer = ProductoSerializer(
+            instance=self.final,
+            data=update_data,
+            partial=True,
+            context={"request": request},
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+
+        self.final.refresh_from_db()
+        self.har.refresh_from_db()
+        self.carne.refresh_from_db()
+
+        self.assertEqual(float(self.final.stock_actual), 15.0)
+        self.assertEqual(float(self.har.stock_actual), 1500.0)
+        self.assertEqual(float(self.carne.stock_actual), 750.0)
+
+        invalid_update = {"stock_actual": 25}
+        serializer_invalid = ProductoSerializer(
+            instance=self.final,
+            data=invalid_update,
+            partial=True,
+            context={"request": request},
+        )
+        self.assertFalse(serializer_invalid.is_valid())
+        self.assertIn("stock_actual", serializer_invalid.errors)

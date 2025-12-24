@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
@@ -179,6 +180,72 @@ class ProductoSerializer(serializers.ModelSerializer):
             )
         return value
     
+    def _composiciones_base(
+        self,
+        ingredientes_data: Any,
+    ) -> list[tuple[Producto, Decimal]]:
+        if ingredientes_data is not None:
+            composiciones = []
+            for ing in ingredientes_data:
+                if ing.get("lote") or ing.get("activo", True) is False:
+                    continue
+                composiciones.append(
+                    (ing["ingrediente"], Decimal(str(ing["cantidad_requerida"])))
+                )
+            return composiciones
+        if self.instance:
+            return [
+                (c.ingrediente, Decimal(str(c.cantidad_requerida)))
+                for c in self.instance.ingredientes.filter(activo=True, lote__isnull=True)
+            ]
+        return []
+
+    def _unidades_posibles_desde_ingredientes(
+        self,
+        tipo: str,
+        stock_actual: Decimal | None,
+        ingredientes_data: Any,
+        merma_porcentaje: Decimal | None,
+        rendimiento_receta: Decimal | None,
+    ) -> int | None:
+        if not tipo or tipo.startswith("ingred") or stock_actual is None:
+            return None
+        composiciones = self._composiciones_base(ingredientes_data)
+        if not composiciones:
+            return None
+        merma = Decimal(str(merma_porcentaje or 0)) / Decimal("100")
+        merma_factor = Decimal("1") + merma
+        rendimiento = Decimal(str(rendimiento_receta or 1))
+        posibles: list[Decimal] = []
+        for ingrediente, cantidad_requerida in composiciones:
+            if cantidad_requerida <= 0:
+                continue
+            disponible = Decimal(str(ingrediente.stock_actual or 0))
+            divisor = cantidad_requerida * merma_factor
+            if divisor <= 0:
+                continue
+            posibles.append(disponible / divisor)
+        base_unidades = min(posibles) if posibles else None
+        if base_unidades is None:
+            return None
+        return int(base_unidades * rendimiento)
+
+    def validate(self, attrs):
+        tipo = attrs.get("tipo") or (self.instance.tipo if self.instance else None)
+        stock_actual = attrs.get("stock_actual") or (self.instance.stock_actual if self.instance else None)
+        unidades_posibles = self._unidades_posibles_desde_ingredientes(
+            tipo=tipo,
+            stock_actual=stock_actual,
+            ingredientes_data=attrs.get("ingredientes"),
+            merma_porcentaje=attrs.get("merma_porcentaje") or (self.instance.merma_porcentaje if self.instance else None),
+            rendimiento_receta=attrs.get("rendimiento_receta") or (self.instance.rendimiento_receta if self.instance else None),
+        )
+        if unidades_posibles is not None and stock_actual is not None and Decimal(str(stock_actual)) > Decimal(unidades_posibles):
+            raise serializers.ValidationError(
+                {"stock_actual": "El stock actual no puede superar las unidades posibles según los ingredientes disponibles."}
+            )
+        return super().validate(attrs)
+    
     def to_representation(self, instance):
         data = super().to_representation(instance)
         ingredientes = data.get("ingredientes")
@@ -198,6 +265,51 @@ class ProductoSerializer(serializers.ModelSerializer):
             return instance
         except ValidationError as exc:
             raise serializers.ValidationError(exc.message_dict)
+        
+    def _consumir_por_produccion(self, producto: Producto, unidades: Decimal) -> None:
+        if unidades <= 0 or producto.tipo.startswith("ingred"):
+            return
+        composiciones = list(
+            producto.ingredientes.filter(activo=True, lote__isnull=True).select_related("ingrediente")
+        )
+        if not composiciones:
+            return
+        merma = Decimal(str(producto.merma_porcentaje or 0)) / Decimal("100")
+        merma_factor = Decimal("1") + merma
+        rendimiento = Decimal(str(producto.rendimiento_receta or 1))
+        if rendimiento <= 0:
+            rendimiento = Decimal("1")
+        batches = Decimal(str(unidades)) / rendimiento
+        request = self.context.get("request")
+        usuario = None
+        if request and hasattr(request, "user") and request.user.is_authenticated:
+            usuario = request.user
+        for comp in composiciones:
+            requerido = Decimal(str(comp.cantidad_requerida)) * batches * merma_factor
+            try:
+                consumir_ingrediente_fifo(comp.ingrediente, requerido)
+            except ValueError:
+                raise serializers.ValidationError(
+                    {
+                        "ingredientes": f"Ingrediente insuficiente para producir {producto.nombre}: {comp.ingrediente.nombre}"
+                    }
+                )
+            MovimientoInventario.objects.create(
+                producto=comp.ingrediente,
+                tipo="salida",
+                cantidad=requerido,
+                motivo=f"Producción de {producto.nombre}",
+                usuario=usuario,
+                operacion_tipo=MovimientoInventario.OPERACION_AJUSTE,
+            )
+        MovimientoInventario.objects.create(
+            producto=producto,
+            tipo="entrada",
+            cantidad=Decimal(str(unidades)),
+            motivo="Producción",
+            usuario=usuario,
+            operacion_tipo=MovimientoInventario.OPERACION_AJUSTE,
+        )
 
     
     def create(self, validated_data):
@@ -214,11 +326,14 @@ class ProductoSerializer(serializers.ModelSerializer):
                     lote=ing.get("lote"),
                     activo=ing.get("activo", True),
                 )
+            if producto.tipo in ("empanada", "producto_final"):
+                self._consumir_por_produccion(producto, Decimal(str(producto.stock_actual or 0)))
         return producto
 
     def update(self, instance, validated_data):
         ingredientes_data = validated_data.pop("ingredientes", None)
         with transaction.atomic():
+            previous_stock = Decimal(str(instance.stock_actual or 0))
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance = self._save_with_validation(instance)
@@ -238,6 +353,9 @@ class ProductoSerializer(serializers.ModelSerializer):
                         lote=ing.get("lote"),
                         activo=ing.get("activo", True),
                     )
+            delta = Decimal(str(instance.stock_actual or 0)) - previous_stock
+            if delta > 0 and instance.tipo in ("empanada", "producto_final"):
+                self._consumir_por_produccion(instance, delta)
         return instance
 
     def get_unidades_posibles(self, obj):
@@ -321,41 +439,6 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                                 "detalles": f"Stock mínimo alcanzado para {producto.nombre}"
                             }
                         )
-                    locked_ingredientes = {}
-                    comps = []
-                    if not producto.tipo.startswith("ingred"):
-                        comps = producto.ingredientes.select_related("ingrediente")
-                        if lote is None:
-                            comps = comps.filter(lote__isnull=True, activo=True)
-                        else:
-                            comps = comps.filter(lote=lote, activo=True)
-                        if not comps.exists():
-                            comps = []
-
-                        ing_ids = [c.ingrediente_id for c in comps]
-                        if ing_ids:
-                            try:
-                                for ing in Producto.objects.select_for_update(nowait=True).filter(id__in=ing_ids):
-                                    locked_ingredientes[ing.id] = ing
-                            except OperationalError:
-                                raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-
-
-                        for comp in comps:
-                            ing = locked_ingredientes.get(comp.ingrediente_id)
-                            if ing is None:
-                                try:
-                                    ing = Producto.objects.select_for_update(nowait=True).get(id=comp.ingrediente_id)
-                                except OperationalError:
-                                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                                locked_ingredientes[ing.id] = ing
-                            requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                            if ing.stock_actual < requerido:
-                                raise serializers.ValidationError(
-                                    {
-                                        "detalles": f"Ingrediente insuficiente para {producto.nombre}: {ing.nombre}"
-                                    }
-                                )
                             
                     locked_items.append(
                         {
@@ -363,8 +446,6 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                             "cantidad": cantidad,
                             "precio": precio,
                             "lote": lote,
-                            "comps": comps,
-                            "ings": locked_ingredientes,
                         }
                     )
                 
@@ -377,8 +458,6 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     cantidad = item["cantidad"]
                     precio = item["precio"]
                     lote = item["lote"]
-                    comps = item["comps"]
-                    locked_ingredientes = item["ings"]
 
                     consumos = []
                     if not producto.tipo.startswith("ingred"):
@@ -415,32 +494,6 @@ class VentaCreateSerializer(serializers.ModelSerializer):
                     if not updated:
                         raise serializers.ValidationError({"detalles": f"Stock insuficiente para {producto.nombre}"})
                     producto.refresh_from_db()
-                    if not producto.tipo.startswith("ingred"):
-                        for comp in comps:
-                            ing = locked_ingredientes[comp.ingrediente_id]
-                            requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                            try:
-                                consumir_ingrediente_fifo(ing, requerido)
-                            except OperationalError:
-                                raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                            except ValueError:
-                                raise serializers.ValidationError(
-                                    {
-                                        "detalles": f"Ingrediente insuficiente para {producto.nombre}: {ing.nombre}"
-                                    }
-                                )
-                            try:
-                                MovimientoInventario.objects.create(
-                                    producto=ing,
-                                    tipo="salida",
-                                    cantidad=requerido,
-                                    motivo=f"Venta de {producto.nombre}",
-                                    usuario=usuario,
-                                    operacion_tipo=MovimientoInventario.OPERACION_VENTA,
-                                    venta=venta,
-                                )
-                            except OperationalError:
-                                raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
                     try:
                         MovimientoInventario.objects.create(
                             producto=producto,
