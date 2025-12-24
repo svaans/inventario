@@ -1,3 +1,4 @@
+import logging
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from decimal import Decimal
@@ -279,7 +280,7 @@ class DetallesVentaSerializer(serializers.Serializer):
 
 
 class VentaCreateSerializer(serializers.ModelSerializer):
-    detalles = DetallesVentaSerializer(many=True)
+    detalles = DetallesVentaSerializer(many=True, write_only=True)
 
     class Meta:
         model = Venta
@@ -291,165 +292,176 @@ class VentaCreateSerializer(serializers.ModelSerializer):
         if not (request and hasattr(request, "user") and request.user.is_authenticated):
             raise PermissionDenied("Authentication credentials were not provided.")
         usuario = request.user
-        with transaction.atomic():
-            total = 0
-            locked_items = []
-            for det in detalles_data:
-                prod_id = det["producto"]
-                try:
-                    producto = Producto.objects.select_for_update(nowait=True).get(id=prod_id)
-                except OperationalError:
-                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                cantidad = det["cantidad"]
-                precio = det["precio_unitario"]
-                lote = det.get("lote")
-                if producto.stock_actual < cantidad:
-                    raise serializers.ValidationError(
-                        {"detalles": "Stock insuficiente para %s" % producto.nombre}
-                    )
-                if producto.stock_actual - cantidad < producto.stock_minimo:
-                    raise serializers.ValidationError(
-                        {
-                            "detalles": f"Stock mínimo alcanzado para {producto.nombre}"
-                        }
-                    )
-                locked_ingredientes = {}
-                comps = []
-                if not producto.tipo.startswith("ingred"):
-                    comps = producto.ingredientes.select_related("ingrediente")
-                    if lote is None:
-                        comps = comps.filter(lote__isnull=True, activo=True)
-                    else:
-                        comps = comps.filter(lote=lote, activo=True)
-                    if not comps.exists():
-                        comps = []
+        try:
+            with transaction.atomic():
+                total = 0
+                locked_items = []
+                for det in detalles_data:
+                    prod_id = det["producto"]
+                    try:
+                        producto = Producto.objects.select_for_update(nowait=True).get(id=prod_id)
+                    except OperationalError:
+                        raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                    cantidad = det["cantidad"]
+                    precio = det["precio_unitario"]
+                    lote = det.get("lote")
+                    if producto.stock_actual < cantidad:
+                        raise serializers.ValidationError(
+                            {"detalles": "Stock insuficiente para %s" % producto.nombre}
+                        )
+                    if producto.stock_actual - cantidad < producto.stock_minimo:
+                        raise serializers.ValidationError(
+                            {
+                                "detalles": f"Stock mínimo alcanzado para {producto.nombre}"
+                            }
+                        )
+                    locked_ingredientes = {}
+                    comps = []
+                    if not producto.tipo.startswith("ingred"):
+                        comps = producto.ingredientes.select_related("ingrediente")
+                        if lote is None:
+                            comps = comps.filter(lote__isnull=True, activo=True)
+                        else:
+                            comps = comps.filter(lote=lote, activo=True)
+                        if not comps.exists():
+                            comps = []
 
-                    ing_ids = [c.ingrediente_id for c in comps]
-                    if ing_ids:
-                        try:
-                            for ing in Producto.objects.select_for_update(nowait=True).filter(id__in=ing_ids):
-                                locked_ingredientes[ing.id] = ing
-                        except OperationalError:
-                            raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                        
-                    for comp in comps:
-                        ing = locked_ingredientes.get(comp.ingrediente_id)
-                        if ing is None:
+                        ing_ids = [c.ingrediente_id for c in comps]
+                        if ing_ids:
                             try:
-                                ing = Producto.objects.select_for_update(nowait=True).get(id=comp.ingrediente_id)
+                                for ing in Producto.objects.select_for_update(nowait=True).filter(id__in=ing_ids):
+                                    locked_ingredientes[ing.id] = ing
                             except OperationalError:
                                 raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                            locked_ingredientes[ing.id] = ing
-                        requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                        if ing.stock_actual < requerido:
-                            raise serializers.ValidationError(
-                                {
-                                    "detalles": f"Ingrediente insuficiente para {producto.nombre}: {ing.nombre}"
-                                }
+
+
+                        for comp in comps:
+                            ing = locked_ingredientes.get(comp.ingrediente_id)
+                            if ing is None:
+                                try:
+                                    ing = Producto.objects.select_for_update(nowait=True).get(id=comp.ingrediente_id)
+                                except OperationalError:
+                                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                                locked_ingredientes[ing.id] = ing
+                            requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
+                            if ing.stock_actual < requerido:
+                                raise serializers.ValidationError(
+                                    {
+                                        "detalles": f"Ingrediente insuficiente para {producto.nombre}: {ing.nombre}"
+                                    }
+                                )
+                            
+                    locked_items.append(
+                        {
+                            "producto": producto,
+                            "cantidad": cantidad,
+                            "precio": precio,
+                            "lote": lote,
+                            "comps": comps,
+                            "ings": locked_ingredientes,
+                        }
+                    )
+                
+                try:
+                    venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
+                except OperationalError:
+                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                for item in locked_items:
+                    producto = item["producto"]
+                    cantidad = item["cantidad"]
+                    precio = item["precio"]
+                    lote = item["lote"]
+                    comps = item["comps"]
+                    locked_ingredientes = item["ings"]
+
+                    consumos = []
+                    if not producto.tipo.startswith("ingred"):
+                        try:
+                            consumos = vender_producto_final_fifo(producto, cantidad)
+                        except ValueError:
+                            raise serializers.ValidationError({"detalles": f"Stock de lotes insuficiente para {producto.nombre}"})
+                    if consumos:
+                        for lpf, cant_lote, _ in consumos:
+                            DetallesVenta.objects.create(
+                                venta=venta,
+                                producto=producto,
+                                cantidad=cant_lote,
+                                precio_unitario=precio,
+                                lote=lpf.codigo,
+                                lote_final=lpf,
                             )
-                        
-                locked_items.append(
-                    {
-                        "producto": producto,
-                        "cantidad": cantidad,
-                        "precio": precio,
-                        "lote": lote,
-                        "comps": comps,
-                        "ings": locked_ingredientes,
-                    }
-                )
-
-            try:
-                venta = Venta.objects.create(usuario=usuario, total=0, **validated_data)
-            except OperationalError:
-                raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-
-            for item in locked_items:
-                producto = item["producto"]
-                cantidad = item["cantidad"]
-                precio = item["precio"]
-                lote = item["lote"]
-                comps = item["comps"]
-                locked_ingredientes = item["ings"]
-
-                consumos = []
-                if not producto.tipo.startswith("ingred"):
-                    try:
-                        consumos = vender_producto_final_fifo(producto, cantidad)
-                    except ValueError:
-                        raise serializers.ValidationError({"detalles": f"Stock de lotes insuficiente para {producto.nombre}"})
-                if consumos:
-                    for lpf, cant_lote, _ in consumos:
+                    else:
                         DetallesVenta.objects.create(
                             venta=venta,
                             producto=producto,
-                            cantidad=cant_lote,
+                            cantidad=cantidad,
                             precio_unitario=precio,
-                            lote=lpf.codigo,
-                            lote_final=lpf,
+                            lote=lote,
                         )
-                else:
-                    DetallesVenta.objects.create(
-                        venta=venta,
-                        producto=producto,
-                        cantidad=cantidad,
-                        precio_unitario=precio,
-                        lote=lote,
-                    )
-                total += cantidad * precio
-                try:
-                    updated = Producto.objects.filter(
-                        id=producto.id,
-                        stock_actual__gte=cantidad,
-                    ).update(stock_actual=F("stock_actual") - cantidad)
-                except OperationalError:
-                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                if not updated:
-                    raise serializers.ValidationError({"detalles": f"Stock insuficiente para {producto.nombre}"})
-                producto.refresh_from_db()
-                if not producto.tipo.startswith("ingred"):
-                    for comp in comps:
-                        ing = locked_ingredientes[comp.ingrediente_id]
-                        requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
-                        try:
-                            consumir_ingrediente_fifo(ing, requerido)
-                        except OperationalError:
-                            raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                        except ValueError:
-                            raise serializers.ValidationError(
-                                {
-                                    "detalles": f"Ingrediente insuficiente para {producto.nombre}: {ing.nombre}"
-                                }
-                            )
-                        try:
-                            MovimientoInventario.objects.create(
-                                producto=ing,
-                                tipo="salida",
-                                cantidad=requerido,
-                                motivo=f"Venta de {producto.nombre}",
-                                usuario=usuario,
-                                operacion_tipo=MovimientoInventario.OPERACION_VENTA,
-                                venta=venta,
-                            )
-                        except OperationalError:
-                            raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                try:
-                    MovimientoInventario.objects.create(
-                        producto=producto,
-                        tipo="salida",
-                        cantidad=cantidad,
-                        motivo="Venta",
-                        usuario=usuario,
-                        operacion_tipo=MovimientoInventario.OPERACION_VENTA,
-                        venta=venta,
-                    )
-                except OperationalError:
-                    raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
-                
-            venta.total = total
-            venta.save()
+                    total += cantidad * precio
+                    try:
+                        updated = Producto.objects.filter(
+                            id=producto.id,
+                            stock_actual__gte=cantidad,
+                        ).update(stock_actual=F("stock_actual") - cantidad)
+                    except OperationalError:
+                        raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                    if not updated:
+                        raise serializers.ValidationError({"detalles": f"Stock insuficiente para {producto.nombre}"})
+                    producto.refresh_from_db()
+                    if not producto.tipo.startswith("ingred"):
+                        for comp in comps:
+                            ing = locked_ingredientes[comp.ingrediente_id]
+                            requerido = Decimal(str(comp.cantidad_requerida)) * Decimal(str(cantidad))
+                            try:
+                                consumir_ingrediente_fifo(ing, requerido)
+                            except OperationalError:
+                                raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                            except ValueError:
+                                raise serializers.ValidationError(
+                                    {
+                                        "detalles": f"Ingrediente insuficiente para {producto.nombre}: {ing.nombre}"
+                                    }
+                                )
+                            try:
+                                MovimientoInventario.objects.create(
+                                    producto=ing,
+                                    tipo="salida",
+                                    cantidad=requerido,
+                                    motivo=f"Venta de {producto.nombre}",
+                                    usuario=usuario,
+                                    operacion_tipo=MovimientoInventario.OPERACION_VENTA,
+                                    venta=venta,
+                                )
+                            except OperationalError:
+                                raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                    try:
+                        MovimientoInventario.objects.create(
+                            producto=producto,
+                            tipo="salida",
+                            cantidad=cantidad,
+                            motivo="Venta",
+                            usuario=usuario,
+                            operacion_tipo=MovimientoInventario.OPERACION_VENTA,
+                            venta=venta,
+                        )
+                    except OperationalError:
+                        raise serializers.ValidationError({"detalles": "Operacion en curso, intente nuevamente"})
+                    
+                venta.total = total
+                venta.save()
 
-        return venta
+            return venta
+        except serializers.ValidationError:
+            raise
+        except Exception:
+            logging.exception(
+                "Unexpected error while creating sale",
+                extra={"usuario_id": getattr(usuario, "id", None)},
+            )
+            raise serializers.ValidationError(
+                {"detalles": "Error interno al registrar la venta. Inténtalo de nuevo."}
+            )
 
 
 class VentaSerializer(serializers.ModelSerializer):
