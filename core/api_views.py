@@ -533,6 +533,23 @@ class DashboardStatsView(APIView):
             Producto.objects.filter(stock_actual__lte=F('stock_minimo'))
             .values('nombre', 'stock_actual', 'stock_minimo')[:5]
         )
+        reorder_suggestions_raw = detectar_faltantes()
+        provider_ids = [
+            suggestion["proveedor"]
+            for suggestion in reorder_suggestions_raw
+            if suggestion.get("proveedor")
+        ]
+        providers = {
+            prov.id: prov.nombre
+            for prov in Proveedor.objects.filter(id__in=provider_ids)
+        }
+        reorder_suggestions = [
+            {
+                **suggestion,
+                "proveedor_nombre": providers.get(suggestion.get("proveedor")),
+            }
+            for suggestion in reorder_suggestions_raw
+        ]
 
         return Response({
             'sales_today': sales_today,
@@ -556,6 +573,8 @@ class DashboardStatsView(APIView):
             'top_products': top_products,
             'week_sales': week_sales,
             'alerts': alerts,
+            'reorder_suggestions': reorder_suggestions,
+            'pending_purchases': len(reorder_suggestions),
             'last_updated': now().isoformat(),
         })
 

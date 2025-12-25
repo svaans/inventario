@@ -1,6 +1,7 @@
+import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
-import { BarChart3, Package, Archive, Calendar, User, AlertTriangle } from "lucide-react";
+import { BarChart3, Package, Archive, Calendar, AlertTriangle, ShoppingBag } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
 import CostPieChart from "../components/finance/CostPieChart";
 import OperationalPieChart from "../components/finance/OperationalPieChart";
@@ -24,13 +25,29 @@ export default function Dashboard() {
     }
   }, [isError]);
 
-  const alerts = data?.alerts?.map((a) => ({
-    type: a.stock_actual <= 0 ? "danger" : "warning",
-    message: `${a.nombre}: ${a.stock_actual}`,
-  })) ?? [];
-
+  const reorderSuggestions = data?.reorder_suggestions ?? [];
+  const pendingPurchases = data?.pending_purchases ?? reorderSuggestions.length;
+  const lowStockAlerts = data?.alerts ?? [];
   const topProducts = data?.top_products ?? [];
   const weekSales = data?.week_sales ?? [];
+  const notifications = [
+    ...reorderSuggestions.map((suggestion) => ({
+      key: `reorder-${suggestion.producto}`,
+      tone: "reorder" as const,
+      title: `Reorden sugerido: ${suggestion.nombre}`,
+      description: `Compra recomendada de ${suggestion.cantidad} unidades`,
+      extra: suggestion.proveedor_nombre
+        ? `Proveedor sugerido: ${suggestion.proveedor_nombre}`
+        : "Asigna un proveedor para agilizar la orden.",
+    })),
+    ...lowStockAlerts.map((alert) => ({
+      key: `stock-${alert.nombre}-${alert.stock_actual}`,
+      tone: alert.stock_actual <= 0 ? ("critical" as const) : ("warning" as const),
+      title: `Stock bajo: ${alert.nombre}`,
+      description: `Stock actual ${alert.stock_actual} (mínimo ${alert.stock_minimo})`,
+      extra: alert.stock_actual <= 0 ? "Sin existencias disponibles." : undefined,
+    })),
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -123,23 +140,52 @@ export default function Dashboard() {
         {/* Alerts */}
         <Card>
           <CardHeader>
-            <CardTitle>Alertas y Notificaciones</CardTitle>
-            <CardDescription>Información importante que requiere atención</CardDescription>
+            <div className="flex items-center gap-3">
+              <CardTitle>Alertas y Notificaciones</CardTitle>
+              {pendingPurchases > 0 && (
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                  {pendingPurchases} compras pendientes
+                </Badge>
+              )}
+            </div>
+            <CardDescription>
+              Información importante que requiere atención, incluyendo sugerencias automáticas de reorden.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {alerts.map((alert, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 rounded-lg border-l-4 border-l-primary bg-muted/30">
-                  <User className="w-5 h-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">{alert.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Hace {Math.floor(Math.random() * 60)} minutos
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {notifications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay alertas en este momento.</p>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map((alert) => {
+                  const toneStyles = {
+                    reorder: "border-emerald-500 bg-emerald-500/10 text-emerald-700",
+                    critical: "border-destructive bg-destructive/10 text-destructive",
+                    warning: "border-amber-500 bg-amber-500/10 text-amber-700",
+                  };
+                  const icon =
+                    alert.tone === "reorder" ? (
+                      <ShoppingBag className="w-4 h-4" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4" />
+                    );
+
+                  return (
+                    <div
+                      key={alert.key}
+                      className={`flex items-start space-x-3 p-3 rounded-lg border-l-4 ${toneStyles[alert.tone]}`}
+                    >
+                      <div className="mt-0.5">{icon}</div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">{alert.title}</p>
+                        <p className="text-xs text-muted-foreground">{alert.description}</p>
+                        {alert.extra && <p className="text-xs text-primary font-medium">{alert.extra}</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 

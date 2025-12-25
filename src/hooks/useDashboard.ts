@@ -18,6 +18,14 @@ export interface DashboardData {
   top_products: { producto__nombre: string; total_vendido: number }[];
   week_sales: { day: string; total: number }[];
   alerts: { nombre: string; stock_actual: number; stock_minimo: number }[];
+  reorder_suggestions: {
+    producto: number;
+    nombre: string;
+    proveedor: number | null;
+    proveedor_nombre?: string | null;
+    cantidad: number;
+  }[];
+  pending_purchases: number;
   last_updated: string;
 }
 
