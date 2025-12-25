@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db.models.functions import Lower
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
+from .helpers import normalize_date
 
 
 class FamiliaProducto(models.Model):
@@ -258,6 +259,9 @@ class Compra(models.Model):
         quant = Decimal("0.01")
         if self.total is not None:
             self.total = Decimal(str(self.total)).quantize(quant, ROUND_HALF_UP)
+        if self.fecha:
+            self.fecha = normalize_date(self.fecha, "fecha")
+        self.full_clean()
         super().save(*args, **kwargs)
 
 
@@ -395,6 +399,19 @@ class LoteMateriaPrima(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.producto.nombre}"
+    
+    def save(self, *args, **kwargs):
+        quant = Decimal("0.01")
+        if self.fecha_recepcion:
+            self.fecha_recepcion = normalize_date(self.fecha_recepcion, "fecha_recepcion")
+        if self.fecha_vencimiento:
+            self.fecha_vencimiento = normalize_date(self.fecha_vencimiento, "fecha_vencimiento")
+        for field in ["cantidad_inicial", "cantidad_usada"]:
+            value = getattr(self, field, None)
+            if value is not None:
+                setattr(self, field, Decimal(str(value)).quantize(quant, ROUND_HALF_UP))
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     @property
     def fecha_ingreso(self):
@@ -475,10 +492,13 @@ class LoteProductoFinal(models.Model):
     
     def save(self, *args, **kwargs):
         quant = Decimal("0.01")
+        if self.fecha_produccion:
+            self.fecha_produccion = normalize_date(self.fecha_produccion, "fecha_produccion")
         base_cost = self.producto.costo if self.producto and self.producto.costo is not None else self.costo_unitario
         if base_cost is None:
             base_cost = 0
         self.costo_unitario = Decimal(str(base_cost)).quantize(quant, ROUND_HALF_UP)
+        self.full_clean()
         super().save(*args, **kwargs)
 
     @property

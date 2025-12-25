@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
+from .helpers import normalize_date
 
 
 class Cliente(models.Model):
@@ -30,8 +31,11 @@ class Venta(models.Model):
 
     def save(self, *args, **kwargs):
         quant = Decimal("0.01")
+        if self.fecha:
+            self.fecha = normalize_date(self.fecha, "fecha")
         if self.total is not None:
             self.total = Decimal(str(self.total)).quantize(quant, ROUND_HALF_UP)
+        self.full_clean()
         super().save(*args, **kwargs)
 
 
@@ -116,46 +120,53 @@ class DevolucionProducto(models.Model):
         quant = Decimal("0.01")
         if self.cantidad is not None:
             self.cantidad = Decimal(str(self.cantidad)).quantize(quant, ROUND_HALF_UP)
+        if self.fecha:
+            self.fecha = normalize_date(self.fecha, "fecha")
         is_new = self.pk is None
         with transaction.atomic():
             self._validar_devolucion()
+            self.full_clean()
             super().save(*args, **kwargs)
             if is_new:
                 self._ajustar_inventario()
 
     def _validar_devolucion(self):
-        if not self.venta_id:
-            raise ValidationError({"venta": "Venta requerida para la devolución"})
-        if not Venta.objects.filter(pk=self.venta_id).exists():
-            raise ValidationError({"venta": "Venta inexistente"})
         if self.cantidad is None or self.cantidad <= 0:
             raise ValidationError({"cantidad": "La cantidad debe ser mayor a cero"})
 
-        total_vendido = (
-            DetallesVenta.objects.filter(
-                venta_id=self.venta_id,
-                producto_id=self.producto_id,
-            )
-            .aggregate(total=Sum("cantidad"))
-            .get("total")
-        )
-        if not total_vendido:
-            raise ValidationError({"producto": "El producto no está en la venta indicada"})
+        if self.venta_id:
+            if not Venta.objects.filter(pk=self.venta_id).exists():
+                raise ValidationError({"venta": "Venta inexistente"})
 
-        total_devuelto = (
-            DevolucionProducto.objects.filter(
-                venta_id=self.venta_id,
-                producto_id=self.producto_id,
+            total_vendido = (
+                DetallesVenta.objects.filter(
+                    venta_id=self.venta_id,
+                    producto_id=self.producto_id,
+                )
+                .aggregate(total=Sum("cantidad"))
+                .get("total")
             )
-            .exclude(pk=self.pk)
-            .aggregate(total=Sum("cantidad"))
-            .get("total")
-            or Decimal("0")
-        )
-        disponible = Decimal(total_vendido) - Decimal(total_devuelto)
-        if self.cantidad > disponible:
+            if not total_vendido:
+                raise ValidationError({"producto": "El producto no está en la venta indicada"})
+
+            total_devuelto = (
+                DevolucionProducto.objects.filter(
+                    venta_id=self.venta_id,
+                    producto_id=self.producto_id,
+                )
+                .exclude(pk=self.pk)
+                .aggregate(total=Sum("cantidad"))
+                .get("total")
+                or Decimal("0")
+            )
+            disponible = Decimal(total_vendido) - Decimal(total_devuelto)
+            if self.cantidad > disponible:
+                raise ValidationError(
+                    {"cantidad": "La cantidad devuelta excede lo vendido disponible"}
+                )
+        elif not self.lote_final_id:
             raise ValidationError(
-                {"cantidad": "La cantidad devuelta excede lo vendido disponible"}
+                {"venta": "Debe asociarse a una venta o lote final para rastrear la devolución"}
             )
 
     def _ajustar_inventario(self):

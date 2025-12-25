@@ -197,9 +197,15 @@ class ProductoSerializer(serializers.ModelSerializer):
                 )
             return composiciones
         if self.instance:
+            base_qs = self.instance.ingredientes.filter(activo=True, lote__isnull=True)
+            if base_qs.exists():
+                return [
+                    (c.ingrediente, Decimal(str(c.cantidad_requerida)))
+                    for c in base_qs
+                ]
             return [
                 (c.ingrediente, Decimal(str(c.cantidad_requerida)))
-                for c in self.instance.ingredientes.filter(activo=True, lote__isnull=True)
+                for c in self.instance.ingredientes.filter(activo=True)
             ]
         return []
 
@@ -248,12 +254,12 @@ class ProductoSerializer(serializers.ModelSerializer):
         if unidades_posibles is not None and stock_actual is not None:
             maximo_permitido = Decimal(str(unidades_posibles))
             if self.instance:
-                maximo_permitido += previous_stock
+                maximo_permitido = max(maximo_permitido, previous_stock)
             if Decimal(str(stock_actual)) > maximo_permitido:
                 mensaje = "El stock actual no puede superar las unidades posibles según los ingredientes disponibles."
                 if self.instance:
                     mensaje = (
-                        "El stock actual no puede ser mayor que el stock anterior más las unidades posibles según los ingredientes disponibles."
+                        "El stock actual no puede ser mayor que el máximo permitido por los ingredientes disponibles."
                     )
                 raise serializers.ValidationError({"stock_actual": mensaje})
         return super().validate(attrs)

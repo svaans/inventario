@@ -138,7 +138,17 @@ class IngredientConsumptionWithLotRecipeTest(TestCase):
             nombre="Harina Lote",
             tipo="ingrediente",
             precio=0,
-            stock_actual=50,
+            stock_actual=525,
+            stock_minimo=0,
+            unidad_media=unidad_g,
+            categoria=cat_i,
+        )
+        self.carne = Producto.objects.create(
+            codigo="CLOT",
+            nombre="Carne Lote",
+            tipo="ingrediente",
+            precio=0,
+            stock_actual=350,
             stock_minimo=0,
             unidad_media=unidad_g,
             categoria=cat_i,
@@ -156,7 +166,13 @@ class IngredientConsumptionWithLotRecipeTest(TestCase):
         ComposicionProducto.objects.create(
             producto_final=self.final,
             ingrediente=self.har,
-            cantidad_requerida=5,
+            cantidad_requerida=100,
+            lote="R1",
+        )
+        ComposicionProducto.objects.create(
+            producto_final=self.final,
+            ingrediente=self.carne,
+            cantidad_requerida=50,
             lote="R1",
         )
         self.user = User.objects.create_user(username="lot_user", password="p")
