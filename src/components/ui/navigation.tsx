@@ -26,6 +26,7 @@ export function Navigation() {
     ...(isAdmin || isProduccion ? [{ name: "Inventario", path: "/inventory" }] : []),
     ...(user ? [{ name: "Productos", path: "/products" }] : []),
     ...(isVentas ? [{ name: "Ventas", path: "/sales" }] : []),
+    ...(isVentas ? [{ name: "Clientes", path: "/clients" }] : []),
     ...(isCompras ? [{ name: "Compras", path: "/purchases" }] : []),
     ...(isCompras ? [{ name: "Proveedores", path: "/suppliers" }] : []),
     ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),

@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 import logging
 from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.models import Group
-from rest_framework.generics import ListAPIView, ListCreateAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from rest_framework import viewsets
@@ -1468,3 +1468,11 @@ class AjusteInventarioView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class ClienteDetailView(RetrieveUpdateDestroyAPIView):
+    """Retrieve, update or delete a single client."""
+
+    queryset = Cliente.objects.all()
+    serializer_class = ClienteCreateSerializer
+    permission_classes = [IsAuthenticated]

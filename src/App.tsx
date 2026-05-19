@@ -23,6 +23,7 @@ import PurchaseList from "./pages/PurchaseList";
 import PurchaseNew from "./pages/PurchaseNew";
 import PurchaseDetail from "./pages/PurchaseDetail";
 import Suppliers from "./pages/Suppliers";
+import Clients from "./pages/Clients";
 
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
@@ -153,6 +154,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRoles={["compras"]}>
                   <Suppliers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                <ProtectedRoute allowedRoles={["ventas"]}>
+                  <Clients />
                 </ProtectedRoute>
               }
             />

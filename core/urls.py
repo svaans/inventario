@@ -40,6 +40,7 @@ from .api_views import (
     LoginAPIView,
     ProveedorViewSet,
     AjusteInventarioView,
+    ClienteDetailView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -105,6 +106,7 @@ urlpatterns = [
     path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
     path('api/unidades/', UnidadMedidaListView.as_view(), name='unidades_api'),
     path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
+    path('api/clientes/<int:pk>/', ClienteDetailView.as_view(), name='cliente_detail_api'),
     path('api/clientes/<int:pk>/historial/', ClienteHistoryView.as_view(), name='cliente_historial_api'),
     path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),
     path('api/sales-summary/', DailySalesSummary.as_view(), name='sales_summary_api'),

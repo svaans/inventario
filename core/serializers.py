@@ -53,11 +53,9 @@ class UnidadMedidaSerializer(serializers.ModelSerializer):
         
 
 class ClienteSerializer(serializers.ModelSerializer):
-    """Serializer para autocompletar clientes."""
-
     class Meta:
         model = Cliente
-        fields = ["id", "nombre"]
+        fields = ["id", "nombre", "contacto", "email", "direccion"]
 
 
 class ClienteCreateSerializer(serializers.ModelSerializer):
