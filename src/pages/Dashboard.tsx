@@ -1,4 +1,5 @@
 import { Badge } from "../components/ui/badge";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { BarChart3, Package, Archive, Calendar, AlertTriangle, ShoppingBag } from "lucide-react";
@@ -196,7 +197,9 @@ export default function Dashboard() {
             <CardDescription>Fijos vs variables</CardDescription>
           </CardHeader>
           <CardContent>
-            <CostPieChart fixed={data?.fixed_costs ?? 0} variable={data?.variable_costs ?? 0} />
+            <ErrorBoundary label="Error al cargar gráfico de costos">
+              <CostPieChart fixed={data?.fixed_costs ?? 0} variable={data?.variable_costs ?? 0} />
+            </ErrorBoundary>
             <p className="text-center text-sm mt-4">
               Punto de equilibrio:
               {data?.break_even ? ` ${formatCurrency(data.break_even)}` : " N/A"}
@@ -211,7 +214,9 @@ export default function Dashboard() {
             <CardDescription>Operativos vs no operativos</CardDescription>
           </CardHeader>
           <CardContent>
-            <OperationalPieChart operational={data?.operational_costs ?? 0} nonOperational={data?.non_operational_costs ?? 0} />
+            <ErrorBoundary label="Error al cargar gráfico operativo">
+              <OperationalPieChart operational={data?.operational_costs ?? 0} nonOperational={data?.non_operational_costs ?? 0} />
+            </ErrorBoundary>
             {data && data.non_operational_percent > 15 && (
               <Alert variant="destructive" className="mt-4">
                 <AlertTriangle className="h-4 w-4" />

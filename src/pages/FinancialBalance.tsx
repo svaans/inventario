@@ -12,6 +12,7 @@ import { formatCurrency } from "../utils/formatCurrency";
 import { toast } from "../hooks/use-toast";
 import { TrendingUp, TrendingDown, Wallet, ArrowRightLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f97316", "#a855f7", "#f43f5e", "#06b6d4"];
 
@@ -139,6 +140,7 @@ export default function FinancialBalance() {
       </div>
 
       {/* Charts row 1 */}
+      <ErrorBoundary label="Error al cargar gráficos financieros">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -247,6 +249,8 @@ export default function FinancialBalance() {
           </CardContent>
         </Card>
       </div>
+
+      </ErrorBoundary>
 
       {/* Transactions section */}
       <Card>

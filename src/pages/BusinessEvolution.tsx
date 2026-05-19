@@ -8,6 +8,7 @@ import { fetchCategories } from "../utils/api";
 import { formatCurrency } from "../utils/formatCurrency";
 import { Skeleton } from "../components/ui/skeleton";
 import { TrendingUp, Users, DollarSign, BarChart2 } from "lucide-react";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 
 export default function BusinessEvolution() {
   const [period, setPeriod] = useState("month");
@@ -157,6 +158,7 @@ export default function BusinessEvolution() {
         </div>
       )}
 
+      <ErrorBoundary label="Error al cargar gráficos de evolución">
       {chartData.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -213,6 +215,7 @@ export default function BusinessEvolution() {
           </Card>
         </div>
       )}
+      </ErrorBoundary>
     </div>
   );
 }

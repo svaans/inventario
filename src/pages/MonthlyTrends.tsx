@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import { Download, Printer, TrendingDown, Package, ShoppingCart, DollarSign } from "lucide-react";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { formatCurrency } from "../utils/formatCurrency";
 
 const CATEGORY_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#a855f7", "#f43f5e", "#06b6d4"];
@@ -141,6 +142,7 @@ export default function MonthlyTrends() {
       </div>
 
       {/* Charts */}
+      <ErrorBoundary label="Error al cargar gráficos de tendencias">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -243,6 +245,8 @@ export default function MonthlyTrends() {
           </CardContent>
         </Card>
       </div>
+      </div>
+      </ErrorBoundary>
     </div>
   );
 }
