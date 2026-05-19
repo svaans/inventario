@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreatePurchase } from "@/hooks/useCreatePurchase";
+import { useCreateSupplier } from "@/hooks/useCreateSupplier";
 import { useProducts } from "@/hooks/useProducts";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { toast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ import {
   ShoppingCart,
   Trash2,
   User,
+  UserPlus,
 } from "lucide-react";
 
 const SUPPLIER_API_URL = import.meta.env.VITE_SUPPLIER_API_URL || import.meta.env.SUPPLIER_API_URL;
@@ -63,12 +65,15 @@ export function PurchaseForm() {
   const { data: products = [] } = useProducts();
   const { data: suppliers = [] } = useSuppliers();
   const createPurchase = useCreatePurchase();
+  const createSupplier = useCreateSupplier();
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [step, setStep] = useState(0);
   const [fecha, setFecha] = useState(today);
   const [supplierId, setSupplierId] = useState<number | null>(null);
   const [supplierSearch, setSupplierSearch] = useState("");
+  const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({ nombre: "", contacto: "", telefono: "", email: "" });
   const [items, setItems] = useState<PurchaseItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
@@ -116,6 +121,20 @@ export function PurchaseForm() {
 
   const removeItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCreateSupplier = async () => {
+    if (!newSupplier.nombre.trim()) return;
+    try {
+      const created = await createSupplier.mutateAsync(newSupplier);
+      setSupplierId(created.id);
+      setSupplierSearch(created.nombre);
+      setShowNewSupplier(false);
+      setNewSupplier({ nombre: "", contacto: "", telefono: "", email: "" });
+      toast({ title: "Proveedor registrado" });
+    } catch (err) {
+      toast({ title: "Error al registrar proveedor", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
+    }
   };
 
   const handleNextStep1 = () => {
@@ -243,65 +262,132 @@ export function PurchaseForm() {
             <Input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="max-w-xs" />
           </div>
 
-          <div className="space-y-2">
-            <Label>Proveedor</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input
-                className="pl-9"
-                placeholder="Buscar proveedor…"
-                value={supplierSearch}
-                onChange={(e) => { setSupplierSearch(e.target.value); setSupplierId(null); }}
-              />
-            </div>
-          </div>
+          {!showNewSupplier ? (
+            <>
+              <div className="space-y-2">
+                <Label>Proveedor</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    className="pl-9"
+                    placeholder="Buscar proveedor…"
+                    value={supplierSearch}
+                    onChange={(e) => { setSupplierSearch(e.target.value); setSupplierId(null); }}
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            {filteredSuppliers.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No se encontraron proveedores.</p>
-            ) : (
-              filteredSuppliers.map((s) => {
-                const selected = supplierId === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => { setSupplierId(s.id); setSupplierSearch(s.nombre); }}
-                    className={`w-full flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors
-                      ${selected
-                        ? "border-primary bg-primary/5 dark:bg-primary/10"
-                        : "border-border bg-card hover:bg-muted/40"}`}
+              {/* Selected chip */}
+              {supplierId && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-medium text-primary flex-1">{supplierSearch}</span>
+                  <button type="button" onClick={() => { setSupplierId(null); setSupplierSearch(""); }} className="text-muted-foreground hover:text-foreground text-xs transition-colors">✕</button>
+                </div>
+              )}
+
+              {/* Results list */}
+              {!supplierId && (
+                <div className="space-y-2">
+                  {filteredSuppliers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">No se encontraron proveedores.</p>
+                  ) : (
+                    filteredSuppliers.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => { setSupplierId(s.id); setSupplierSearch(s.nombre); }}
+                        className="w-full flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                          <Building2 className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">{s.nombre}</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
+                            {s.contacto && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <User className="w-3 h-3" />{s.contacto}
+                              </span>
+                            )}
+                            {s.telefono && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Phone className="w-3 h-3" />{s.telefono}
+                              </span>
+                            )}
+                            {s.email && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Mail className="w-3 h-3" />{s.email}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowNewSupplier(true)}
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <UserPlus className="w-4 h-4" /> Registrar nuevo proveedor
+              </button>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <p className="text-sm font-semibold">Nuevo proveedor</p>
+                <Input
+                  placeholder="Nombre *"
+                  value={newSupplier.nombre}
+                  onChange={(e) => setNewSupplier({ ...newSupplier, nombre: e.target.value })}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="Contacto"
+                      value={newSupplier.contacto}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, contacto: e.target.value })}
+                      className="pl-9"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="Teléfono"
+                      value={newSupplier.telefono}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, telefono: e.target.value })}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Email (opcional)"
+                    type="email"
+                    value={newSupplier.email}
+                    onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value })}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end pt-1">
+                  <Button variant="outline" size="sm" onClick={() => setShowNewSupplier(false)}>Cancelar</Button>
+                  <Button
+                    size="sm"
+                    onClick={handleCreateSupplier}
+                    disabled={!newSupplier.nombre.trim() || createSupplier.isPending}
                   >
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5
-                      ${selected ? "bg-primary/15" : "bg-muted"}`}>
-                      <Building2 className={`w-4 h-4 ${selected ? "text-primary" : "text-muted-foreground"}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{s.nombre}</p>
-                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
-                        {s.contacto && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <User className="w-3 h-3" />{s.contacto}
-                          </span>
-                        )}
-                        {s.telefono && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Phone className="w-3 h-3" />{s.telefono}
-                          </span>
-                        )}
-                        {s.email && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Mail className="w-3 h-3" />{s.email}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {selected && <Check className="w-4 h-4 text-primary shrink-0 mt-1" />}
-                  </button>
-                );
-              })
-            )}
-          </div>
+                    {createSupplier.isPending ? "Guardando…" : "Guardar"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex justify-end">
             <Button onClick={handleNextStep1} disabled={!supplierId} className="gap-2">
