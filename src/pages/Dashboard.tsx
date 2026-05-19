@@ -57,56 +57,56 @@ export default function Dashboard() {
       </div>
 
       {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-gradient-primary text-primary-foreground">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ventas Hoy</CardTitle>
-            <BarChart3 className="h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(data?.sales_today ?? 0)}</div>
-            <p className="text-xs opacity-80">
-              +{((data?.sales_week ?? 0) / (dailyGoal || 1)).toFixed(1)}% vs ayer
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Productos</CardTitle>
-            <Package className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.total_products ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {data?.low_stock ?? 0} con stock bajo
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Producción Diaria</CardTitle>
-            <Archive className="h-4 w-4 text-golden" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.production_today ?? 0}/{dailyGoal}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="border-0 shadow-sm bg-emerald-50 dark:bg-emerald-950/40 transition-transform hover:-translate-y-0.5 duration-200">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ventas hoy</p>
+              <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/60">
+                <BarChart3 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
             </div>
-            <Progress value={((data?.production_today ?? 0) / dailyGoal) * 100} className="mt-2" />
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(data?.sales_today ?? 0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{formatCurrency(data?.sales_week ?? 0)} esta semana</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Inventario</CardTitle>
-            <Calendar className="h-4 w-4 text-brown" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(data?.inventory_value ?? 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor total del stock
-            </p>
+        <Card className="border-0 shadow-sm bg-blue-50 dark:bg-blue-950/40 transition-transform hover:-translate-y-0.5 duration-200">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Productos</p>
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/60">
+                <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{data?.total_products ?? 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">{data?.low_stock ?? 0} con stock bajo</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-orange-50 dark:bg-orange-950/40 transition-transform hover:-translate-y-0.5 duration-200">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Producción diaria</p>
+              <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/60">
+                <Archive className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{data?.production_today ?? 0}<span className="text-base font-normal text-muted-foreground">/{dailyGoal}</span></p>
+            <Progress value={((data?.production_today ?? 0) / dailyGoal) * 100} className="mt-2 h-1.5" />
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-amber-50 dark:bg-amber-950/40 transition-transform hover:-translate-y-0.5 duration-200">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor inventario</p>
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/60">
+                <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{formatCurrency(data?.inventory_value ?? 0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Valor total del stock</p>
           </CardContent>
         </Card>
       </div>

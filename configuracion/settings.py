@@ -15,9 +15,12 @@ import dj_database_url
 import os
 from decimal import Decimal
 from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -186,9 +189,9 @@ CORS_ALLOW_CREDENTIALS = True
 # Allow cross-site POSTs from the Vite dev server during development
 CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([*_DEFAULT_ORIGINS, *_EXTRA_ORIGINS]))
 
-SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 
-CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
 

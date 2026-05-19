@@ -1,5 +1,6 @@
 # Python dependencies
 Django>=5.2
+python-dotenv
 openpyxl
 reportlab
 # For API integration with React

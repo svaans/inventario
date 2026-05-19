@@ -104,40 +104,43 @@ export default function PurchaseList() {
       </Card>
 
       {isLoading ? (
-        <Skeleton className="h-40" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
+        </div>
       ) : purchases.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            No hay compras registradas con los filtros actuales.
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+          </div>
+          <h3 className="text-base font-semibold mb-1">Sin compras registradas</h3>
+          <p className="text-sm text-muted-foreground">No hay compras con los filtros actuales.</p>
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-2">
           {purchases.map((purchase) => (
-            <Card key={purchase.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle>Compra #{purchase.id}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{purchase.fecha}</p>
+            <Link
+              key={purchase.id}
+              to={`/purchases/${purchase.id}`}
+              className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted/40 transition-colors group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                 </div>
-                <div className="text-lg font-semibold">{formatCurrency(purchase.total)}</div>
-              </CardHeader>
-              <CardContent className="grid md:grid-cols-3 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Proveedor: </span>
-                  {purchase.proveedor_nombre ?? purchase.proveedor}
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">Compra #{purchase.id}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                    <span>{purchase.fecha}</span>
+                    <span>{purchase.proveedor_nombre ?? purchase.proveedor}</span>
+                    <span>{purchase.detalles.length} línea{purchase.detalles.length !== 1 ? "s" : ""}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Líneas: </span>
-                  {purchase.detalles.length}
-                </div>
-                <div>
-                  <Link to={`/purchases/${purchase.id}`} className="text-primary hover:underline">
-                    Ver detalle
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-semibold text-sm">{formatCurrency(purchase.total)}</span>
+                <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </div>
+            </Link>
           ))}
         </div>
       )}
