@@ -3,6 +3,7 @@ from django.db.models import F, Sum, Count, Case, When, Avg, Q, Prefetch
 from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
 from django.utils.timezone import now
 from datetime import timedelta, datetime, date
+from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 import logging
 from django.contrib.auth import authenticate, get_user_model, login
@@ -1508,3 +1509,87 @@ class CompraReceptionView(APIView):
             compra.save(update_fields=["estado"])
 
         return Response({"id": compra.id, "estado": compra.estado}, status=status.HTTP_200_OK)
+
+
+class VentaDetailView(APIView):
+    """Return full sale detail including line items."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        venta = get_object_or_404(
+            Venta.objects.select_related("cliente", "usuario")
+            .prefetch_related("detallesventa_set__producto"),
+            pk=pk,
+        )
+        detalles = [
+            {
+                "producto": d.producto_id,
+                "producto_nombre": d.producto.nombre,
+                "cantidad": float(d.cantidad),
+                "precio_unitario": float(d.precio_unitario),
+                "subtotal": float(d.cantidad * d.precio_unitario),
+            }
+            for d in venta.detallesventa_set.all()
+        ]
+        data = {
+            "id": venta.id,
+            "fecha": venta.fecha.isoformat(),
+            "total": float(venta.total),
+            "cliente": venta.cliente.nombre if venta.cliente else None,
+            "cliente_id": venta.cliente_id,
+            "usuario": venta.usuario.username if venta.usuario else None,
+            "detalles": detalles,
+        }
+        return Response(data)
+
+
+class VentaReturnView(APIView):
+    """Register a product return for a given sale."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        venta = get_object_or_404(Venta, pk=pk)
+        items = request.data.get("items", [])
+        if not items:
+            return Response({"detail": "Debes indicar al menos un producto a devolver."}, status=status.HTTP_400_BAD_REQUEST)
+
+        motivo = request.data.get("motivo", "Devolución de venta")
+        reembolso = bool(request.data.get("reembolso", False))
+        fecha = request.data.get("fecha") or now().date()
+
+        created = []
+        with transaction.atomic():
+            for item in items:
+                try:
+                    producto = Producto.objects.select_for_update().get(id=item["producto"])
+                except Producto.DoesNotExist:
+                    return Response({"detail": f"Producto {item['producto']} no existe."}, status=status.HTTP_400_BAD_REQUEST)
+                cantidad = Decimal(str(item["cantidad"]))
+                if cantidad <= 0:
+                    continue
+                dev = DevolucionProducto.objects.create(
+                    fecha=fecha,
+                    venta=venta,
+                    producto=producto,
+                    motivo=motivo,
+                    cantidad=cantidad,
+                    responsable=request.user,
+                    reembolso=reembolso,
+                    clasificacion=DevolucionProducto.CLASIFICACION_REINTEGRO,
+                )
+                Producto.objects.filter(id=producto.id).update(
+                    stock_actual=F("stock_actual") + cantidad
+                )
+                MovimientoInventario.objects.create(
+                    producto=producto,
+                    tipo="entrada",
+                    cantidad=cantidad,
+                    motivo=f"Devolución venta #{venta.id}",
+                    usuario=request.user,
+                    operacion_tipo=MovimientoInventario.OPERACION_AJUSTE,
+                )
+                created.append(dev.id)
+
+        return Response({"created": created, "count": len(created)}, status=status.HTTP_201_CREATED)

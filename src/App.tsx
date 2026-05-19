@@ -24,6 +24,7 @@ import PurchaseNew from "./pages/PurchaseNew";
 import PurchaseDetail from "./pages/PurchaseDetail";
 import Suppliers from "./pages/Suppliers";
 import Clients from "./pages/Clients";
+import SaleDetail from "./pages/SaleDetail";
 
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
@@ -98,6 +99,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRoles={["compras"]}>
                   <PurchaseDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sales/:id"
+              element={
+                <ProtectedRoute allowedRoles={["ventas"]}>
+                  <SaleDetail />
                 </ProtectedRoute>
               }
             />

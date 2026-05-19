@@ -133,9 +133,10 @@ export default function Sales() {
           {filtered.map((sale) => {
             const isToday = sale.fecha === new Date().toISOString().slice(0, 10);
             return (
-              <div
+              <Link
                 key={sale.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted/40 transition-colors"
+                to={`/sales/${sale.id}`}
+                className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted/40 transition-colors group"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -163,8 +164,11 @@ export default function Sales() {
                     </div>
                   </div>
                 </div>
-                <span className="font-semibold text-sm shrink-0">{formatCurrency(sale.total)}</span>
-              </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-semibold text-sm">{formatCurrency(sale.total)}</span>
+                  <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </div>
+              </Link>
             );
           })}
         </div>

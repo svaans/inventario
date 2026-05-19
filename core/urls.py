@@ -42,6 +42,8 @@ from .api_views import (
     AjusteInventarioView,
     ClienteDetailView,
     CompraReceptionView,
+    VentaDetailView,
+    VentaReturnView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -116,6 +118,8 @@ urlpatterns = [
     path('api/reorder/', ReorderSuggestionView.as_view(), name='reorder_api'),
     path('api/ajuste-inventario/', AjusteInventarioView.as_view(), name='ajuste_inventario_api'),
     path('api/compras/<int:pk>/recibir/', CompraReceptionView.as_view(), name='compra_recepcion_api'),
+    path('api/ventas/<int:pk>/', VentaDetailView.as_view(), name='venta_detail_api'),
+    path('api/ventas/<int:pk>/devolucion/', VentaReturnView.as_view(), name='venta_devolucion_api'),
     path('api/me/', CurrentUserView.as_view(), name='current_user_api'),
     path('api/trazabilidad/<str:codigo>/', TraceabilityView.as_view(), name='traceability_api'),
     path('password_reset/',
