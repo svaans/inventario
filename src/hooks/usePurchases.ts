@@ -10,12 +10,15 @@ export interface PurchaseDetail {
   producto_nombre?: string;
 }
 
+export type PurchaseEstado = "pendiente" | "recibido" | "parcial";
+
 export interface Purchase {
   id: number;
   proveedor: number;
   proveedor_nombre?: string;
   fecha: string;
   total: number;
+  estado: PurchaseEstado;
   detalles: PurchaseDetail[];
 }
 
@@ -25,6 +28,7 @@ interface PurchaseAPI {
   proveedor_nombre?: string;
   fecha: string;
   total: string | number;
+  estado?: string;
   detalles?: {
     producto: number;
     producto_nombre?: string;
@@ -62,6 +66,7 @@ export function usePurchases(filters: PurchaseFilters = {}) {
           (typeof purchase.proveedor === "object" ? purchase.proveedor.nombre : undefined),
         fecha: purchase.fecha,
         total: Number(purchase.total ?? 0),
+        estado: (purchase.estado ?? "recibido") as PurchaseEstado,
         detalles:
           purchase.detalles?.map((d) => ({
             producto: d.producto,

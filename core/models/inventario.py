@@ -247,9 +247,19 @@ class Proveedor(models.Model):
 
 class Compra(models.Model):
     """Orden de compra generada a un proveedor."""
+    ESTADO_PENDIENTE = "pendiente"
+    ESTADO_RECIBIDO = "recibido"
+    ESTADO_PARCIAL = "parcial"
+    ESTADO_CHOICES = [
+        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_RECIBIDO, "Recibido"),
+        (ESTADO_PARCIAL, "Recibido parcial"),
+    ]
+
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha = models.DateField()
     total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=ESTADO_RECIBIDO)
 
     def __str__(self):
         return f"Compra {self.id} - {self.fecha}"

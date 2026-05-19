@@ -688,7 +688,7 @@ class CompraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Compra
-        fields = ["id", "proveedor", "proveedor_nombre", "fecha", "total", "detalles"]
+        fields = ["id", "proveedor", "proveedor_nombre", "fecha", "total", "estado", "detalles"]
 
 
 class CompraCreateSerializer(serializers.ModelSerializer):
@@ -716,7 +716,7 @@ class CompraCreateSerializer(serializers.ModelSerializer):
         proveedor = validated_data.get("proveedor")
         proveedor_id = proveedor.id if proveedor else None
         with transaction.atomic():
-            compra = Compra.objects.create(total=0, **validated_data)
+            compra = Compra.objects.create(total=0, estado=Compra.ESTADO_PENDIENTE, **validated_data)
             total = Decimal("0")
 
             for det in detalles_data:
@@ -738,18 +738,6 @@ class CompraCreateSerializer(serializers.ModelSerializer):
                     producto=producto_locked,
                     cantidad=cantidad,
                     precio_unitario=precio_unitario,
-                )
-                Producto.objects.filter(id=producto_locked.id).update(
-                    stock_actual=F("stock_actual") + cantidad
-                )
-                MovimientoInventario.objects.create(
-                    producto=producto_locked,
-                    tipo="entrada",
-                    cantidad=cantidad,
-                    motivo="Compra",
-                    usuario=usuario,
-                    operacion_tipo=MovimientoInventario.OPERACION_COMPRA,
-                    compra=compra,
                 )
                 total += cantidad * precio_unitario
 

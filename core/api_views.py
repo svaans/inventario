@@ -63,6 +63,7 @@ from .models import (
     FacturaVenta,
     MovimientoInventario,
     Compra,
+    DetalleCompra,
     Categoria,
     Cliente,
     Proveedor,
@@ -1476,3 +1477,34 @@ class ClienteDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Cliente.objects.all()
     serializer_class = ClienteCreateSerializer
     permission_classes = [IsAuthenticated]
+
+
+class CompraReceptionView(APIView):
+    """Confirm receipt of a purchase order and update stock."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        compra = get_object_or_404(Compra, pk=pk)
+        if compra.estado == Compra.ESTADO_RECIBIDO:
+            return Response({"detail": "Esta compra ya fue recibida."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            detalles = DetalleCompra.objects.filter(compra=compra).select_related("producto")
+            for det in detalles:
+                Producto.objects.filter(id=det.producto_id).update(
+                    stock_actual=F("stock_actual") + det.cantidad
+                )
+                MovimientoInventario.objects.create(
+                    producto=det.producto,
+                    tipo="entrada",
+                    cantidad=det.cantidad,
+                    motivo="Recepción de compra",
+                    usuario=request.user,
+                    operacion_tipo=MovimientoInventario.OPERACION_COMPRA,
+                    compra=compra,
+                )
+            compra.estado = Compra.ESTADO_RECIBIDO
+            compra.save(update_fields=["estado"])
+
+        return Response({"id": compra.id, "estado": compra.estado}, status=status.HTTP_200_OK)

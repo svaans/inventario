@@ -18,6 +18,7 @@ export function usePurchase(id: string | number) {
           data.proveedor_nombre ?? (typeof data.proveedor === "object" ? data.proveedor.nombre : undefined),
         fecha: data.fecha,
         total: Number(data.total ?? 0),
+        estado: (data.estado ?? "recibido") as import("./usePurchases").PurchaseEstado,
         detalles: (data.detalles ?? []).map((d: any) => ({
           producto: d.producto,
           producto_nombre: d.producto_nombre,

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { usePurchases } from "@/hooks/usePurchases";
+import type { PurchaseEstado } from "@/hooks/usePurchases";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { formatCurrency } from "@/utils/formatCurrency";
+
+function EstadoBadge({ estado }: { estado: PurchaseEstado }) {
+  if (estado === "recibido") {
+    return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-100">Recibido</Badge>;
+  }
+  if (estado === "parcial") {
+    return <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-100">Parcial</Badge>;
+  }
+  return <Badge className="text-xs bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 hover:bg-orange-100">Pendiente</Badge>;
+}
 
 export default function PurchaseList() {
   const { data: suppliers = [] } = useSuppliers();
@@ -136,7 +148,8 @@ export default function PurchaseList() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
+                <EstadoBadge estado={purchase.estado} />
                 <span className="font-semibold text-sm">{formatCurrency(purchase.total)}</span>
                 <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </div>
