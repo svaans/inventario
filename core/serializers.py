@@ -33,6 +33,7 @@ from .models import (
     RegistroTurno,
     LoteMateriaPrima,
     AuditLog,
+    Proveedor,
 )
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -921,3 +922,48 @@ class AuditLogSerializer(serializers.ModelSerializer):
 
     def get_objeto_repr(self, obj):
         return str(obj.objeto)
+
+
+class ProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Proveedor
+        fields = ["id", "nombre", "contacto", "telefono", "email", "direccion"]
+
+
+class AjusteInventarioSerializer(serializers.Serializer):
+    producto = serializers.PrimaryKeyRelatedField(queryset=Producto.objects.all())
+    cantidad_nueva = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    motivo = serializers.CharField(max_length=200)
+
+    def create(self, validated_data):
+        from decimal import Decimal
+        request = self.context["request"]
+        producto = validated_data["producto"]
+        cantidad_nueva = Decimal(str(validated_data["cantidad_nueva"]))
+        cantidad_antes = Decimal(str(producto.stock_actual))
+        tipo = (
+            AjusteInventario.TIPO_INCREMENTO
+            if cantidad_nueva >= cantidad_antes
+            else AjusteInventario.TIPO_DECREMENTO
+        )
+        ajuste = AjusteInventario.objects.create(
+            producto=producto,
+            cantidad_antes=cantidad_antes,
+            cantidad_despues=cantidad_nueva,
+            tipo=tipo,
+            motivo=validated_data["motivo"],
+            responsable=request.user,
+        )
+        diferencia = cantidad_nueva - cantidad_antes
+        MovimientoInventario.objects.create(
+            producto=producto,
+            tipo="entrada" if diferencia >= 0 else "salida",
+            cantidad=abs(diferencia),
+            motivo=validated_data["motivo"],
+            usuario=request.user,
+            operacion_tipo=MovimientoInventario.OPERACION_AJUSTE,
+            ajuste=ajuste,
+        )
+        producto.stock_actual = cantidad_nueva
+        producto.save(update_fields=["stock_actual"])
+        return ajuste

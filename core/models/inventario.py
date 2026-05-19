@@ -236,8 +236,10 @@ class HistorialPrecio(models.Model):
 class Proveedor(models.Model):
     """Entidad que abastece productos o insumos."""
     nombre = models.CharField(max_length=100)
-    contacto = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=200)
+    contacto = models.CharField(max_length=100, blank=True, default="")
+    telefono = models.CharField(max_length=50, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
+    direccion = models.CharField(max_length=200, blank=True, default="")
 
     def __str__(self):
         return self.nombre

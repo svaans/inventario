@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import AddProductDialog from "../components/inventory/AddProductDialog";
 import { InventoryStats } from "../components/inventory/InventoryStats";
 import { Skeleton } from "../components/ui/skeleton";
-import { Search, Package, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Package, Pencil, Trash2, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { StockAdjustmentDialog } from "../components/inventory/StockAdjustmentDialog";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { getStockStatus } from "../utils/stockStatus";
@@ -64,10 +65,12 @@ function ProductCard({
   product,
   onEdit,
   onDelete,
+  onAdjust,
 }: {
   product: Product;
   onEdit: (p: Product) => void;
   onDelete: (id: number) => void;
+  onAdjust: (p: Product) => void;
 }) {
   const [showIngredients, setShowIngredients] = useState(false);
   const stockStatus = getStockStatus(product.stock, product.minStock);
@@ -171,6 +174,15 @@ function ProductCard({
             <Pencil className="w-3 h-3" />
             Editar
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+            onClick={() => onAdjust(product)}
+            title="Ajustar stock"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+          </Button>
           <ConfirmDialog
             trigger={
               <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
@@ -205,6 +217,7 @@ export default function Inventory() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
+  const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -540,6 +553,7 @@ export default function Inventory() {
               product={product}
               onEdit={setEditing}
               onDelete={handleDelete}
+              onAdjust={setAdjustingProduct}
             />
           ))}
         </div>
@@ -568,6 +582,15 @@ export default function Inventory() {
             </Button>
           )}
         </div>
+      )}
+
+      {adjustingProduct && (
+        <StockAdjustmentDialog
+          product={adjustingProduct}
+          open={!!adjustingProduct}
+          onOpenChange={(open) => { if (!open) setAdjustingProduct(null); }}
+          onSuccess={refetch}
+        />
       )}
     </div>
   );

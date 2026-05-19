@@ -38,6 +38,8 @@ from .api_views import (
     ReorderSuggestionView,
     AuditLogViewSet,
     LoginAPIView,
+    ProveedorViewSet,
+    AjusteInventarioView,
 )
 from django.shortcuts import redirect
 from django.contrib.auth import logout
@@ -57,6 +59,7 @@ router.register(r"api/devoluciones", DevolucionViewSet, basename="devoluciones")
 router.register(r"api/shift-logs", RegistroTurnoViewSet, basename="shiftlogs")
 router.register(r"api/audit-logs", AuditLogViewSet, basename="auditlogs")
 router.register(r"api/compras", CompraViewSet, basename="compras")
+router.register(r"api/proveedores", ProveedorViewSet, basename="proveedores")
 
 urlpatterns = [
     path('', lambda request: redirect('login'), name='root_redirect'),
@@ -108,6 +111,7 @@ urlpatterns = [
     path('api/inventory-activity/', InventoryActivityView.as_view(), name='inventory_activity_api'),
     path('api/production-plan/', ProductionPlanView.as_view(), name='production_plan_api'),
     path('api/reorder/', ReorderSuggestionView.as_view(), name='reorder_api'),
+    path('api/ajuste-inventario/', AjusteInventarioView.as_view(), name='ajuste_inventario_api'),
     path('api/me/', CurrentUserView.as_view(), name='current_user_api'),
     path('api/trazabilidad/<str:codigo>/', TraceabilityView.as_view(), name='traceability_api'),
     path('password_reset/',

@@ -93,6 +93,8 @@ from .serializers import (
     RegistroTurnoSerializer,
     UnidadMedidaSerializer,
     AuditLogSerializer,
+    ProveedorSerializer,
+    AjusteInventarioSerializer,
 )
 from .utils import (
     calcular_perdidas_devolucion,
@@ -1428,3 +1430,41 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
             except (ValueError, ContentType.DoesNotExist):
                 pass
         return qs
+
+
+class ProveedorViewSet(viewsets.ModelViewSet):
+    """CRUD completo de proveedores."""
+
+    queryset = Proveedor.objects.all().order_by("nombre")
+    serializer_class = ProveedorSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        search = self.request.query_params.get("search", "")
+        if search:
+            qs = qs.filter(nombre__icontains=search)
+        return qs
+
+
+class AjusteInventarioView(APIView):
+    """Registra un ajuste manual de stock para un producto."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AjusteInventarioSerializer(data=request.data, context={"request": request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        ajuste = serializer.save()
+        return Response(
+            {
+                "id": ajuste.id,
+                "producto": ajuste.producto_id,
+                "cantidad_antes": float(ajuste.cantidad_antes),
+                "cantidad_despues": float(ajuste.cantidad_despues),
+                "tipo": ajuste.tipo,
+                "motivo": ajuste.motivo,
+            },
+            status=status.HTTP_201_CREATED,
+        )
