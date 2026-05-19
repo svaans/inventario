@@ -245,7 +245,6 @@ export default function MonthlyTrends() {
           </CardContent>
         </Card>
       </div>
-      </div>
       </ErrorBoundary>
     </div>
   );
