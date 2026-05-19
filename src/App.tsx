@@ -22,6 +22,7 @@ import { ensureCSRFToken } from "./utils/csrf";
 import PurchaseList from "./pages/PurchaseList";
 import PurchaseNew from "./pages/PurchaseNew";
 import PurchaseDetail from "./pages/PurchaseDetail";
+import Suppliers from "./pages/Suppliers";
 
 // Configuramos React Query con un tiempo de stale más amplio para evitar
 // refetch innecesarios pero asegurando sincronización cuando la ventana
@@ -144,6 +145,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Employees />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/suppliers"
+              element={
+                <ProtectedRoute allowedRoles={["compras"]}>
+                  <Suppliers />
                 </ProtectedRoute>
               }
             />

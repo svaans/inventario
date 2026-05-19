@@ -27,6 +27,7 @@ export function Navigation() {
     ...(user ? [{ name: "Productos", path: "/products" }] : []),
     ...(isVentas ? [{ name: "Ventas", path: "/sales" }] : []),
     ...(isCompras ? [{ name: "Compras", path: "/purchases" }] : []),
+    ...(isCompras ? [{ name: "Proveedores", path: "/suppliers" }] : []),
     ...(isAdmin ? [{ name: "Empleados", path: "/employees" }] : []),
     ...(isFinanzas ? [{ name: "Balance", path: "/finanzas" }] : []),
     ...(isFinanzas ? [{ name: "Dashboard", path: "/dashboard" }] : []),
