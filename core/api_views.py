@@ -124,8 +124,11 @@ class CriticalProductListView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Producto.objects.filter(stock_actual__lte=F("stock_minimo")).order_by(
-            "nombre"
+        return (
+            Producto.objects
+            .filter(stock_actual__lte=F("stock_minimo"))
+            .select_related("categoria", "proveedor", "familia", "unidad_media")
+            .order_by("nombre")
         )
 
 class ProductoPagination(PageNumberPagination):
@@ -404,6 +407,15 @@ class VentaFacturaEmailView(APIView):
         if not correo:
             return Response(
                 {"detail": "No hay correo disponible para enviar la factura."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_email(correo)
+        except DjangoValidationError:
+            return Response(
+                {"detail": "La dirección de correo proporcionada no es válida."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         factura = crear_factura_para_venta(venta)
@@ -1011,9 +1023,13 @@ class DevolucionRatesView(APIView):
                 }
             )
 
+        products_by_responsable: dict[int, set[int]] = {}
+        for row in devs.values("responsable", "producto"):
+            products_by_responsable.setdefault(row["responsable"], set()).add(row["producto"])
+
         result_resp = []
         for item in devs.values("responsable", "responsable__username").annotate(total=Sum("cantidad")):
-            prods = devs.filter(responsable_id=item["responsable"]).values_list("producto", flat=True).distinct()
+            prods = products_by_responsable.get(item["responsable"], set())
             total_sales = sum(sales_by_product.get(pid, 0) for pid in prods)
             rate = float(item["total"]) / float(total_sales) * 100 if total_sales else 0.0
             result_resp.append(

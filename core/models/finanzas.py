@@ -19,7 +19,7 @@ class Balance(models.Model):
     anio = models.IntegerField()
     total_ingresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     total_egresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
-    utilidad = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    utilidad = models.DecimalField(max_digits=12, decimal_places=2)
     ingresos_operativos = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -47,13 +47,11 @@ class Balance(models.Model):
     utilidad_operativa = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        validators=[MinValueValidator(0)],
         default=0,
     )
     utilidad_neta_real = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        validators=[MinValueValidator(0)],
         default=0,
     )
     cerrado = models.BooleanField(default=False)

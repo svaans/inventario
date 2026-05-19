@@ -31,8 +31,10 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
-#ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'https://inventario-o9gf.onrender.com']
-ALLOWED_HOSTS = ['*']
+_DEFAULT_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'inventario-o9gf.onrender.com', 'inventario-backend-3pjc.onrender.com']
+_extra_hosts_raw = os.environ.get("DJANGO_ALLOWED_HOSTS", "")
+_extra_hosts = [h.strip() for h in _extra_hosts_raw.split(",") if h.strip()]
+ALLOWED_HOSTS = ['*'] if DEBUG else list(dict.fromkeys([*_DEFAULT_HOSTS, *_extra_hosts]))
 
 # Application definition
 

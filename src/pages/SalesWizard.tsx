@@ -101,7 +101,8 @@ export default function SalesWizard() {
         })),
       });
       setSaleId(created.id);
-      setInvoiceEmail(newClient.email || "");
+      const selectedClient = clients.find((c) => c.id === clientId);
+      setInvoiceEmail((selectedClient as { email?: string })?.email || newClient.email || "");
       const res = await apiFetch("/api/sales-summary/", {
         credentials: "include",
       });

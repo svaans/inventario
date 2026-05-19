@@ -114,9 +114,6 @@ class Producto(models.Model):
 
     def save(self, *args, **kwargs):
         """Guardar el producto y registrar cambios de precio o costo."""
-        if self.tipo == "ingredientes":
-            self.tipo = "ingrediente"
-
         if self.categoria_id and not self.familia_id:
             self.familia = self.categoria.familia
 
@@ -285,7 +282,9 @@ class ComposicionProducto(models.Model):
     """Relación de ingredientes para elaborar un producto final."""
     producto_final = models.ForeignKey(Producto, related_name="ingredientes", on_delete=models.CASCADE)
     ingrediente = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad_requerida = models.FloatField(
+    cantidad_requerida = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
         help_text="Cantidad requerida del ingrediente (en gramos, litros, etc.)",
         validators=[MinValueValidator(0)],
     )
