@@ -137,13 +137,7 @@ export function PurchaseForm() {
     }
   };
 
-  const handleNextStep1 = () => {
-    if (!supplierId) {
-      toast({ title: "Selecciona un proveedor", variant: "destructive" });
-      return;
-    }
-    setStep(1);
-  };
+  const handleNextStep1 = () => setStep(1);
 
   const handleNextStep2 = () => {
     if (items.length === 0) {
@@ -159,10 +153,9 @@ export function PurchaseForm() {
   };
 
   const handleSubmit = async () => {
-    if (!supplierId) return;
     try {
       const payload = {
-        proveedor: supplierId,
+        proveedor: supplierId as number,
         fecha,
         detalles: items.map((item) => ({
           producto: Number(item.producto),
@@ -389,8 +382,11 @@ export function PurchaseForm() {
             </Card>
           )}
 
-          <div className="flex justify-end">
-            <Button onClick={handleNextStep1} disabled={!supplierId} className="gap-2">
+          <div className="flex justify-between pt-2">
+            <Button variant="outline" onClick={handleNextStep1}>
+              Continuar sin proveedor
+            </Button>
+            <Button onClick={handleNextStep1} disabled={!!supplierSearch && !supplierId} className="gap-2">
               Continuar <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
