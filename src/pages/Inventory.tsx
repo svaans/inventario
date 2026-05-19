@@ -13,6 +13,7 @@ import AddProductDialog from "../components/inventory/AddProductDialog";
 import { InventoryStats } from "../components/inventory/InventoryStats";
 import { Skeleton } from "../components/ui/skeleton";
 import { Search, Package, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { formatCurrency } from "../utils/formatCurrency";
 import { translateCategory } from "../utils/categoryTranslations";
 import { getStockStatus } from "../utils/stockStatus";
@@ -170,14 +171,16 @@ function ProductCard({
             <Pencil className="w-3 h-3" />
             Editar
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onDelete(product.id)}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            }
+            title="¿Eliminar producto?"
+            description={`Se eliminará "${product.name}" de forma permanente. Esta acción no se puede deshacer.`}
+            onConfirm={() => onDelete(product.id)}
+          />
         </div>
       </CardContent>
     </Card>
@@ -294,7 +297,6 @@ export default function Inventory() {
   const ingredientOptions = products.filter((p) => p.tipo?.startsWith("ingred"));
 
   const handleDelete = async (id: number) => {
-    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
     try {
       await deleteProduct.mutateAsync(id);
       toast({ title: "Producto eliminado" });

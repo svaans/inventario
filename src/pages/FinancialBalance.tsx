@@ -11,6 +11,7 @@ import { TransactionInput, useCreateTransaction, useDeleteTransaction, useTransa
 import { formatCurrency } from "../utils/formatCurrency";
 import { toast } from "../hooks/use-toast";
 import { TrendingUp, TrendingDown, Wallet, ArrowRightLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f97316", "#a855f7", "#f43f5e", "#06b6d4"];
 
@@ -346,9 +347,16 @@ export default function FinancialBalance() {
                           <Button size="sm" variant="ghost" onClick={() => handleEdit(t.id)} className="h-7 w-7 p-0">
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDelete(t.id)} disabled={deleteTransaction.isPending} className="h-7 w-7 p-0 text-destructive hover:text-destructive">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          <ConfirmDialog
+                            trigger={
+                              <Button size="sm" variant="ghost" disabled={deleteTransaction.isPending} className="h-7 w-7 p-0 text-destructive hover:text-destructive">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            }
+                            title="¿Eliminar transacción?"
+                            description={`Se eliminará "${t.descripcion || "esta transacción"}" de forma permanente.`}
+                            onConfirm={() => handleDelete(t.id)}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
