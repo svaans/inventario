@@ -1,0 +1,16 @@
+# Python dependencies
+Django>=5.2
+openpyxl
+reportlab
+# For API integration with React
+django-cors-headers
+djangorestframework
+requests
+gunicorn
+uvicorn
+dj-database-url
+psycopg2-binary
+whitenoise
+# Testing
+pytest
+pytest-django

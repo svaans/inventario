@@ -1,0 +1,8 @@
+digraph architecture {
+    rankdir=LR;
+    node [shape=box, style=rounded];
+    Browser -> "React Frontend";
+    "React Frontend" -> "Django REST API";
+    "Django REST API" -> Database;
+    "Django REST API" -> "Supplier API or Email" [style=dashed];
+}

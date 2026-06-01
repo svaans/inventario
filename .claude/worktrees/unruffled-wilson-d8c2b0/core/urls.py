@@ -1,0 +1,136 @@
+from django.urls import path, include
+from django.views.generic import RedirectView
+from . import views
+from .views import login_view, csrf_token_view
+from rest_framework.routers import DefaultRouter
+from .api_views import (
+    CriticalProductListView,
+    ProductoViewSet,
+    VentaListCreateView,
+    DashboardStatsView,
+    CategoriaListView,
+    ClienteListView,
+    DailySalesSummary,
+    InventoryActivityView,
+    EmployeeListCreateView,
+    CurrentUserView,
+    CompraViewSet,
+    VentaFacturaView,
+    VentaFacturaEmailView,
+    TransaccionViewSet,
+    GastoRecurrenteViewSet,
+    DevolucionViewSet,
+    DevolucionRatesView,
+    DevolucionLossReportView,
+    FlujoCajaReportView,
+    BusinessEvolutionView,
+    PriceHistoryView,
+    ClienteHistoryView,
+    MarginImpactView,
+    ProfitabilityRankingView,
+    FinancialSummaryView,
+    InventoryAnalysisView,
+    MonthlyTrendsView,
+    UnidadMedidaListView,
+    ProductionPlanView,
+    RegistroTurnoViewSet,
+    TraceabilityView,
+    ReorderSuggestionView,
+    AuditLogViewSet,
+    LoginAPIView,
+)
+from django.shortcuts import redirect
+from django.contrib.auth import logout
+from django.contrib.auth import views as auth_views
+
+
+def cerrar_sesion(request):
+    logout(request)
+    return redirect('login')
+
+
+router = DefaultRouter()
+router.register(r"api/productos", ProductoViewSet, basename="productos")
+router.register(r"api/transacciones", TransaccionViewSet, basename="transacciones")
+router.register(r"api/gastos-recurrentes", GastoRecurrenteViewSet, basename="gastosrecurrentes")
+router.register(r"api/devoluciones", DevolucionViewSet, basename="devoluciones")
+router.register(r"api/shift-logs", RegistroTurnoViewSet, basename="shiftlogs")
+router.register(r"api/audit-logs", AuditLogViewSet, basename="auditlogs")
+router.register(r"api/compras", CompraViewSet, basename="compras")
+
+urlpatterns = [
+    path('', lambda request: redirect('login'), name='root_redirect'),
+    path('inicio/', views.index, name='index'),
+    path('productos/', views.ProductoListView.as_view(), name='producto_list'),
+    path("inventario/reporte/", views.ReporteInventarioView.as_view(), name="reporte_inventario"),
+    path("inventario/exportar/", views.exportar_inventario_excel, name="exportar_inventario_excel"),
+    path('devoluciones/perdidas/exportar/', views.exportar_perdidas_excel, name='exportar_perdidas_excel'),
+    path('productos/nuevo/', views.ProductoCreateView.as_view(), name='producto_create'),
+    path('productos/<int:pk>/editar/', views.ProductoUpdateView.as_view(), name='producto_update'),
+    path('productos/<int:pk>/eliminar/', views.ProductoDeleteView.as_view(), name='producto_delete'),
+    path('ventas/nueva/', views.VentaCreateView.as_view(), name='venta_create'),
+    path('ventas/', views.VentaListView.as_view(), name='venta_list'),
+    path('compras/nueva/', views.CompraCreateView.as_view(), name='compra_create'),
+    path('compras/', views.CompraListView.as_view(), name='compra_list'),
+    path('balance/', views.BalanceView.as_view(), name='balance'),
+    path('balance/exportar/', views.exportar_balance_excel, name='exportar_balance_excel'),
+    path('balance/pdf/', views.exportar_balance_pdf, name='exportar_balance_pdf'),
+    path('movimientos/', views.MovimientoInventarioListView.as_view(), name='movimiento_list'),
+    path("movimientos/nuevo/", views.MovimientoManualCreateView.as_view(), name="movimiento_create"),
+    path('productos/cargar/', views.CargarProductosView.as_view(), name='cargar_productos'),
+    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path("login", RedirectView.as_view(pattern_name="login", permanent=False)),
+    path('login/', login_view, name='login'),
+    path('api/login/', LoginAPIView.as_view(), name='api_login'),
+    path('api/csrf/', csrf_token_view, name='csrf_token'),
+    path('logout/', cerrar_sesion, name='logout'),
+    path('api/critical-products/', CriticalProductListView.as_view(), name='critical_products'),
+    path('api/ventas/', VentaListCreateView.as_view(), name='ventas_api'),
+    path('api/ventas/<int:venta_id>/factura/', VentaFacturaView.as_view(), name='venta_factura_api'),
+    path('api/ventas/<int:venta_id>/factura/enviar/', VentaFacturaEmailView.as_view(), name='venta_factura_email_api'),
+    path('api/dashboard/', DashboardStatsView.as_view(), name='dashboard_api'),
+    path('api/flujo-caja/', FlujoCajaReportView.as_view(), name='flujo_caja_api'),
+    path('api/business-evolution/', BusinessEvolutionView.as_view(), name='business_evolution_api'),
+    path('api/devoluciones/rates/', DevolucionRatesView.as_view(), name='devolucion_rates_api'),
+    path('api/devoluciones/losses/', DevolucionLossReportView.as_view(), name='devolucion_losses_api'),
+    path('api/price-history/', PriceHistoryView.as_view(), name='price_history_api'),
+    path('api/margin-impact/', MarginImpactView.as_view(), name='margin_impact_api'),
+    path('api/inventory-analysis/', InventoryAnalysisView.as_view(), name='inventory_analysis_api'),
+    path('api/profitability-ranking/', ProfitabilityRankingView.as_view(), name='profitability_ranking_api'),
+    path('api/finanzas/resumen/', FinancialSummaryView.as_view(), name='financial_summary_api'),
+    path('api/monthly-trends/', MonthlyTrendsView.as_view(), name='monthly_trends_api'),
+    path('api/categorias/', CategoriaListView.as_view(), name='categorias_api'),
+    path('api/unidades/', UnidadMedidaListView.as_view(), name='unidades_api'),
+    path('api/clientes/', ClienteListView.as_view(), name='clientes_api'),
+    path('api/clientes/<int:pk>/historial/', ClienteHistoryView.as_view(), name='cliente_historial_api'),
+    path('api/empleados/', EmployeeListCreateView.as_view(), name='employees_api'),
+    path('api/sales-summary/', DailySalesSummary.as_view(), name='sales_summary_api'),
+    path('api/inventory-activity/', InventoryActivityView.as_view(), name='inventory_activity_api'),
+    path('api/production-plan/', ProductionPlanView.as_view(), name='production_plan_api'),
+    path('api/reorder/', ReorderSuggestionView.as_view(), name='reorder_api'),
+    path('api/me/', CurrentUserView.as_view(), name='current_user_api'),
+    path('api/trazabilidad/<str:codigo>/', TraceabilityView.as_view(), name='traceability_api'),
+    path('password_reset/',
+         auth_views.PasswordResetView.as_view(
+             template_name='registration/password_reset_form.html'),
+         name='password_reset'),
+    path('password_reset/done/',
+         auth_views.PasswordResetDoneView.as_view(
+             template_name='registration/password_reset_done.html'),
+         name='password_reset_done'),
+    path('reset/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view(
+             template_name='registration/password_reset_confirm.html'),
+         name='password_reset_confirm'),
+    path('reset/done/',
+         auth_views.PasswordResetCompleteView.as_view(
+             template_name='registration/password_reset_complete.html'),
+         name='password_reset_complete'),
+    path('', include('django.contrib.auth.urls')),
+
+]
+
+
+urlpatterns += router.urls
+
+

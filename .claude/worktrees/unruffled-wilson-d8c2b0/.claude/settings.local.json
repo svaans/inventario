@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py makemigrations core --name \"composicion_cantidad_requerida_decimal\")",
+      "Bash(pip install *)",
+      "Bash(python -c \"import django; print\\(django.__version__\\)\")",
+      "Bash(set DJANGO_SECRET_KEY=temp-key-for-migration)",
+      "PowerShell($env:DJANGO_SECRET_KEY = \"temp-key-for-migration-only\"; cd \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\\\\.claude\\\\worktrees\\\\unruffled-wilson-d8c2b0\"; python manage.py makemigrations core --name \"composicion_cantidad_requerida_decimal\" 2>&1)",
+      "PowerShell(pip install djangorestframework django-cors-headers whitenoise 2>&1)",
+      "PowerShell(tail -5)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\\\\.claude\\\\worktrees\\\\unruffled-wilson-d8c2b0\\\\.vscode\")",
+      "Bash(git -C \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\" log --oneline -5)",
+      "Bash(git -C \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\" branch)",
+      "Bash(git -C \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\\\\.claude\\\\worktrees\\\\unruffled-wilson-d8c2b0\" status)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx tsc *)",
+      "Bash(npx --prefix \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\" tsc --noEmit)",
+      "Bash(git -C \"C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario\" add src/pages/Sales.tsx src/pages/Products.tsx src/pages/Dashboard.tsx src/pages/PurchaseList.tsx configuracion/settings.py requirements.txt)",
+      "Bash(git -C 'C:\\\\Users\\\\santi\\\\Downloads\\\\proyecto_inventario' commit -m ' *)",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}

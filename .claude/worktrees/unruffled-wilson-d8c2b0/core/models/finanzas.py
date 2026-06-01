@@ -1,0 +1,193 @@
+from django.db import models
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal, ROUND_HALF_UP
+
+
+class Balance(models.Model):
+    """Resumen mensual de las finanzas de la empresa.
+
+    Attributes:
+        mes: Mes al que pertenece el balance.
+        anio: Año correspondiente.
+        total_ingresos: Suma de todas las entradas de dinero.
+        total_egresos: Suma de todos los gastos registrados.
+        utilidad: Diferencia entre ingresos y egresos del periodo.
+    """
+    mes = models.IntegerField()
+    anio = models.IntegerField()
+    total_ingresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    total_egresos = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    utilidad = models.DecimalField(max_digits=12, decimal_places=2)
+    ingresos_operativos = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    costos_variables = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    costos_fijos = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    gastos_financieros = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    utilidad_operativa = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+    utilidad_neta_real = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+    )
+    cerrado = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Balance {self.mes}/{self.anio}"
+
+
+class Transaccion(models.Model):
+    """Registro detallado de un ingreso o egreso de caja.
+
+    Guarda la fecha, monto y categoría junto con el responsable que la
+    realizó. Se usa para calcular balances y costos operativos.
+    """
+
+    TIPO_CHOICES = [
+        ("ingreso", "Ingreso"),
+        ("egreso", "Egreso"),
+    ]
+
+    CANAL_INGRESO_CHOICES = [
+        ("mostrador", "Mostrador"),
+        ("delivery", "Delivery"),
+        ("pedido_grande", "Pedidos grandes"),
+    ]
+
+    CATEGORIA_EGRESO_CHOICES = [
+        ("materia_prima", "Materia prima"),
+        ("empaque", "Empaque"),
+        ("transporte_pedido", "Transporte por pedido"),
+        ("comisiones", "Comisiones"),
+        ("sueldos", "Sueldos"),
+        ("seguros", "Seguros"),
+        ("alquiler", "Alquiler"),
+        ("servicios", "Servicios"),
+        ("mantenimiento", "Mantenimiento"),
+        ("otros", "Otros"),
+    ]
+
+    COSTO_FIJO_CATEGORIAS = {"alquiler", "sueldos", "seguros", "servicios"}
+    COSTO_VARIABLE_CATEGORIAS = {
+        "materia_prima",
+        "empaque",
+        "transporte_pedido",
+        "comisiones",
+    }
+
+    TIPO_COSTO_CHOICES = [("fijo", "Fijo"), ("variable", "Variable")]
+    NATURALEZA_CHOICES = [
+        ("operativo", "Operativo"),
+        ("estructural", "Estructural"),
+        ("financiero", "Financiero"),
+    ]
+
+    fecha = models.DateField()
+    monto = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    categoria = models.CharField(max_length=50)
+    operativo = models.BooleanField(default=True)
+    naturaleza = models.CharField(
+        max_length=15,
+        choices=NATURALEZA_CHOICES,
+        default="operativo",
+    )
+    ACTIVIDAD_CHOICES = [
+        ("produccion", "Producción"),
+        ("distribucion", "Distribución"),
+        ("administracion", "Administración"),
+        ("otros", "Otros"),
+    ]
+    actividad = models.CharField(max_length=20, choices=ACTIVIDAD_CHOICES, blank=True)
+    canal = models.CharField(max_length=20, blank=True)
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    comprobante = models.FileField(upload_to="comprobantes/", null=True, blank=True)
+    descripcion = models.TextField(blank=True)
+    tipo_costo = models.CharField(max_length=10, choices=TIPO_COSTO_CHOICES, blank=True)
+    revisado = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [models.Index(fields=["fecha"])]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} {self.monto} - {self.fecha}"
+
+    def clean(self):
+        if self.tipo == "egreso":
+            exists = (
+                Transaccion.objects.filter(
+                    fecha=self.fecha,
+                    monto=self.monto,
+                    tipo="egreso",
+                    categoria=self.categoria,
+                    responsable=self.responsable,
+                )
+                .exclude(pk=self.pk)
+                .exists()
+            )
+            if exists:
+                raise ValidationError("Egreso duplicado")
+
+    def save(self, *args, **kwargs):
+        quant = Decimal("0.01")
+        if self.monto is not None:
+            self.monto = Decimal(str(self.monto)).quantize(quant, ROUND_HALF_UP)
+        if self.tipo == "egreso":
+            if self.tipo_costo in ("", None):
+                if self.categoria in self.COSTO_FIJO_CATEGORIAS:
+                    self.tipo_costo = "fijo"
+                elif self.categoria in self.COSTO_VARIABLE_CATEGORIAS:
+                    self.tipo_costo = "variable"
+            if self.pk is None:
+                self.revisado = False
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class GastoRecurrente(models.Model):
+    """Configuración de gastos recurrentes para generar transacciones mensuales."""
+
+    nombre = models.CharField(max_length=120)
+    categoria = models.CharField(max_length=50)
+    monto = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    dia_corte = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(31)])
+    activo = models.BooleanField(default=True)
+    naturaleza = models.CharField(
+        max_length=15,
+        choices=Transaccion.NATURALEZA_CHOICES,
+        default="operativo",
+    )
+    tipo_costo = models.CharField(
+        max_length=10,
+        choices=Transaccion.TIPO_COSTO_CHOICES,
+        blank=True,
+    )
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    ultima_generacion = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre

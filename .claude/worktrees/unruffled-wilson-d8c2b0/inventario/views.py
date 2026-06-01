@@ -1,0 +1,1 @@
+from core.views import *  # re-export all inventory views
